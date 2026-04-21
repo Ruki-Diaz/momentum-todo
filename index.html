@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Momentum Todo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <main class="app-shell">
+    <section class="hero">
+      <p class="eyebrow">Momentum Todo</p>
+      <h1>Turn scattered tasks into a day with shape.</h1>
+      <p class="hero-copy">
+        Capture what matters, sort by energy, and keep the list honest.
+      </p>
+      <div class="stats" aria-label="Todo stats">
+        <article class="stat-card">
+          <span class="stat-label">Open</span>
+          <strong id="openCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Done</span>
+          <strong id="doneCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Streak</span>
+          <strong id="streakCount">0</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel composer-panel">
+      <form id="todoForm" class="todo-form">
+        <label class="sr-only" for="todoInput">Task title</label>
+        <input id="todoInput" name="todo" type="text" maxlength="120" placeholder="What needs your attention?" required>
+
+        <div class="form-row">
+          <label>
+            <span>Priority</span>
+            <select id="priorityInput" name="priority">
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Due date</span>
+            <input id="dueDateInput" name="dueDate" type="date">
+          </label>
+        </div>
+
+        <button type="submit" class="primary-btn">Add task</button>
+      </form>
+    </section>
+
+    <section class="panel controls-panel">
+      <div class="filters" role="tablist" aria-label="Task filters">
+        <button class="filter-chip active" data-filter="all" type="button">All</button>
+        <button class="filter-chip" data-filter="open" type="button">Open</button>
+        <button class="filter-chip" data-filter="done" type="button">Done</button>
+      </div>
+
+      <label class="search-wrap" for="searchInput">
+        <span class="sr-only">Search tasks</span>
+        <input id="searchInput" type="search" placeholder="Search tasks">
+      </label>
+
+      <button id="clearCompletedBtn" class="ghost-btn" type="button">Clear completed</button>
+    </section>
+
+    <section class="panel list-panel">
+      <div class="list-header">
+        <div>
+          <p class="section-label">Today’s board</p>
+          <h2>Your tasks</h2>
+        </div>
+        <p id="summaryText" class="summary-text">No tasks yet. Add one to get started.</p>
+      </div>
+
+      <ul id="todoList" class="todo-list" aria-live="polite"></ul>
+      <template id="emptyStateTemplate">
+        <li class="empty-state">
+          <h3>Nothing here yet</h3>
+          <p>Add a task above, or change the current filter.</p>
+        </li>
+      </template>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
