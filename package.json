@@ -1,0 +1,36 @@
+{
+  "name": "momentum-todo",
+  "version": "2.0.0",
+  "description": "Momentum — Personal Productivity Workspace",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server/test-health.ts",
+    "build": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx server/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "test:health": "tsx server/test-health.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.39.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@vercel/node": "^5.1.8",
+    "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "productivity",
+    "todo",
+    "calendar",
+    "neon",
+    "postgresql",
+    "drizzle"
+  ],
+  "author": "Rukshan",
+  "license": "UNLICENSED"
+}
