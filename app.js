@@ -177,9 +177,11 @@ function calculateNextDueDate(currentDueDateStr, recurrence) {
 }
 
 // ==========================================================================
-// 4. DATASTORE ABSTRACTION LAYER (Centralized Storage & Cloud-Sync Ready)
+// 4. STORAGE REPOSITORY ARCHITECTURE (Local Mode & Authenticated Cloud Mode)
 // ==========================================================================
-const DataStore = {
+
+// 4A. Local Data Store (localStorage backed)
+const LocalDataStore = {
   getProjects() {
     try {
       const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
@@ -297,6 +299,600 @@ const DataStore = {
   }
 };
 
+// Legacy fallback alias
+const DataStore = LocalDataStore;
+
+// 4B. Authenticated Cloud API Client
+const ApiClient = {
+  async request(path, options = {}) {
+    const session = AuthManager.clerk?.session;
+    if (!session) {
+      const err = new Error("No active authenticated session.");
+      err.status = 401;
+      err.code = "UNAUTHORIZED";
+      throw err;
+    }
+
+    let token = await session.getToken();
+    if (!token) {
+      const err = new Error("Could not retrieve session token.");
+      err.status = 401;
+      err.code = "UNAUTHORIZED";
+      throw err;
+    }
+
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {})
+    };
+
+    const fetchOptions = {
+      ...options,
+      headers
+    };
+
+    if (fetchOptions.body && typeof fetchOptions.body === "object") {
+      fetchOptions.body = JSON.stringify(fetchOptions.body);
+    }
+
+    let res = await fetch(`/api${path}`, fetchOptions);
+
+    // If 401, attempt one fresh token retry
+    if (res.status === 401 && !options._retried) {
+      try {
+        token = await session.getToken({ skipCache: true });
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+          res = await fetch(`/api${path}`, { ...fetchOptions, headers, _retried: true });
+        }
+      } catch (refreshErr) {
+        console.warn("[ApiClient] Token refresh attempt failed:", refreshErr);
+      }
+    }
+
+    let resJson = null;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      resJson = await res.json().catch(() => null);
+    }
+
+    if (!res.ok) {
+      const errorObj = resJson?.error || {
+        code: res.status === 409 ? "STALE_VERSION" : "API_ERROR",
+        message: `Request failed with status ${res.status}`
+      };
+      const error = new Error(errorObj.message || "An unexpected API error occurred.");
+      error.status = res.status;
+      error.code = errorObj.code;
+      error.details = errorObj.details;
+      throw error;
+    }
+
+    return resJson;
+  }
+};
+
+// 4C. Cloud Data Store (REST API backed)
+const CloudDataStore = {
+  saveQueues: new Map(),
+
+  async listProjects() {
+    const res = await ApiClient.request("/projects", { method: "GET" });
+    return (res.data || []).map(normalizeProject).filter(Boolean);
+  },
+
+  async createProject(data) {
+    const res = await ApiClient.request("/projects", {
+      method: "POST",
+      body: { name: data.name, color: data.color }
+    });
+    return normalizeProject(res.data);
+  },
+
+  async updateProject(id, data, version) {
+    const res = await ApiClient.request(`/projects/${id}`, {
+      method: "PATCH",
+      body: { name: data.name, color: data.color, version: version || 1 }
+    });
+    return normalizeProject(res.data);
+  },
+
+  async deleteProject(id, version) {
+    await ApiClient.request(`/projects/${id}`, {
+      method: "DELETE",
+      body: { version: version || 1 }
+    });
+    return true;
+  },
+
+  async listTasks() {
+    const res = await ApiClient.request("/tasks", { method: "GET" });
+    return (res.data || []).map((t) => normalizeTodo(t, state.projects)).filter(Boolean);
+  },
+
+  async getTask(id) {
+    const res = await ApiClient.request(`/tasks/${id}`, { method: "GET" });
+    return normalizeTodo(res.data, state.projects);
+  },
+
+  async createTask(data) {
+    const payload = {
+      title: data.title,
+      description: data.description || "",
+      priority: data.priority || "medium",
+      dueDate: data.dueDate || null,
+      dueTime: data.dueTime || null,
+      projectId: data.projectId || null,
+      tags: data.tags || [],
+      notes: data.notes || "",
+      reminder: data.reminder || null,
+      recurrence: data.recurrence || "none",
+      subtasks: (data.subtasks || []).map((s) => ({ title: s.title, completed: s.completed }))
+    };
+    const res = await ApiClient.request("/tasks", {
+      method: "POST",
+      body: payload
+    });
+    return normalizeTodo(res.data, state.projects);
+  },
+
+  async updateTask(id, data, version) {
+    const res = await ApiClient.request(`/tasks/${id}`, {
+      method: "PATCH",
+      body: { ...data, version: version || 1 }
+    });
+    return normalizeTodo(res.data, state.projects);
+  },
+
+  async deleteTask(id, version) {
+    await ApiClient.request(`/tasks/${id}`, {
+      method: "DELETE",
+      body: { version: version || 1 }
+    });
+    return true;
+  },
+
+  async completeTask(id, version) {
+    const res = await ApiClient.request(`/tasks/${id}/complete`, {
+      method: "POST",
+      body: { version: version || 1 }
+    });
+    return {
+      task: normalizeTodo(res.data.task, state.projects),
+      nextOccurrence: res.data.nextOccurrence
+        ? normalizeTodo(res.data.nextOccurrence, state.projects)
+        : null
+    };
+  },
+
+  async createSubtask(taskId, data) {
+    const res = await ApiClient.request(`/tasks/${taskId}/subtasks`, {
+      method: "POST",
+      body: { title: data.title, completed: data.completed ?? false }
+    });
+    return res.data;
+  },
+
+  async updateSubtask(taskId, subtaskId, data, version) {
+    const res = await ApiClient.request(`/tasks/${taskId}/subtasks/${subtaskId}`, {
+      method: "PATCH",
+      body: { ...data, version: version || 1 }
+    });
+    return res.data;
+  },
+
+  async deleteSubtask(taskId, subtaskId, version) {
+    await ApiClient.request(`/tasks/${taskId}/subtasks/${subtaskId}`, {
+      method: "DELETE",
+      body: { version: version || 1 }
+    });
+    return true;
+  },
+
+  async getSettings() {
+    const res = await ApiClient.request("/settings", { method: "GET" });
+    return res.data;
+  },
+
+  async updateSettings(data, version) {
+    const res = await ApiClient.request("/settings", {
+      method: "PATCH",
+      body: { ...data, version: version || 1 }
+    });
+    return res.data;
+  },
+
+  // Serialized Task Save Execution (Coalesces edits & avoids 409 collisions)
+  queueTaskSave(taskId, updatedFields, onStatusChange) {
+    let queue = this.saveQueues.get(taskId);
+    if (!queue) {
+      queue = { inFlight: false, pendingData: null };
+      this.saveQueues.set(taskId, queue);
+    }
+
+    queue.pendingData = { ...(queue.pendingData || {}), ...updatedFields };
+    if (onStatusChange) onStatusChange("saving");
+
+    if (queue.inFlight) return;
+
+    this.processTaskSaveQueue(taskId, onStatusChange);
+  },
+
+  async processTaskSaveQueue(taskId, onStatusChange) {
+    const queue = this.saveQueues.get(taskId);
+    if (!queue || !queue.pendingData) {
+      if (onStatusChange) onStatusChange("saved");
+      return;
+    }
+
+    const todo = state.todos.find((t) => t.id === taskId);
+    if (!todo) {
+      queue.pendingData = null;
+      if (onStatusChange) onStatusChange("saved");
+      return;
+    }
+
+    const payload = queue.pendingData;
+    queue.pendingData = null;
+    queue.inFlight = true;
+
+    try {
+      const updated = await this.updateTask(taskId, payload, todo.version || 1);
+      state.todos = state.todos.map((t) => (t.id === taskId ? { ...t, ...updated } : t));
+      render();
+    } catch (err) {
+      console.warn("[CloudDataStore] Task autosave failed:", err);
+      if (err.code === "STALE_VERSION" || err.status === 409) {
+        showToast("This item changed on another device.", 3500);
+        try {
+          const fresh = await this.getTask(taskId);
+          state.todos = state.todos.map((t) => (t.id === taskId ? fresh : t));
+          if (state.activeDrawerTodoId === taskId) {
+            populateDrawerInputs(fresh);
+          }
+          render();
+        } catch (fetchErr) {
+          console.error("Failed to reconcile stale cloud task:", fetchErr);
+        }
+      } else {
+        showToast(err.message || "Failed to save changes to cloud.", 3000);
+      }
+    } finally {
+      queue.inFlight = false;
+      if (queue.pendingData) {
+        this.processTaskSaveQueue(taskId, onStatusChange);
+      } else {
+        if (onStatusChange) onStatusChange("saved");
+      }
+    }
+  },
+
+  // Serialized Settings Save Execution (Rapid theme/sort changes coalesce version-safely)
+  settingsSaveQueue: {
+    inFlight: false,
+    pendingData: null
+  },
+
+  queueSettingsSave(settingsFields) {
+    this.settingsSaveQueue.pendingData = {
+      ...(this.settingsSaveQueue.pendingData || {}),
+      ...settingsFields
+    };
+
+    if (this.settingsSaveQueue.inFlight) return;
+    this.processSettingsSaveQueue();
+  },
+
+  async processSettingsSaveQueue() {
+    if (!this.settingsSaveQueue.pendingData) return;
+
+    const payload = this.settingsSaveQueue.pendingData;
+    this.settingsSaveQueue.pendingData = null;
+    this.settingsSaveQueue.inFlight = true;
+
+    try {
+      const updated = await this.updateSettings(payload, state.cloudSettingsVersion || 1);
+      state.cloudSettingsVersion = updated.version || ((state.cloudSettingsVersion || 1) + 1);
+    } catch (err) {
+      console.warn("[CloudDataStore] Settings save failed:", err);
+      if (err.code === "STALE_VERSION" || err.status === 409) {
+        try {
+          const fresh = await this.getSettings();
+          state.cloudSettingsVersion = fresh.version;
+        } catch (fetchErr) {
+          console.error("Failed to reconcile settings version:", fetchErr);
+        }
+      }
+    } finally {
+      this.settingsSaveQueue.inFlight = false;
+      if (this.settingsSaveQueue.pendingData) {
+        this.processSettingsSaveQueue();
+      }
+    }
+  }
+};
+
+// 4D. Workspace Repository Facade
+const WorkspaceRepository = {
+  workspaceGeneration: 0,
+
+  getMode() {
+    return state.workspaceMode;
+  },
+
+  isCloud() {
+    return state.workspaceMode === "cloud";
+  },
+
+  async init() {
+    state.workspaceMode = "local";
+    state.cloudStatus = "idle";
+    state.cloudError = null;
+    state.projects = LocalDataStore.getProjects();
+    state.todos = LocalDataStore.getTodos(state.projects);
+    state.theme = LocalDataStore.getTheme();
+    state.sort = LocalDataStore.getSortPreference();
+    render();
+  },
+
+  async switchToCloud(user) {
+    this.workspaceGeneration++;
+    const currentGen = this.workspaceGeneration;
+
+    state.workspaceMode = "cloud";
+    state.cloudStatus = "loading";
+    state.cloudError = null;
+    render();
+
+    try {
+      // 1. Fetch Cloud Settings
+      let settings = null;
+      try {
+        settings = await CloudDataStore.getSettings();
+      } catch (settingsErr) {
+        console.warn("[WorkspaceRepository] Cloud settings fetch error:", settingsErr);
+      }
+
+      if (this.workspaceGeneration !== currentGen) return;
+
+      if (settings) {
+        state.cloudSettingsVersion = settings.version || 1;
+        if (settings.theme && (settings.theme === "dark" || settings.theme === "light")) {
+          applyTheme(settings.theme, false);
+        }
+        if (settings.sortPreference) {
+          state.sort = settings.sortPreference;
+          if (sortSelect) sortSelect.value = state.sort;
+        }
+      }
+
+      // 2. Fetch Projects and Tasks
+      const [cloudProjects, cloudTasks] = await Promise.all([
+        CloudDataStore.listProjects(),
+        CloudDataStore.listTasks()
+      ]);
+
+      if (this.workspaceGeneration !== currentGen) return;
+
+      state.projects = cloudProjects;
+      state.todos = cloudTasks;
+      state.cloudStatus = "connected";
+      state.cloudError = null;
+      render();
+    } catch (err) {
+      if (this.workspaceGeneration !== currentGen) return;
+      console.error("[WorkspaceRepository] Failed to load cloud workspace:", err);
+      state.cloudStatus = "error";
+      state.cloudError = err.message || "Unable to load cloud workspace.";
+      render();
+    }
+  },
+
+  async switchToLocal() {
+    this.workspaceGeneration++;
+    state.workspaceMode = "local";
+    state.cloudStatus = "idle";
+    state.cloudError = null;
+
+    // Restore local data
+    state.projects = LocalDataStore.getProjects();
+    state.todos = LocalDataStore.getTodos(state.projects);
+    state.theme = LocalDataStore.getTheme();
+    state.sort = LocalDataStore.getSortPreference();
+
+    applyTheme(state.theme, false);
+    if (sortSelect) sortSelect.value = state.sort;
+
+    render();
+  },
+
+  async createTask(taskData) {
+    if (this.isCloud()) {
+      const created = await CloudDataStore.createTask(taskData);
+      state.todos = [created, ...state.todos];
+      render();
+      return created;
+    } else {
+      const newTodo = {
+        id: crypto.randomUUID(),
+        title: taskData.title,
+        description: taskData.description || "",
+        priority: taskData.priority || "medium",
+        dueDate: taskData.dueDate || null,
+        dueTime: taskData.dueTime || null,
+        projectId: taskData.projectId || null,
+        tags: taskData.tags || [],
+        completed: false,
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+        subtasks: (taskData.subtasks || []).map((s) => ({
+          id: crypto.randomUUID(),
+          title: s.title,
+          completed: s.completed ?? false,
+          createdAt: new Date().toISOString()
+        })),
+        notes: taskData.notes || "",
+        reminder: taskData.reminder || null,
+        recurrence: taskData.recurrence || "none",
+        recurrenceSeriesId: null,
+        generatedNextOccurrenceId: null
+      };
+      state.todos = [newTodo, ...state.todos];
+      LocalDataStore.saveTodos(state.todos);
+      render();
+      return newTodo;
+    }
+  },
+
+  async updateTask(taskId, updatedFields, onStatusChange) {
+    if (this.isCloud()) {
+      CloudDataStore.queueTaskSave(taskId, updatedFields, onStatusChange);
+    } else {
+      state.todos = state.todos.map((t) => (t.id === taskId ? { ...t, ...updatedFields } : t));
+      LocalDataStore.saveTodos(state.todos);
+      if (onStatusChange) onStatusChange("saved");
+      render();
+    }
+  },
+
+  async deleteTask(taskId) {
+    const todo = state.todos.find((t) => t.id === taskId);
+    if (!todo) return;
+
+    if (this.isCloud()) {
+      await CloudDataStore.deleteTask(taskId, todo.version || 1);
+      state.todos = state.todos.filter((t) => t.id !== taskId);
+      render();
+    } else {
+      state.todos = state.todos.filter((t) => t.id !== taskId);
+      LocalDataStore.saveTodos(state.todos);
+      render();
+    }
+  },
+
+  async createProject(projectData) {
+    if (this.isCloud()) {
+      const created = await CloudDataStore.createProject(projectData);
+      state.projects.push(created);
+      render();
+      return created;
+    } else {
+      const newProj = {
+        id: crypto.randomUUID(),
+        name: projectData.name,
+        color: projectData.color || PROJECT_COLORS[0],
+        createdAt: new Date().toISOString()
+      };
+      state.projects.push(newProj);
+      LocalDataStore.saveProjects(state.projects);
+      render();
+      return newProj;
+    }
+  },
+
+  async updateProject(id, projectData) {
+    const proj = state.projects.find((p) => p.id === id);
+    if (this.isCloud()) {
+      const updated = await CloudDataStore.updateProject(id, projectData, proj?.version || 1);
+      state.projects = state.projects.map((p) => (p.id === id ? updated : p));
+      render();
+      return updated;
+    } else {
+      state.projects = state.projects.map((p) => (p.id === id ? { ...p, ...projectData } : p));
+      LocalDataStore.saveProjects(state.projects);
+      render();
+    }
+  },
+
+  async deleteProject(projectId) {
+    const proj = state.projects.find((p) => p.id === projectId);
+    if (this.isCloud()) {
+      await CloudDataStore.deleteProject(projectId, proj?.version || 1);
+      state.projects = state.projects.filter((p) => p.id !== projectId);
+      state.todos = state.todos.map((t) =>
+        t.projectId === projectId ? { ...t, projectId: null } : t
+      );
+      render();
+    } else {
+      LocalDataStore.deleteProject(projectId);
+      render();
+    }
+  },
+
+  async createSubtask(taskId, subtaskData) {
+    const todo = state.todos.find((t) => t.id === taskId);
+    if (!todo) return;
+
+    if (this.isCloud()) {
+      const created = await CloudDataStore.createSubtask(taskId, subtaskData);
+      todo.subtasks = [...(todo.subtasks || []), created];
+      render();
+      return created;
+    } else {
+      const newSt = {
+        id: crypto.randomUUID(),
+        title: subtaskData.title,
+        completed: subtaskData.completed ?? false,
+        createdAt: new Date().toISOString()
+      };
+      todo.subtasks = [...(todo.subtasks || []), newSt];
+      LocalDataStore.saveTodos(state.todos);
+      render();
+      return newSt;
+    }
+  },
+
+  async updateSubtask(taskId, subtaskId, data) {
+    const todo = state.todos.find((t) => t.id === taskId);
+    if (!todo) return;
+    const st = (todo.subtasks || []).find((s) => s.id === subtaskId);
+
+    if (this.isCloud()) {
+      const updated = await CloudDataStore.updateSubtask(taskId, subtaskId, data, st?.version || 1);
+      todo.subtasks = (todo.subtasks || []).map((s) => (s.id === subtaskId ? updated : s));
+      render();
+      return updated;
+    } else {
+      todo.subtasks = (todo.subtasks || []).map((s) => (s.id === subtaskId ? { ...s, ...data } : s));
+      LocalDataStore.saveTodos(state.todos);
+      render();
+    }
+  },
+
+  async deleteSubtask(taskId, subtaskId) {
+    const todo = state.todos.find((t) => t.id === taskId);
+    if (!todo) return;
+    const st = (todo.subtasks || []).find((s) => s.id === subtaskId);
+
+    if (this.isCloud()) {
+      await CloudDataStore.deleteSubtask(taskId, subtaskId, st?.version || 1);
+      todo.subtasks = (todo.subtasks || []).filter((s) => s.id !== subtaskId);
+      render();
+    } else {
+      todo.subtasks = (todo.subtasks || []).filter((s) => s.id !== subtaskId);
+      LocalDataStore.saveTodos(state.todos);
+      render();
+    }
+  },
+
+  async updateTheme(theme) {
+    if (this.isCloud()) {
+      CloudDataStore.queueSettingsSave({ theme });
+    } else {
+      LocalDataStore.saveTheme(theme);
+    }
+  },
+
+  async updateSortPreference(sort) {
+    if (this.isCloud()) {
+      CloudDataStore.queueSettingsSave({ sortPreference: sort });
+    } else {
+      LocalDataStore.saveSortPreference(sort);
+    }
+  }
+};
+
 // ==========================================================================
 // 5. STRUCTURED UNDO MANAGER
 // ==========================================================================
@@ -333,7 +929,9 @@ class UndoManager {
       const insertAt = typeof index === "number" && index >= 0 && index <= nextTodos.length ? index : 0;
       nextTodos.splice(insertAt, 0, todo);
       state.todos = nextTodos;
-      DataStore.saveTodos(state.todos);
+      if (!WorkspaceRepository.isCloud()) {
+        LocalDataStore.saveTodos(state.todos);
+      }
       render();
       showToast(`Restored "${todo.title}"`, 2200);
       return true;
@@ -352,7 +950,9 @@ class UndoManager {
           }
           return t;
         });
-      DataStore.saveTodos(state.todos);
+      if (!WorkspaceRepository.isCloud()) {
+        LocalDataStore.saveTodos(state.todos);
+      }
       render();
       showToast("Completion undone", 2000);
       return true;
@@ -362,15 +962,19 @@ class UndoManager {
       state.todos = state.todos.map((t) =>
         affectedTodoIds.includes(t.id) ? { ...t, projectId: project.id } : t
       );
-      DataStore.saveProjects(state.projects);
-      DataStore.saveTodos(state.todos);
+      if (!WorkspaceRepository.isCloud()) {
+        LocalDataStore.saveProjects(state.projects);
+        LocalDataStore.saveTodos(state.todos);
+      }
       render();
       showToast(`Restored project "${project.name}"`, 2500);
       return true;
     } else if (action.type === "CLEAR_COMPLETED") {
       const { clearedTodos } = action;
       state.todos = [...clearedTodos, ...state.todos];
-      DataStore.saveTodos(state.todos);
+      if (!WorkspaceRepository.isCloud()) {
+        LocalDataStore.saveTodos(state.todos);
+      }
       render();
       showToast(`Restored ${clearedTodos.length} completed task${clearedTodos.length === 1 ? "" : "s"}`, 2500);
       return true;
@@ -560,21 +1164,27 @@ const closeShortcutsModalBtn = document.querySelector("#closeShortcutsModalBtn")
 // ==========================================================================
 // 7. APPLICATION STATE
 // ==========================================================================
-const initialProjects = DataStore.getProjects();
+const initialProjects = LocalDataStore.getProjects();
 const initialNow = new Date();
 
 let state = {
   currentView: "today", // 'today' | 'inbox' | 'upcoming' | 'calendar' | 'calendar:<YYYY-MM-DD>' | 'completed' | 'overdue' | 'project:<id>' | 'tag:<tag>'
   filter: "all",        // 'all' | 'open' | 'done'
-  sort: DataStore.getSortPreference(), // 'smart' | 'dueDate' | 'priority' | 'newest' | 'oldest'
+  sort: LocalDataStore.getSortPreference(), // 'smart' | 'dueDate' | 'priority' | 'newest' | 'oldest'
   search: "",
-  theme: DataStore.getTheme(),
+  theme: LocalDataStore.getTheme(),
   projects: initialProjects,
-  todos: DataStore.getTodos(initialProjects),
+  todos: LocalDataStore.getTodos(initialProjects),
   activeDrawerTodoId: null,
   activeContextMenuTodoId: null,
   completingTodoIds: new Set(),
   lastFocusedElement: null,
+
+  // Workspace Mode & Cloud State (Stage 4D)
+  workspaceMode: "local", // 'local' | 'cloud'
+  cloudStatus: "idle",    // 'idle' | 'loading' | 'connected' | 'error'
+  cloudError: null,
+  cloudSettingsVersion: 1,
 
   // Calendar State
   calendarDate: { year: initialNow.getFullYear(), month: initialNow.getMonth() }, // 0-indexed month
@@ -632,9 +1242,11 @@ function showToast(message, duration = 3000, undoCallback = null) {
 // ==========================================================================
 // 9. THEME MANAGEMENT
 // ==========================================================================
-function applyTheme(theme) {
+function applyTheme(theme, persist = true) {
   state.theme = theme;
-  DataStore.saveTheme(theme);
+  if (persist) {
+    WorkspaceRepository.updateTheme(theme);
+  }
 
   let activeTheme = theme;
   if (theme === "system") {
@@ -649,7 +1261,7 @@ function applyTheme(theme) {
 
 function toggleTheme() {
   const nextTheme = state.theme === "dark" ? "light" : "dark";
-  applyTheme(nextTheme);
+  applyTheme(nextTheme, true);
   showToast(`Switched to ${capitalize(nextTheme)} mode`, 2000);
 }
 
@@ -875,8 +1487,42 @@ function setupComposerInteractions() {
   });
 }
 
+function populateDrawerInputs(todo) {
+  if (!todo) return;
+
+  drawerTitleInput.value = todo.title;
+  drawerDescInput.value = todo.description || "";
+  drawerPriorityInput.value = todo.priority || "medium";
+  drawerDueDateInput.value = todo.dueDate || "";
+  drawerDueTimeInput.value = todo.dueTime || "";
+  drawerRecurrenceInput.value = todo.recurrence || "none";
+  drawerReminderInput.value = todo.reminder || "";
+  drawerNotesInput.value = todo.notes || "";
+
+  drawerProjectInput.innerHTML = '<option value="">Inbox</option>';
+  state.projects.forEach((proj) => {
+    const opt = document.createElement("option");
+    opt.value = proj.id;
+    opt.textContent = proj.name;
+    if (todo.projectId === proj.id) opt.selected = true;
+    drawerProjectInput.appendChild(opt);
+  });
+
+  updateDrawerStatusButton(todo);
+  renderDrawerTags(todo);
+  renderDrawerSubtasks(todo);
+
+  drawerCreatedAtLabel.textContent = `Created: ${formatTimestamp(todo.createdAt)}`;
+  drawerCompletedAtLabel.textContent = todo.completedAt ? `Completed: ${formatTimestamp(todo.completedAt)}` : "";
+
+  if (drawerSaveStatus) {
+    drawerSaveStatus.textContent = "Saved ✓";
+    drawerSaveStatus.classList.remove("saving");
+  }
+}
+
 // ==========================================================================
-// 14. TASK DETAILS DRAWER & DEBOUNCED AUTOSAVE
+// 14. TASK DETAILS DRAWER (Autosave, Subtasks, Tags, Meta)
 // ==========================================================================
 let autosaveTimer = null;
 
@@ -911,9 +1557,9 @@ function flushDrawerAutosave() {
   const description = drawerDescInput.value;
   const priority = drawerPriorityInput.value;
   const projectId = drawerProjectInput.value || null;
-  const dueDate = drawerDueDateInput.value;
-  const dueTime = drawerDueTimeInput.value;
-  const recurrence = drawerRecurrenceInput.value;
+  const dueDate = drawerDueDateInput.value || null;
+  const dueTime = drawerDueTimeInput.value || null;
+  const recurrence = drawerRecurrenceInput.value || "none";
   const reminder = drawerReminderInput.value || null;
   const notes = drawerNotesInput.value;
 
@@ -929,31 +1575,34 @@ function flushDrawerAutosave() {
     todo.notes !== notes;
 
   if (hasChanged) {
-    state.todos = state.todos.map((t) => {
-      if (t.id === todoId) {
-        return {
-          ...t,
-          title,
-          description,
-          priority,
-          projectId,
-          dueDate,
-          dueTime,
-          recurrence,
-          reminder,
-          notes
-        };
+    const changedFields = {
+      title,
+      description,
+      priority,
+      projectId,
+      dueDate,
+      dueTime,
+      recurrence,
+      reminder,
+      notes
+    };
+
+    WorkspaceRepository.updateTask(todoId, changedFields, (status) => {
+      if (drawerSaveStatus) {
+        if (status === "saving") {
+          drawerSaveStatus.textContent = "Saving…";
+          drawerSaveStatus.classList.add("saving");
+        } else {
+          drawerSaveStatus.textContent = "Saved ✓";
+          drawerSaveStatus.classList.remove("saving");
+        }
       }
-      return t;
     });
-
-    DataStore.saveTodos(state.todos);
-    render();
-  }
-
-  if (drawerSaveStatus) {
-    drawerSaveStatus.textContent = "Saved ✓";
-    drawerSaveStatus.classList.remove("saving");
+  } else {
+    if (drawerSaveStatus) {
+      drawerSaveStatus.textContent = "Saved ✓";
+      drawerSaveStatus.classList.remove("saving");
+    }
   }
 }
 
@@ -966,33 +1615,7 @@ function openTaskDetails(todoId) {
   state.lastFocusedElement = document.activeElement;
   state.activeDrawerTodoId = todoId;
 
-  drawerTitleInput.value = todo.title;
-  drawerDescInput.value = todo.description || "";
-  drawerPriorityInput.value = todo.priority || "medium";
-  drawerDueDateInput.value = todo.dueDate || "";
-  drawerDueTimeInput.value = todo.dueTime || "";
-  drawerRecurrenceInput.value = todo.recurrence || "none";
-  drawerReminderInput.value = todo.reminder || "";
-  drawerNotesInput.value = todo.notes || "";
-
-  drawerProjectInput.innerHTML = '<option value="">Inbox</option>';
-  state.projects.forEach((proj) => {
-    const opt = document.createElement("option");
-    opt.value = proj.id;
-    opt.textContent = proj.name;
-    if (todo.projectId === proj.id) opt.selected = true;
-    drawerProjectInput.appendChild(opt);
-  });
-
-  updateDrawerStatusButton(todo);
-  renderDrawerTags(todo);
-  renderDrawerSubtasks(todo);
-
-  drawerCreatedAtLabel.textContent = `Created: ${formatTimestamp(todo.createdAt)}`;
-  drawerCompletedAtLabel.textContent = todo.completedAt ? `Completed: ${formatTimestamp(todo.completedAt)}` : "";
-
-  drawerSaveStatus.textContent = "Saved ✓";
-  drawerSaveStatus.classList.remove("saving");
+  populateDrawerInputs(todo);
 
   taskDetailsDrawer.classList.add("open");
   taskDetailsDrawer.setAttribute("aria-hidden", "false");
@@ -1029,11 +1652,11 @@ function renderDrawerTags(todo) {
       <span>#${tag}</span>
       <button type="button" class="drawer-tag-remove" aria-label="Remove tag #${tag}">&times;</button>
     `;
-    chip.querySelector(".drawer-tag-remove").addEventListener("click", () => {
-      todo.tags = todo.tags.filter((t) => t !== tag);
-      DataStore.saveTodos(state.todos);
+    chip.querySelector(".drawer-tag-remove").addEventListener("click", async () => {
+      const nextTags = (todo.tags || []).filter((t) => t !== tag);
+      todo.tags = nextTags;
+      await WorkspaceRepository.updateTask(todo.id, { tags: nextTags });
       renderDrawerTags(todo);
-      render();
     });
     drawerTagsList.appendChild(chip);
   });
@@ -1060,23 +1683,22 @@ function renderDrawerSubtasks(todo) {
     chk.className = "subtask-checkbox";
     chk.checked = st.completed;
     chk.setAttribute("aria-label", `Mark subtask "${st.title}" as ${st.completed ? "incomplete" : "complete"}`);
-    chk.addEventListener("change", () => {
+    chk.addEventListener("change", async () => {
       st.completed = chk.checked;
-      DataStore.saveTodos(state.todos);
+      await WorkspaceRepository.updateSubtask(todo.id, st.id, { completed: chk.checked });
       renderDrawerSubtasks(todo);
-      render();
     });
 
     const titleInput = document.createElement("input");
     titleInput.type = "text";
     titleInput.className = "subtask-title-input";
     titleInput.value = st.title;
-    titleInput.addEventListener("input", () => {
-      st.title = titleInput.value.trim();
-      scheduleDrawerAutosave();
-    });
-    titleInput.addEventListener("blur", () => {
-      flushDrawerAutosave();
+    titleInput.addEventListener("blur", async () => {
+      const newTitle = titleInput.value.trim() || st.title;
+      if (newTitle !== st.title) {
+        st.title = newTitle;
+        await WorkspaceRepository.updateSubtask(todo.id, st.id, { title: newTitle });
+      }
     });
 
     const delBtn = document.createElement("button");
@@ -1086,11 +1708,10 @@ function renderDrawerSubtasks(todo) {
     delBtn.innerHTML = `
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     `;
-    delBtn.addEventListener("click", () => {
-      todo.subtasks = todo.subtasks.filter((s) => s.id !== st.id);
-      DataStore.saveTodos(state.todos);
-      renderDrawerSubtasks(todo);
-      render();
+    delBtn.addEventListener("click", async () => {
+      await WorkspaceRepository.deleteSubtask(todo.id, st.id);
+      const fresh = state.todos.find((t) => t.id === todo.id);
+      if (fresh) renderDrawerSubtasks(fresh);
     });
 
     li.append(chk, titleInput, delBtn);
@@ -1144,45 +1765,40 @@ function setupDrawerListeners() {
     }
   });
 
-  drawerTagsInput.addEventListener("keydown", (e) => {
+  drawerTagsInput.addEventListener("keydown", async (e) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       const raw = drawerTagsInput.value.trim();
       if (!raw || !state.activeDrawerTodoId) return;
 
-      const todo = state.todos.find((t) => t.id === state.activeDrawerTodoId);
+      const todoId = state.activeDrawerTodoId;
+      const todo = state.todos.find((t) => t.id === todoId);
       if (!todo) return;
 
       const norm = normalizeTag(raw);
-      if (norm && !todo.tags.includes(norm)) {
-        todo.tags.push(norm);
-        DataStore.saveTodos(state.todos);
+      if (norm && !(todo.tags || []).includes(norm)) {
+        const nextTags = [...(todo.tags || []), norm];
+        todo.tags = nextTags;
+        await WorkspaceRepository.updateTask(todoId, { tags: nextTags });
         renderDrawerTags(todo);
-        render();
       }
       drawerTagsInput.value = "";
     }
   });
 
-  drawerAddSubtaskForm.addEventListener("submit", (e) => {
+  drawerAddSubtaskForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const title = newSubtaskInput.value.trim();
     if (!title || !state.activeDrawerTodoId) return;
 
-    const todo = state.todos.find((t) => t.id === state.activeDrawerTodoId);
+    const todoId = state.activeDrawerTodoId;
+    const todo = state.todos.find((t) => t.id === todoId);
     if (!todo) return;
 
-    todo.subtasks.push({
-      id: crypto.randomUUID(),
-      title,
-      completed: false,
-      createdAt: new Date().toISOString()
-    });
-
-    DataStore.saveTodos(state.todos);
     newSubtaskInput.value = "";
-    renderDrawerSubtasks(todo);
-    render();
+    await WorkspaceRepository.createSubtask(todoId, { title, completed: false });
+    const fresh = state.todos.find((t) => t.id === todoId);
+    if (fresh) renderDrawerSubtasks(fresh);
   });
 }
 
@@ -1253,7 +1869,7 @@ function setupProjectModalListeners() {
     if (e.target === projectModalOverlay) closeProjectModal();
   });
 
-  projectModalForm.addEventListener("submit", (e) => {
+  projectModalForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = projectNameInput.value.trim();
     if (!name) return;
@@ -1263,28 +1879,17 @@ function setupProjectModalListeners() {
     const editId = projectModalEditId.value;
 
     if (editId) {
-      state.projects = state.projects.map((p) =>
-        p.id === editId ? { ...p, name, color } : p
-      );
-      DataStore.saveProjects(state.projects);
+      await WorkspaceRepository.updateProject(editId, { name, color });
       showToast(`Project "${name}" updated`, 2200);
     } else {
-      const newProj = {
-        id: crypto.randomUUID(),
-        name,
-        color,
-        createdAt: new Date().toISOString()
-      };
-      state.projects.push(newProj);
-      DataStore.saveProjects(state.projects);
+      await WorkspaceRepository.createProject({ name, color });
       showToast(`Project "${name}" created`, 2200);
     }
 
     closeProjectModal();
-    render();
   });
 
-  deleteProjectBtn.addEventListener("click", () => {
+  deleteProjectBtn.addEventListener("click", async () => {
     const editId = projectModalEditId.value;
     if (!editId) return;
 
@@ -1297,15 +1902,15 @@ function setupProjectModalListeners() {
       : `Delete project "${proj.name}"?`;
 
     if (window.confirm(confirmMsg)) {
-      DataStore.deleteProject(editId);
+      await WorkspaceRepository.deleteProject(editId);
       closeProjectModal();
       if (state.currentView === `project:${editId}`) {
         setView("inbox");
-      } else {
-        render();
       }
-      showToast(`Project "${proj.name}" deleted. Tasks moved to Inbox.`, 2800, () => {
-        state.undoManager.undo();
+      showToast(`Project "${proj.name}" deleted.`, 2800, () => {
+        if (!WorkspaceRepository.isCloud()) {
+          state.undoManager.undo();
+        }
       });
     }
   });
@@ -1327,8 +1932,8 @@ function openContextMenu(e, todoId) {
   const inboxBtn = document.createElement("button");
   inboxBtn.className = "context-menu-item";
   inboxBtn.innerHTML = `<span>Inbox (Unassigned)</span>`;
-  inboxBtn.addEventListener("click", () => {
-    moveTodoToProject(todoId, null);
+  inboxBtn.addEventListener("click", async () => {
+    await moveTodoToProject(todoId, null);
     closeContextMenu();
   });
   ctxProjectSubmenu.appendChild(inboxBtn);
@@ -1340,8 +1945,8 @@ function openContextMenu(e, todoId) {
       <span class="project-dot" style="background:${proj.color}"></span>
       <span>${proj.name}</span>
     `;
-    projBtn.addEventListener("click", () => {
-      moveTodoToProject(todoId, proj.id);
+    projBtn.addEventListener("click", async () => {
+      await moveTodoToProject(todoId, proj.id);
       closeContextMenu();
     });
     ctxProjectSubmenu.appendChild(projBtn);
@@ -1372,25 +1977,38 @@ function closeContextMenu() {
   taskContextMenu.setAttribute("aria-hidden", "true");
 }
 
-function moveTodoToProject(todoId, nextProjectId) {
-  state.todos = state.todos.map((t) =>
-    t.id === todoId ? { ...t, projectId: nextProjectId } : t
-  );
-  DataStore.saveTodos(state.todos);
-  render();
+async function moveTodoToProject(todoId, nextProjectId) {
+  const todo = state.todos.find((t) => t.id === todoId);
+  if (!todo) return;
+
+  await WorkspaceRepository.updateTask(todoId, { projectId: nextProjectId });
   const proj = state.projects.find((p) => p.id === nextProjectId);
   showToast(proj ? `Moved to ${proj.name}` : "Moved to Inbox", 2000);
 }
 
-function handleDuplicateTodo(todoId) {
+async function handleDuplicateTodo(todoId) {
   const original = state.todos.find((t) => t.id === todoId);
   if (!original) return;
 
-  const clone = duplicateTodo(original);
-  state.todos = [clone, ...state.todos];
-  DataStore.saveTodos(state.todos);
-  render();
-  showToast(`Duplicated "${clone.title}"`, 2200);
+  const cloneData = {
+    title: `${original.title} (Copy)`,
+    description: original.description || "",
+    priority: original.priority || "medium",
+    dueDate: original.dueDate || null,
+    dueTime: original.dueTime || null,
+    projectId: original.projectId || null,
+    tags: [...(original.tags || [])],
+    notes: original.notes || "",
+    reminder: original.reminder || null,
+    recurrence: "none",
+    subtasks: (original.subtasks || []).map((s) => ({
+      title: s.title,
+      completed: false
+    }))
+  };
+
+  await WorkspaceRepository.createTask(cloneData);
+  showToast(`Duplicated "${original.title}"`, 2200);
 }
 
 function setupContextMenuListeners() {
@@ -1594,6 +2212,7 @@ const AuthManager = {
           await this.syncUserWithBackend(session);
         } else {
           this.setSignedOutState();
+          await WorkspaceRepository.switchToLocal();
         }
       });
 
@@ -1602,11 +2221,13 @@ const AuthManager = {
         await this.syncUserWithBackend(this.clerk.session);
       } else {
         this.setSignedOutState();
+        await WorkspaceRepository.switchToLocal();
       }
     } catch (err) {
       console.warn("Auth initialization fallback to Local Mode:", err);
       this.status = "signed_out";
       this.setSignedOutState();
+      await WorkspaceRepository.switchToLocal();
     }
   },
 
@@ -1990,10 +2611,14 @@ const AuthManager = {
       this.setSignedInState(user);
       this.closeSignInModal();
       showToast(`Welcome back, ${user.displayName || user.email || "Explorer"}!`, 3000);
+
+      // Switch to Cloud Workspace
+      await WorkspaceRepository.switchToCloud(user);
     } catch (err) {
       console.error("Backend identity verification failed:", err);
       this.status = "signed_out";
       this.setSignedOutState();
+      await WorkspaceRepository.switchToLocal();
       showToast("Authentication sync failed. Running in Local Mode.", 3500);
     }
   },
@@ -2035,6 +2660,7 @@ const AuthManager = {
     this.currentUser = null;
     this.status = "signed_out";
     this.setSignedOutState();
+    await WorkspaceRepository.switchToLocal();
     showToast("Signed out. Local workspace is active.", 2500);
   },
 
@@ -2571,7 +3197,13 @@ function render() {
 
     todoList.innerHTML = "";
 
-    if (sortedTodos.length === 0) {
+    if (state.workspaceMode === "cloud" && state.cloudStatus === "loading") {
+      summaryText.textContent = "Syncing cloud workspace…";
+      todoList.append(buildCloudLoadingElement());
+    } else if (state.workspaceMode === "cloud" && state.cloudStatus === "error") {
+      summaryText.textContent = "Cloud workspace unavailable";
+      todoList.append(buildCloudErrorElement(state.cloudError, () => WorkspaceRepository.switchToCloud(AuthManager.currentUser)));
+    } else if (sortedTodos.length === 0) {
       todoList.append(buildEmptyStateElement());
     } else {
       sortedTodos.forEach((todo) => {
@@ -2725,6 +3357,46 @@ function buildSummary(visibleCount, openTodos) {
     return "No tasks match this filter.";
   }
   return `${visibleCount} showing, ${openTodos} active.`;
+}
+
+function buildCloudLoadingElement() {
+  const container = document.createElement("div");
+  container.className = "cloud-loading-container";
+  container.innerHTML = `
+    <div class="cloud-loading-spinner"></div>
+    <div class="cloud-loading-text">Connecting to cloud workspace…</div>
+  `;
+  return container;
+}
+
+function buildCloudErrorElement(errorMessage, onRetry) {
+  const container = document.createElement("div");
+  container.className = "cloud-error-container";
+  container.innerHTML = `
+    <div class="cloud-error-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <h3 class="cloud-error-title">Unable to load cloud workspace</h3>
+    <p class="cloud-error-desc">${errorMessage || "A temporary connection issue occurred while syncing with the server."}</p>
+  `;
+  const retryBtn = document.createElement("button");
+  retryBtn.type = "button";
+  retryBtn.className = "btn btn-primary cloud-retry-btn";
+  retryBtn.innerHTML = `
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"></polyline>
+      <polyline points="1 20 1 14 7 14"></polyline>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    </svg>
+    <span>Retry</span>
+  `;
+  retryBtn.addEventListener("click", onRetry);
+  container.appendChild(retryBtn);
+  return container;
 }
 
 function buildEmptyStateElement() {
@@ -3136,12 +3808,68 @@ function renderSecondaryRail() {
 // ==========================================================================
 // 22. CRUD ACTIONS, RECURRENCE LIFECYCLE & UNDO INTEGRATION
 // ==========================================================================
-function toggleTodo(id) {
+async function toggleTodo(id) {
   const todo = state.todos.find((t) => t.id === id);
   if (!todo) return;
 
+  // Prevent double click/submit while in flight
+  if (state.completingTodoIds.has(id)) return;
+
   const willBeDone = !todo.completed;
 
+  if (WorkspaceRepository.isCloud()) {
+    state.completingTodoIds.add(id);
+
+    const itemEl = document.querySelector(`.todo-item[data-id="${id}"]`);
+    if (itemEl) {
+      if (willBeDone) itemEl.classList.add("completing");
+      const chk = itemEl.querySelector(".todo-toggle");
+      if (chk) chk.checked = willBeDone;
+    }
+
+    try {
+      if (willBeDone) {
+        // Cloud authoritative completion
+        const res = await CloudDataStore.completeTask(id, todo.version || 1);
+        const { task: completedTask, nextOccurrence } = res;
+
+        let updatedTodos = state.todos.map((t) => (t.id === id ? completedTask : t));
+        if (nextOccurrence) {
+          updatedTodos = [nextOccurrence, ...updatedTodos];
+        }
+        state.todos = updatedTodos;
+        render();
+
+        if (state.activeDrawerTodoId === id) {
+          updateDrawerStatusButton(completedTask);
+        }
+
+        const toastMsg = nextOccurrence
+          ? `Completed. Next occurrence scheduled for ${formatDueDate(nextOccurrence.dueDate)}`
+          : "Task completed 🎉";
+        showToast(toastMsg, 3000);
+      } else {
+        // Cloud uncomplete
+        const updated = await CloudDataStore.updateTask(id, { completed: false, completedAt: null }, todo.version || 1);
+        state.todos = state.todos.map((t) => (t.id === id ? updated : t));
+        render();
+
+        if (state.activeDrawerTodoId === id) {
+          updateDrawerStatusButton(updated);
+        }
+        showToast("Task marked incomplete", 2500);
+      }
+    } catch (err) {
+      console.error("[toggleTodo] Cloud toggle error:", err);
+      showToast(err.message || "Failed to update task status in cloud.", 3500);
+      render();
+    } finally {
+      state.completingTodoIds.delete(id);
+    }
+    return;
+  }
+
+  // Local Mode Implementation (preserved)
   if (willBeDone) {
     state.completingTodoIds.add(id);
 
@@ -3219,7 +3947,7 @@ function toggleTodo(id) {
       }
 
       state.todos = updatedTodos;
-      DataStore.saveTodos(state.todos);
+      LocalDataStore.saveTodos(state.todos);
       render();
 
       if (state.activeDrawerTodoId === id) {
@@ -3255,7 +3983,7 @@ function toggleTodo(id) {
       return t;
     });
 
-    DataStore.saveTodos(state.todos);
+    LocalDataStore.saveTodos(state.todos);
     render();
 
     if (state.activeDrawerTodoId === id) {
@@ -3269,28 +3997,41 @@ function toggleTodo(id) {
   }
 }
 
-function deleteTodo(id) {
+async function deleteTodo(id) {
   const index = state.todos.findIndex((t) => t.id === id);
   if (index === -1) return;
 
   const todo = state.todos[index];
 
-  state.undoManager.push({
-    type: "DELETE_TODO",
-    todo: { ...todo },
-    index
-  });
+  if (WorkspaceRepository.isCloud()) {
+    try {
+      await CloudDataStore.deleteTask(id, todo.version || 1);
+      state.todos = state.todos.filter((t) => t.id !== id);
+      render();
+      showToast(`Deleted "${todo.title}"`, 3000);
+    } catch (err) {
+      console.error("[deleteTodo] Cloud delete error:", err);
+      showToast(err.message || "Failed to delete task from cloud.", 3500);
+      render();
+    }
+  } else {
+    state.undoManager.push({
+      type: "DELETE_TODO",
+      todo: { ...todo },
+      index
+    });
 
-  state.todos = state.todos.filter((t) => t.id !== id);
-  DataStore.saveTodos(state.todos);
-  render();
+    state.todos = state.todos.filter((t) => t.id !== id);
+    LocalDataStore.saveTodos(state.todos);
+    render();
 
-  showToast(`Deleted "${todo.title}"`, 3500, () => {
-    state.undoManager.undo();
-  });
+    showToast(`Deleted "${todo.title}"`, 3500, () => {
+      state.undoManager.undo();
+    });
+  }
 }
 
-function clearCompleted() {
+async function clearCompleted() {
   const completedTodos = state.todos.filter((t) => t.completed);
   if (completedTodos.length === 0) {
     showToast("No completed tasks to clear.", 2000);
@@ -3298,18 +4039,35 @@ function clearCompleted() {
   }
 
   if (window.confirm(`Clear ${completedTodos.length} completed task${completedTodos.length === 1 ? "" : "s"}?`)) {
-    state.undoManager.push({
-      type: "CLEAR_COMPLETED",
-      clearedTodos: [...completedTodos]
-    });
+    if (WorkspaceRepository.isCloud()) {
+      try {
+        const results = await Promise.allSettled(
+          completedTodos.map((t) => CloudDataStore.deleteTask(t.id, t.version || 1))
+        );
+        const successfulIds = new Set(
+          completedTodos.filter((_, idx) => results[idx].status === "fulfilled").map((t) => t.id)
+        );
+        state.todos = state.todos.filter((t) => !successfulIds.has(t.id));
+        render();
+        showToast(`Cleared ${successfulIds.size} completed task${successfulIds.size === 1 ? "" : "s"}.`, 3500);
+      } catch (err) {
+        console.error("Failed to clear completed tasks in cloud:", err);
+        showToast("Error clearing completed tasks.", 3500);
+      }
+    } else {
+      state.undoManager.push({
+        type: "CLEAR_COMPLETED",
+        clearedTodos: [...completedTodos]
+      });
 
-    state.todos = state.todos.filter((todo) => !todo.completed);
-    DataStore.saveTodos(state.todos);
-    render();
+      state.todos = state.todos.filter((todo) => !todo.completed);
+      LocalDataStore.saveTodos(state.todos);
+      render();
 
-    showToast(`Cleared ${completedTodos.length} completed task${completedTodos.length === 1 ? "" : "s"}.`, 3500, () => {
-      state.undoManager.undo();
-    });
+      showToast(`Cleared ${completedTodos.length} completed task${completedTodos.length === 1 ? "" : "s"}.`, 3500, () => {
+        state.undoManager.undo();
+      });
+    }
   }
 }
 
@@ -3733,7 +4491,7 @@ function checkReminders() {
 // ==========================================================================
 function setupTaskCreationListeners() {
   // Desktop Task Creation
-  todoForm.addEventListener("submit", (event) => {
+  todoForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const title = todoInput.value.trim();
@@ -3747,47 +4505,37 @@ function setupTaskCreationListeners() {
 
     const tags = normalizeTags(rawTags.split(","));
 
-    const newTodo = {
-      id: crypto.randomUUID(),
-      title,
-      description: "",
-      priority,
-      dueDate,
-      dueTime,
-      projectId,
-      tags,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      completedAt: null,
-      subtasks: [],
-      notes: "",
-      reminder: null,
-      recurrence: "none",
-      recurrenceSeriesId: null,
-      generatedNextOccurrenceId: null
-    };
+    try {
+      await WorkspaceRepository.createTask({
+        title,
+        priority,
+        dueDate,
+        dueTime,
+        projectId,
+        tags
+      });
 
-    state.todos = [newTodo, ...state.todos];
-    DataStore.saveTodos(state.todos);
+      todoForm.reset();
+      priorityInput.value = "medium";
+      if (state.currentView === "today") {
+        dueDateInput.value = getLocalDateString();
+      } else if (state.currentView.startsWith("calendar:")) {
+        dueDateInput.value = state.currentView.slice(9);
+      }
+      if (state.currentView.startsWith("project:")) {
+        projectInput.value = state.currentView.slice(8);
+      }
 
-    todoForm.reset();
-    priorityInput.value = "medium";
-    if (state.currentView === "today") {
-      dueDateInput.value = getLocalDateString();
-    } else if (state.currentView.startsWith("calendar:")) {
-      dueDateInput.value = state.currentView.slice(9);
+      collapseComposer();
+      showToast("Task created", 2000);
+    } catch (err) {
+      console.error("Task creation failed:", err);
+      showToast(err.message || "Failed to create task.", 3500);
     }
-    if (state.currentView.startsWith("project:")) {
-      projectInput.value = state.currentView.slice(8);
-    }
-
-    collapseComposer();
-    render();
-    showToast("Task created", 2000);
   });
 
   // Mobile Task Creation (Bottom Sheet)
-  mobileTodoForm.addEventListener("submit", (event) => {
+  mobileTodoForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const title = mobileTodoInput.value.trim();
@@ -3801,32 +4549,22 @@ function setupTaskCreationListeners() {
 
     const tags = normalizeTags(rawTags.split(","));
 
-    const newTodo = {
-      id: crypto.randomUUID(),
-      title,
-      description: "",
-      priority,
-      dueDate,
-      dueTime,
-      projectId,
-      tags,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      completedAt: null,
-      subtasks: [],
-      notes: "",
-      reminder: null,
-      recurrence: "none",
-      recurrenceSeriesId: null,
-      generatedNextOccurrenceId: null
-    };
+    try {
+      await WorkspaceRepository.createTask({
+        title,
+        priority,
+        dueDate,
+        dueTime,
+        projectId,
+        tags
+      });
 
-    state.todos = [newTodo, ...state.todos];
-    DataStore.saveTodos(state.todos);
-
-    closeMobileBottomSheet();
-    render();
-    showToast("Task created", 2000);
+      closeMobileBottomSheet();
+      showToast("Task created", 2000);
+    } catch (err) {
+      console.error("Task creation failed:", err);
+      showToast(err.message || "Failed to create task.", 3500);
+    }
   });
 
   if (mobileAddBtn) {
@@ -3850,7 +4588,7 @@ function setupTaskCreationListeners() {
     sortSelect.value = state.sort;
     sortSelect.addEventListener("change", (e) => {
       state.sort = e.target.value;
-      DataStore.saveSortPreference(state.sort);
+      WorkspaceRepository.updateSortPreference(state.sort);
       render();
     });
   }
