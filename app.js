@@ -395,9 +395,23 @@ const themeLabel = document.querySelector("#themeLabel");
 const userProfileWrap = document.querySelector(".user-profile-wrap");
 const userProfileBtn = document.querySelector("#userProfileBtn");
 const userAccountMenu = document.querySelector("#userAccountMenu");
+const menuSignInBtn = document.querySelector("#menuSignInBtn");
+const menuManageAccountBtn = document.querySelector("#menuManageAccountBtn");
 const menuToggleThemeBtn = document.querySelector("#menuToggleThemeBtn");
 const menuExportDataBtn = document.querySelector("#menuExportDataBtn");
 const menuClearCompletedBtn = document.querySelector("#menuClearCompletedBtn");
+const menuSignOutBtn = document.querySelector("#menuSignOutBtn");
+const accountMenuHeaderTitle = document.querySelector("#accountMenuHeaderTitle");
+const accountMenuHeaderSub = document.querySelector("#accountMenuHeaderSub");
+const accountMenuBadge = document.querySelector("#accountMenuBadge");
+
+// Authentication Modal Elements (Clerk)
+const authModalOverlay = document.querySelector("#authModalOverlay");
+const authModal = document.querySelector("#authModal");
+const closeAuthModalBtn = document.querySelector("#closeAuthModalBtn");
+const clerkAuthMount = document.querySelector("#clerkAuthMount");
+const authLoadingSpinner = document.querySelector("#authLoadingSpinner");
+
 
 const heroSection = document.querySelector("#heroSection");
 const heroDate = document.querySelector("#heroDate");
@@ -1473,6 +1487,30 @@ function setupUserProfileMenu() {
     }
   });
 
+  if (menuSignInBtn) {
+    menuSignInBtn.addEventListener("click", () => {
+      userProfileWrap.classList.remove("open");
+      userProfileBtn.setAttribute("aria-expanded", "false");
+      AuthManager.openSignIn();
+    });
+  }
+
+  if (menuManageAccountBtn) {
+    menuManageAccountBtn.addEventListener("click", () => {
+      userProfileWrap.classList.remove("open");
+      userProfileBtn.setAttribute("aria-expanded", "false");
+      AuthManager.openAccountManagement();
+    });
+  }
+
+  if (menuSignOutBtn) {
+    menuSignOutBtn.addEventListener("click", () => {
+      userProfileWrap.classList.remove("open");
+      userProfileBtn.setAttribute("aria-expanded", "false");
+      AuthManager.signOut();
+    });
+  }
+
   if (menuToggleThemeBtn) {
     menuToggleThemeBtn.addEventListener("click", () => {
       toggleTheme();
@@ -1495,6 +1533,637 @@ function setupUserProfileMenu() {
     });
   }
 }
+
+// ==========================================================================
+// 17B. AUTHENTICATION & CLERK IDENTITY MANAGER (STAGE 4B)
+// ==========================================================================
+const AuthManager = {
+  status: "loading", // "loading" | "signed_out" | "signed_in"
+  currentUser: null,  // { id, authProviderId, email, displayName, avatarUrl, createdAt }
+  clerk: null,
+  publishableKey: null,
+  isInitialized: false,
+
+  // Multi-step Email Code flow state
+  flowState: {
+    step: 1,           // 1 = Email entry, 2 = Verification code
+    mode: null,        // "sign_in" | "sign_up"
+    email: "",
+    emailAddressId: null
+  },
+
+  isAuthenticated() {
+    return this.status === "signed_in" && Boolean(this.currentUser);
+  },
+
+  async init() {
+    this.setupListeners();
+
+    try {
+      // 1. Fetch Clerk Publishable Key safely from backend config endpoint
+      const configRes = await fetch("/api/auth/config");
+      if (!configRes.ok) {
+        throw new Error(`Failed to load auth config: ${configRes.status}`);
+      }
+      const config = await configRes.json();
+      this.publishableKey = config.publishableKey;
+
+      if (!this.publishableKey) {
+        console.warn("Clerk publishable key not configured; running in Local Mode.");
+        this.setSignedOutState();
+        return;
+      }
+
+      // 2. Load ClerkJS dynamic browser bundle into DOM
+      await this.loadClerkScript();
+
+      if (!window.Clerk) {
+        throw new Error("Clerk SDK failed to initialize.");
+      }
+
+      // 3. Initialize Clerk instance
+      this.clerk = window.Clerk;
+      await this.clerk.load();
+
+      this.isInitialized = true;
+
+      // 4. Listen to auth state transitions
+      this.clerk.addListener(async (emission) => {
+        const { user, session } = emission || {};
+        if (user && session) {
+          await this.syncUserWithBackend(session);
+        } else {
+          this.setSignedOutState();
+        }
+      });
+
+      // 5. Initial auth evaluation
+      if (this.clerk.user && this.clerk.session) {
+        await this.syncUserWithBackend(this.clerk.session);
+      } else {
+        this.setSignedOutState();
+      }
+    } catch (err) {
+      console.warn("Auth initialization fallback to Local Mode:", err);
+      this.status = "signed_out";
+      this.setSignedOutState();
+    }
+  },
+
+  loadClerkScript() {
+    return new Promise((resolve, reject) => {
+      if (window.Clerk) return resolve();
+
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js";
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      script.setAttribute("data-clerk-publishable-key", this.publishableKey);
+
+      script.onload = () => resolve();
+      script.onerror = (e) => reject(new Error("Failed to load ClerkJS script from CDN"));
+      document.head.appendChild(script);
+    });
+  },
+
+  showError(message) {
+    const errorAlert = document.getElementById("authErrorAlert");
+    const errorMessage = document.getElementById("authErrorMessage");
+    if (errorAlert && errorMessage) {
+      errorMessage.textContent = message || "An unexpected error occurred. Please try again.";
+      errorAlert.style.display = "flex";
+    }
+  },
+
+  clearError() {
+    const errorAlert = document.getElementById("authErrorAlert");
+    if (errorAlert) {
+      errorAlert.style.display = "none";
+    }
+  },
+
+  setLoading(btnId, isLoading) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.disabled = isLoading;
+    const btnText = btn.querySelector(".btn-text");
+    const spinner = btn.querySelector(".auth-btn-spinner");
+    if (btnText) btnText.style.display = isLoading ? "none" : "inline";
+    if (spinner) spinner.style.display = isLoading ? "inline-block" : "none";
+  },
+
+  setStep(step) {
+    this.flowState.step = step;
+    this.clearError();
+
+    const step1 = document.getElementById("authStep1");
+    const step2 = document.getElementById("authStep2");
+    const targetEmailLabel = document.getElementById("authTargetEmailLabel");
+    const codeInput = document.getElementById("authCodeInput");
+    const emailInput = document.getElementById("authEmailInput");
+
+    if (step === 1) {
+      if (step1) step1.style.display = "block";
+      if (step2) step2.style.display = "none";
+      if (emailInput) {
+        setTimeout(() => emailInput.focus(), 50);
+      }
+    } else if (step === 2) {
+      if (step1) step1.style.display = "none";
+      if (step2) step2.style.display = "block";
+      if (targetEmailLabel) targetEmailLabel.textContent = this.flowState.email;
+      if (codeInput) {
+        codeInput.value = "";
+        setTimeout(() => codeInput.focus(), 50);
+      }
+    }
+  },
+
+  openSignIn() {
+    this.setStep(1);
+    this.clearError();
+
+    if (userProfileWrap) userProfileWrap.classList.remove("open");
+    if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
+
+    const authModalOverlay = document.getElementById("authModalOverlay");
+    if (authModalOverlay) {
+      authModalOverlay.classList.add("active");
+      authModalOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    const emailInput = document.getElementById("authEmailInput");
+    if (emailInput) {
+      setTimeout(() => emailInput.focus(), 50);
+    }
+  },
+
+  closeSignInModal() {
+    const authModalOverlay = document.getElementById("authModalOverlay");
+    if (authModalOverlay) {
+      authModalOverlay.classList.remove("active");
+      authModalOverlay.setAttribute("aria-hidden", "true");
+    }
+    this.clearError();
+  },
+
+  async handleEmailSubmit(e) {
+    if (e) e.preventDefault();
+    this.clearError();
+
+    const emailInput = document.getElementById("authEmailInput");
+    const email = (emailInput?.value || "").trim().toLowerCase();
+
+    if (!email || !email.includes("@")) {
+      this.showError("Please enter a valid email address.");
+      return;
+    }
+
+    if (!this.clerk) {
+      this.showError("Authentication service is initializing. Please try in a moment.");
+      return;
+    }
+
+    this.setLoading("authContinueEmailBtn", true);
+
+    try {
+      this.flowState.email = email;
+      const tempSecret = `M0m!_${crypto.randomUUID()}#9Z`;
+      this.flowState.tempSecret = tempSecret;
+
+      console.log("[Momentum Auth] Starting email flow for:", email);
+
+      // 1. Try initiating Sign-In with email code
+      let signInSuccess = false;
+      try {
+        const signIn = await this.clerk.client.signIn.create({
+          identifier: email
+        });
+        console.log("[Momentum Auth] SignIn attempt created:", signIn);
+
+        // Check for direct email_code factor in supportedFirstFactors
+        const emailCodeFactor = signIn.supportedFirstFactors?.find(
+          (f) => f.strategy === "email_code"
+        );
+
+        if (emailCodeFactor && emailCodeFactor.emailAddressId) {
+          console.log("[Momentum Auth] Preparing direct email_code factor");
+          await signIn.prepareFirstFactor({
+            strategy: "email_code",
+            emailAddressId: emailCodeFactor.emailAddressId
+          });
+
+          this.flowState.mode = "sign_in_email_code";
+          this.flowState.emailAddressId = emailCodeFactor.emailAddressId;
+          this.setStep(2);
+          signInSuccess = true;
+          return;
+        }
+
+        // Check for reset_password_email_code factor (for existing accounts with password)
+        const resetCodeFactor = signIn.supportedFirstFactors?.find(
+          (f) => f.strategy === "reset_password_email_code"
+        );
+
+        if (resetCodeFactor && resetCodeFactor.emailAddressId) {
+          console.log("[Momentum Auth] Preparing reset_password_email_code factor");
+          await signIn.prepareFirstFactor({
+            strategy: "reset_password_email_code",
+            emailAddressId: resetCodeFactor.emailAddressId
+          });
+
+          this.flowState.mode = "sign_in_reset_code";
+          this.flowState.emailAddressId = resetCodeFactor.emailAddressId;
+          this.setStep(2);
+          signInSuccess = true;
+          return;
+        }
+      } catch (signInErr) {
+        console.log("[Momentum Auth] SignIn create error (user likely new):", signInErr);
+      }
+
+      if (signInSuccess) return;
+
+      // 2. User is new or needs Sign-Up -> Initiate Sign-Up
+      console.log("[Momentum Auth] Initiating SignUp for:", email);
+      let signUp = null;
+      try {
+        // Attempt with temp secret to satisfy any instance password requirements seamlessly
+        signUp = await this.clerk.client.signUp.create({
+          emailAddress: email,
+          password: tempSecret
+        });
+      } catch (signUpWithPwErr) {
+        console.log("[Momentum Auth] SignUp with password failed; trying email-only create:", signUpWithPwErr);
+        signUp = await this.clerk.client.signUp.create({
+          emailAddress: email
+        });
+      }
+
+      console.log("[Momentum Auth] SignUp created:", signUp);
+
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code"
+      });
+
+      console.log("[Momentum Auth] Prepared SignUp email verification");
+      this.flowState.mode = "sign_up";
+      this.flowState.emailAddressId = null;
+      this.setStep(2);
+    } catch (err) {
+      console.error("[Momentum Auth] Email authentication error:", err);
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "Failed to send verification code.";
+      this.showError(msg);
+    } finally {
+      this.setLoading("authContinueEmailBtn", false);
+    }
+  },
+
+  async handleCodeSubmit(e) {
+    if (e) e.preventDefault();
+    this.clearError();
+
+    const codeInput = document.getElementById("authCodeInput");
+    const code = (codeInput?.value || "").trim().replace(/\s+/g, "");
+
+    if (!code || code.length < 6) {
+      this.showError("Please enter the complete 6-digit verification code.");
+      return;
+    }
+
+    if (!this.clerk) {
+      this.showError("Authentication service is offline.");
+      return;
+    }
+
+    this.setLoading("authVerifyCodeBtn", true);
+
+    try {
+      let createdSessionId = null;
+      console.log(`[Momentum Auth] Submitting code for mode: ${this.flowState.mode}`);
+
+      if (this.flowState.mode === "sign_in_email_code") {
+        const result = await this.clerk.client.signIn.attemptFirstFactor({
+          strategy: "email_code",
+          code: code
+        });
+        console.log("[Momentum Auth] SignIn attemptFirstFactor result:", result);
+
+        if (result.status === "complete") {
+          createdSessionId = result.createdSessionId;
+        } else {
+          throw new Error(`Sign in status: ${result.status}`);
+        }
+      } else if (this.flowState.mode === "sign_in_reset_code") {
+        const result = await this.clerk.client.signIn.attemptFirstFactor({
+          strategy: "reset_password_email_code",
+          code: code,
+          password: this.flowState.tempSecret
+        });
+        console.log("[Momentum Auth] SignIn reset_password attemptFirstFactor result:", result);
+
+        if (result.status === "complete") {
+          createdSessionId = result.createdSessionId;
+        } else {
+          throw new Error(`Sign in status: ${result.status}`);
+        }
+      } else if (this.flowState.mode === "sign_up") {
+        let result = await this.clerk.client.signUp.attemptEmailAddressVerification({
+          code: code
+        });
+        console.log("[Momentum Auth] SignUp attemptEmailAddressVerification result:", result);
+
+        if (result.status === "complete") {
+          createdSessionId = result.createdSessionId;
+        } else if (result.status === "missing_requirements") {
+          const missing = result.missingFields || [];
+          const unverified = result.unverifiedFields || [];
+          const allMissing = Array.from(new Set([...missing, ...unverified]));
+          console.warn("[Momentum Auth] SignUp missing requirements:", allMissing);
+
+          if (allMissing.includes("password")) {
+            // Fulfill password requirement automatically so user is never blocked
+            const updated = await this.clerk.client.signUp.update({
+              password: this.flowState.tempSecret || `M0m!_${crypto.randomUUID()}#9Z`
+            });
+            console.log("[Momentum Auth] Updated SignUp after fulfilling password:", updated);
+            if (updated.status === "complete") {
+              createdSessionId = updated.createdSessionId;
+            } else {
+              throw new Error(`Sign up requirements remaining: ${updated.missingFields?.join(", ")}`);
+            }
+          } else {
+            throw new Error(`Sign up requirements: ${allMissing.join(", ")}`);
+          }
+        } else {
+          throw new Error(`Sign up status: ${result.status}`);
+        }
+      }
+
+      if (createdSessionId) {
+        console.log("[Momentum Auth] Verification successful. Setting active session:", createdSessionId);
+        await this.clerk.setActive({ session: createdSessionId });
+        if (this.clerk.session) {
+          await this.syncUserWithBackend(this.clerk.session);
+        }
+      } else {
+        throw new Error("Verification could not complete session creation.");
+      }
+    } catch (err) {
+      console.error("[Momentum Auth] Code verification error:", err);
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "Incorrect verification code. Please check your email.";
+      this.showError(msg);
+    } finally {
+      this.setLoading("authVerifyCodeBtn", false);
+    }
+  },
+
+  async handleResendCode() {
+    this.clearError();
+    if (!this.clerk || !this.flowState.email) return;
+
+    try {
+      if (this.flowState.mode === "sign_in_email_code" || this.flowState.mode === "sign_in_reset_code") {
+        if (this.flowState.emailAddressId) {
+          const strategy = this.flowState.mode === "sign_in_reset_code" ? "reset_password_email_code" : "email_code";
+          await this.clerk.client.signIn.prepareFirstFactor({
+            strategy: strategy,
+            emailAddressId: this.flowState.emailAddressId
+          });
+        }
+      } else if (this.flowState.mode === "sign_up") {
+        await this.clerk.client.signUp.prepareEmailAddressVerification({
+          strategy: "email_code"
+        });
+      }
+      showToast("Verification code resent! Check your inbox.", 3000);
+    } catch (err) {
+      console.warn("Resend code error:", err);
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Could not resend code. Please try again shortly.";
+      this.showError(msg);
+    }
+  },
+
+  async handleGoogleAuth() {
+    this.clearError();
+    if (!this.clerk) {
+      this.showError("Authentication service is connecting…");
+      return;
+    }
+
+    try {
+      const redirectUrl = window.location.origin + window.location.pathname;
+      await this.clerk.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: redirectUrl,
+        redirectUrlComplete: redirectUrl
+      });
+    } catch (err) {
+      console.warn("Google OAuth error:", err);
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Google sign-in could not be initiated.";
+      this.showError(msg);
+    }
+  },
+
+  async syncUserWithBackend(session) {
+    try {
+      this.status = "loading";
+      const token = await session.getToken();
+      if (!token) {
+        throw new Error("Could not retrieve session token");
+      }
+
+      const res = await fetch("/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Server auth error: ${res.status}`);
+      }
+
+      const { user } = await res.json();
+      this.currentUser = user;
+      this.status = "signed_in";
+      this.setSignedInState(user);
+      this.closeSignInModal();
+      showToast(`Welcome back, ${user.displayName || user.email || "Explorer"}!`, 3000);
+    } catch (err) {
+      console.error("Backend identity verification failed:", err);
+      this.status = "signed_out";
+      this.setSignedOutState();
+      showToast("Authentication sync failed. Running in Local Mode.", 3500);
+    }
+  },
+
+  openAccountManagement() {
+    if (!this.clerk || !this.currentUser) return;
+
+    if (userProfileWrap) userProfileWrap.classList.remove("open");
+    if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
+
+    const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+    this.clerk.openUserProfile({
+      appearance: {
+        variables: {
+          colorPrimary: isDark ? "#f08352" : "#e06b3a",
+          colorBackground: isDark ? "#1e1c19" : "#ffffff",
+          colorText: isDark ? "#f3eee8" : "#1c1917",
+          colorInputBackground: isDark ? "#24211e" : "#f8f7f5",
+          colorInputText: isDark ? "#f3eee8" : "#1c1917",
+          borderRadius: "10px",
+          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif'
+        }
+      }
+    });
+  },
+
+  async signOut() {
+    if (userProfileWrap) userProfileWrap.classList.remove("open");
+    if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
+
+    if (this.clerk) {
+      try {
+        await this.clerk.signOut();
+      } catch (err) {
+        console.warn("Clerk sign-out error:", err);
+      }
+    }
+
+    this.currentUser = null;
+    this.status = "signed_out";
+    this.setSignedOutState();
+    showToast("Signed out. Local workspace is active.", 2500);
+  },
+
+  setSignedInState(user) {
+    const avatarEl = document.querySelector("#userProfileBtn .user-avatar");
+    const nameEl = document.querySelector("#userProfileBtn .user-name");
+    const statusEl = document.querySelector("#userProfileBtn .user-status");
+
+    const displayName = user.displayName || (user.email ? user.email.split("@")[0] : "Account");
+
+    if (avatarEl) {
+      if (user.avatarUrl) {
+        avatarEl.innerHTML = `<img src="${user.avatarUrl}" class="user-avatar-img" alt="${displayName}">`;
+      } else {
+        avatarEl.textContent = (displayName[0] || "U").toUpperCase();
+      }
+    }
+
+    if (nameEl) {
+      nameEl.textContent = displayName;
+    }
+
+    if (statusEl) {
+      statusEl.className = "user-status cloud-connected";
+      statusEl.innerHTML = `<span class="user-status-dot"></span>Cloud Connected`;
+    }
+
+    if (accountMenuHeaderTitle) accountMenuHeaderTitle.textContent = displayName;
+    if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = user.email || "Verified Account";
+
+    if (menuSignInBtn) menuSignInBtn.style.display = "none";
+    if (menuManageAccountBtn) menuManageAccountBtn.style.display = "flex";
+    if (menuSignOutBtn) menuSignOutBtn.style.display = "flex";
+
+    if (accountMenuBadge) {
+      accountMenuBadge.textContent = "Cloud Account";
+      accountMenuBadge.classList.add("cloud-badge");
+    }
+  },
+
+  setSignedOutState() {
+    const avatarEl = document.querySelector("#userProfileBtn .user-avatar");
+    const nameEl = document.querySelector("#userProfileBtn .user-name");
+    const statusEl = document.querySelector("#userProfileBtn .user-status");
+
+    if (avatarEl) {
+      avatarEl.textContent = "R";
+    }
+
+    if (nameEl) {
+      nameEl.textContent = "Rukshan";
+    }
+
+    if (statusEl) {
+      statusEl.className = "user-status";
+      statusEl.textContent = "Personal Workspace";
+    }
+
+    if (accountMenuHeaderTitle) accountMenuHeaderTitle.textContent = "Local Workspace";
+    if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = "Offline-Ready";
+
+    if (menuSignInBtn) menuSignInBtn.style.display = "flex";
+    if (menuManageAccountBtn) menuManageAccountBtn.style.display = "none";
+    if (menuSignOutBtn) menuSignOutBtn.style.display = "none";
+
+    if (accountMenuBadge) {
+      accountMenuBadge.textContent = "Local Mode";
+      accountMenuBadge.classList.remove("cloud-badge");
+    }
+  },
+
+  setupListeners() {
+    const closeAuthModalBtn = document.getElementById("closeAuthModalBtn");
+    const authModalOverlay = document.getElementById("authModalOverlay");
+    const emailForm = document.getElementById("authEmailForm");
+    const codeForm = document.getElementById("authCodeForm");
+    const googleBtn = document.getElementById("authGoogleBtn");
+    const continueLocalBtn = document.getElementById("authContinueLocalBtn");
+    const resendCodeBtn = document.getElementById("authResendCodeBtn");
+    const changeEmailBtn = document.getElementById("authChangeEmailBtn");
+    const codeInput = document.getElementById("authCodeInput");
+
+    if (closeAuthModalBtn) {
+      closeAuthModalBtn.addEventListener("click", () => this.closeSignInModal());
+    }
+
+    if (authModalOverlay) {
+      authModalOverlay.addEventListener("click", (e) => {
+        if (e.target === authModalOverlay) {
+          this.closeSignInModal();
+        }
+      });
+    }
+
+    if (emailForm) {
+      emailForm.addEventListener("submit", (e) => this.handleEmailSubmit(e));
+    }
+
+    if (codeForm) {
+      codeForm.addEventListener("submit", (e) => this.handleCodeSubmit(e));
+    }
+
+    if (codeInput) {
+      codeInput.addEventListener("input", (e) => {
+        const val = e.target.value.replace(/\D/g, "");
+        e.target.value = val;
+        if (val.length === 6) {
+          this.handleCodeSubmit();
+        }
+      });
+    }
+
+    if (googleBtn) {
+      googleBtn.addEventListener("click", () => this.handleGoogleAuth());
+    }
+
+    if (continueLocalBtn) {
+      continueLocalBtn.addEventListener("click", () => this.closeSignInModal());
+    }
+
+    if (resendCodeBtn) {
+      resendCodeBtn.addEventListener("click", () => this.handleResendCode());
+    }
+
+    if (changeEmailBtn) {
+      changeEmailBtn.addEventListener("click", () => this.setStep(1));
+    }
+  }
+};
 
 // ==========================================================================
 // 18. ADVANCED MULTI-FIELD SEARCH LOGIC
@@ -2768,6 +3437,17 @@ function renderCommandPaletteResults(query = "") {
     { title: "Show Keyboard Shortcuts", meta: "Help", icon: "help", action: () => openShortcutsModal() }
   ];
 
+  if (AuthManager.isAuthenticated()) {
+    actionDefs.push(
+      { title: "Manage Account (Clerk Profile)", meta: "Account", icon: "user", action: () => AuthManager.openAccountManagement() },
+      { title: "Sign Out", meta: "Account", icon: "log-out", action: () => AuthManager.signOut() }
+    );
+  } else {
+    actionDefs.push(
+      { title: "Sign In / Create Account", meta: "Account", icon: "log-in", action: () => AuthManager.openSignIn() }
+    );
+  }
+
   const matchedActions = actionDefs.filter((a) => !needle || a.title.toLowerCase().includes(needle));
 
   // Project Items
@@ -2960,6 +3640,7 @@ function setupGlobalShortcuts() {
     if (e.key === "Escape") {
       closeCommandPalette();
       closeShortcutsModal();
+      AuthManager.closeSignInModal();
       closeTaskDetails();
       closeProjectModal();
       closeContextMenu();
@@ -3460,6 +4141,7 @@ setupCommandPaletteListeners();
 setupShortcutsModalListeners();
 setupGlobalShortcuts();
 setupTaskCreationListeners();
+AuthManager.init();
 
 // Start In-App Reminder Polling every 30 seconds
 setInterval(checkReminders, 30000);

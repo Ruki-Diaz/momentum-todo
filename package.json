@@ -4,7 +4,7 @@
   "description": "Momentum — Personal Productivity Workspace",
   "type": "module",
   "scripts": {
-    "dev": "tsx server/test-health.ts",
+    "dev": "tsx server/dev-server.ts",
     "build": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/migrate.ts",
@@ -12,6 +12,7 @@
     "test:health": "tsx server/test-health.ts"
   },
   "dependencies": {
+    "@clerk/backend": "^3.18.1",
     "@neondatabase/serverless": "^0.10.4",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.39.3"
