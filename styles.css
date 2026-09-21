@@ -1956,3 +1956,1191 @@ button {
     transform: translateY(0);
   }
 }
+
+/* --------------------------------------------------------------------------
+   16. ADVANCED SORTING SELECTOR
+   -------------------------------------------------------------------------- */
+.sort-control-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sort-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.55rem 2.2rem 0.55rem 0.95rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2381766D' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  transition: all 160ms ease;
+}
+
+.sort-select:hover {
+  background-color: var(--panel-strong);
+  color: var(--text);
+  border-color: var(--border-focus);
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+/* --------------------------------------------------------------------------
+   17. TASK ROW PROGRESS & ACTIONS
+   -------------------------------------------------------------------------- */
+.todo-subtask-progress-wrap {
+  width: 100%;
+  height: 3.5px;
+  background: var(--panel-subtle);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-top: 0.35rem;
+}
+
+.todo-subtask-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success) 0%, var(--accent) 100%);
+  border-radius: var(--radius-pill);
+  transition: width 240ms ease;
+}
+
+.icon-btn-danger:hover {
+  color: var(--danger) !important;
+  background: var(--danger-soft) !important;
+}
+
+/* --------------------------------------------------------------------------
+   18. TASK DETAILS SLIDE-OVER DRAWER
+   -------------------------------------------------------------------------- */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 65;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+
+.drawer-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.task-details-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 90vw;
+  background: var(--panel-strong);
+  backdrop-filter: blur(32px) saturate(140%);
+  -webkit-backdrop-filter: blur(32px) saturate(140%);
+  border-left: 1px solid var(--border);
+  box-shadow: -15px 0 50px rgba(0, 0, 0, 0.5);
+  transform: translateX(100%);
+  transition: transform 280ms var(--ease-smooth);
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-details-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: 1.15rem 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.drawer-header-left,
+.drawer-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.drawer-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--panel-subtle);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.drawer-status-btn:hover {
+  background: var(--panel-strong);
+  color: var(--text);
+}
+
+.status-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.drawer-status-btn.is-completed .status-indicator-dot {
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+
+.drawer-save-status {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-weight: 600;
+  transition: color 200ms ease;
+}
+
+.drawer-save-status.saving {
+  color: var(--warning);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.drawer-title-input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  outline: none;
+  resize: none;
+  padding: 0;
+  line-height: 1.35;
+  border-bottom: 1px solid transparent;
+  transition: border-color 160ms ease;
+}
+
+.drawer-title-input:focus {
+  border-color: var(--accent);
+}
+
+.drawer-desc-input,
+.drawer-notes-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  outline: none;
+  resize: vertical;
+  line-height: 1.45;
+  transition: border-color 160ms ease;
+}
+
+.drawer-desc-input:focus,
+.drawer-notes-input:focus {
+  border-color: var(--accent);
+  background: var(--panel-strong);
+}
+
+.drawer-field-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.drawer-props-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.drawer-prop-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Tags Editor in Drawer */
+.drawer-tags-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  min-height: 42px;
+}
+
+.drawer-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.drawer-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.drawer-tag-remove {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.drawer-tag-remove:hover {
+  opacity: 1;
+}
+
+.drawer-tag-input {
+  flex: 1;
+  min-width: 110px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.86rem;
+  outline: none;
+  padding: 0.15rem 0;
+}
+
+/* Subtasks in Drawer */
+.drawer-subtasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-subtasks-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.subtask-progress-wrap {
+  height: 4px;
+  background: var(--panel-subtle);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.drawer-subtask-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.drawer-subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--panel-subtle);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: all 140ms ease;
+}
+
+.drawer-subtask-item:hover {
+  background: var(--panel-strong);
+  border-color: var(--border-light);
+}
+
+.subtask-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 160ms ease;
+}
+
+.subtask-checkbox:checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.subtask-checkbox:checked::after {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.subtask-title-input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 500;
+  outline: none;
+}
+
+.drawer-subtask-item.done .subtask-title-input {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.subtask-delete-btn {
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.drawer-subtask-item:hover .subtask-delete-btn {
+  opacity: 1;
+}
+
+.drawer-add-subtask-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.subtask-add-input {
+  flex: 1;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-subtle);
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.subtask-add-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.drawer-footer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-light);
+}
+
+/* --------------------------------------------------------------------------
+   19. PROJECT CREATION & EDIT MODAL
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: min(100% - 2rem, 440px);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  transform: scale(0.96);
+  transition: transform 200ms var(--ease-smooth);
+}
+
+.modal-overlay.active .modal-card {
+  transform: scale(1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.modal-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  color: var(--text);
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 1.15rem;
+}
+
+.modal-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.modal-input {
+  padding: 0.75rem 0.95rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--panel-subtle);
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.color-swatches-grid {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.color-swatch-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.color-swatch-btn:hover {
+  transform: scale(1.1);
+}
+
+.color-swatch-btn.selected {
+  border-color: #ffffff;
+  box-shadow: 0 0 12px currentColor;
+  transform: scale(1.15);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.4rem;
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.danger-btn {
+  padding: 0.65rem 1.05rem;
+  border-radius: var(--radius-pill);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-weight: 600;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.danger-btn:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   20. FLOATING TASK CONTEXT MENU
+   -------------------------------------------------------------------------- */
+.context-menu {
+  position: fixed;
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.5rem;
+  box-shadow: var(--shadow);
+  z-index: 90;
+  min-width: 190px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.context-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.context-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 120ms ease;
+}
+
+.context-menu-item:hover {
+  background: var(--panel-subtle);
+  color: var(--text);
+}
+
+.context-menu-item.item-danger {
+  color: var(--danger);
+}
+
+.context-menu-item.item-danger:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 0.35rem 0;
+}
+
+.context-menu-submenu-title {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.context-menu-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+/* --------------------------------------------------------------------------
+   21. RESPONSIVE OVERLAYS (TABLET & MOBILE)
+   -------------------------------------------------------------------------- */
+/* Tablet (768px – 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .task-details-drawer {
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    width: min(90vw, 560px);
+    max-height: 85vh;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .task-details-drawer.open {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Mobile (<= 767px) */
+@media (max-width: 767px) {
+  .task-details-drawer {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    max-width: 100vw;
+    border-left: 0;
+    border-radius: 0;
+    transform: translateY(100%);
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .task-details-drawer.open {
+    transform: translateY(0);
+  }
+
+  .drawer-props-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   22. FULL CALENDAR WORKSPACE (MONTH GRID & MOBILE AGENDA)
+   -------------------------------------------------------------------------- */
+.calendar-view-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem 1.65rem;
+}
+
+.calendar-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.calendar-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.calendar-month-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.calendar-desktop-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.calendar-weekdays-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  padding: 0.4rem 0;
+}
+
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.cal-day-cell {
+  min-height: 110px;
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: all 160ms var(--ease-smooth);
+  cursor: pointer;
+  position: relative;
+}
+
+.cal-day-cell:hover {
+  background: var(--panel-strong);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1.5px);
+}
+
+.cal-day-cell.is-empty {
+  opacity: 0.25;
+  cursor: default;
+  background: transparent;
+  border-style: dashed;
+}
+
+.cal-day-cell.is-empty:hover {
+  transform: none;
+  border-color: var(--border);
+}
+
+.cal-day-cell.is-today {
+  border-color: var(--accent);
+  background: rgba(240, 131, 82, 0.05);
+}
+
+.cal-day-cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cal-day-num {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.cal-day-cell.is-today .cal-day-num {
+  color: #ffffff;
+  background: var(--accent);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.cal-day-task-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.cal-day-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow: hidden;
+}
+
+.cal-task-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.45rem;
+  border-radius: 6px;
+  background: var(--panel-strong);
+  border: 1px solid var(--border-light);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 120ms ease, background 120ms ease;
+  cursor: pointer;
+}
+
+.cal-task-chip:hover {
+  background: var(--panel);
+  transform: scale(1.02);
+  border-color: var(--accent);
+}
+
+.cal-task-chip.is-done {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.cal-task-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cal-task-time {
+  font-size: 0.68rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* Mobile Calendar Planner & Agenda */
+.calendar-mobile-planner {
+  display: none;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (max-width: 767px) {
+  .calendar-desktop-view {
+    display: none;
+  }
+  .calendar-mobile-planner {
+    display: flex;
+  }
+}
+
+.mobile-cal-date-strip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+}
+
+.mobile-cal-date-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-date-pill {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-md);
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  min-width: 54px;
+  transition: all 150ms ease;
+}
+
+.mobile-date-pill:hover,
+.mobile-date-pill.selected {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.mobile-date-pill-weekday {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mobile-date-pill-num {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.mobile-agenda-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-agenda-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.mobile-agenda-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.mobile-agenda-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   23. COMMAND PALETTE (⌘K / Ctrl+K)
+   -------------------------------------------------------------------------- */
+.cmd-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 95;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: clamp(3rem, 12vh, 8rem);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.cmd-palette-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cmd-palette-modal {
+  width: min(90vw, 580px);
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.96);
+  transition: transform 180ms var(--ease-smooth);
+}
+
+.cmd-palette-overlay.active .cmd-palette-modal {
+  transform: scale(1);
+}
+
+.cmd-palette-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.cmd-palette-icon {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+#cmdPaletteInput {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 500;
+  outline: none;
+}
+
+.cmd-palette-kbd {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.cmd-palette-results {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 0.65rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cmd-group-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  padding: 0.5rem 0.85rem 0.25rem;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+}
+
+.cmd-item:hover,
+.cmd-item.selected {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.cmd-item:hover svg,
+.cmd-item.selected svg {
+  stroke: #ffffff;
+}
+
+.cmd-item:hover .cmd-item-meta,
+.cmd-item.selected .cmd-item-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cmd-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.cmd-item-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmd-item-meta {
+  font-size: 0.74rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.cmd-palette-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.65rem 1.35rem;
+  border-top: 1px solid var(--border-light);
+  font-size: 0.74rem;
+  color: var(--muted);
+  background: var(--panel-subtle);
+}
+
+.cmd-footer-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* --------------------------------------------------------------------------
+   24. KEYBOARD SHORTCUTS HELP MODAL (?)
+   -------------------------------------------------------------------------- */
+.shortcuts-modal-card {
+  width: min(90vw, 480px);
+}
+
+.shortcuts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: var(--panel-subtle);
+  font-size: 0.88rem;
+}
+
+.shortcut-desc {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.shortcut-keys {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.shortcut-keys kbd {
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   25. TOAST NOTIFICATION UNDO BUTTON
+   -------------------------------------------------------------------------- */
+.toast-undo-btn {
+  border: 0;
+  background: var(--accent);
+  color: #ffffff;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  transition: transform 120ms ease;
+}
+
+.toast-undo-btn:hover {
+  transform: scale(1.05);
+}
+
+

@@ -429,6 +429,16 @@
               </div>
 
               <div class="controls-actions">
+                <div class="sort-control-wrap">
+                  <label for="sortSelect" class="sr-only">Sort tasks</label>
+                  <select id="sortSelect" class="select-input-sm sort-select" aria-label="Sort tasks">
+                    <option value="smart" selected>Sort: Smart</option>
+                    <option value="dueDate">Sort: Due Date</option>
+                    <option value="priority">Sort: Priority</option>
+                    <option value="newest">Sort: Newest</option>
+                    <option value="oldest">Sort: Oldest</option>
+                  </select>
+                </div>
                 <button id="clearCompletedBtn" class="ghost-btn" type="button">Clear completed</button>
               </div>
             </section>
@@ -454,6 +464,48 @@
                   <button type="button" class="ghost-btn empty-state-cta" id="emptyStateAddBtn">+ Create a task</button>
                 </li>
               </template>
+            </section>
+
+            <!-- Full Calendar View Section (Active when currentView === 'calendar') -->
+            <section id="calendarViewSection" class="panel calendar-view-panel" style="display: none;" aria-label="Full Calendar Workspace">
+              <!-- Calendar Navigation Header -->
+              <div class="calendar-view-header">
+                <div class="calendar-nav-controls">
+                  <button id="calPrevMonthBtn" class="icon-btn" type="button" aria-label="Previous month">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <h2 id="calCurrentMonthLabel" class="calendar-month-title">September 2026</h2>
+                  <button id="calNextMonthBtn" class="icon-btn" type="button" aria-label="Next month">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+                <div class="calendar-header-actions">
+                  <button id="calTodayBtn" class="ghost-btn" type="button">Today</button>
+                </div>
+              </div>
+
+              <!-- Desktop/Tablet Month Grid -->
+              <div class="calendar-desktop-view">
+                <div class="calendar-weekdays-row">
+                  <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+                </div>
+                <div id="calendarMonthGrid" class="calendar-month-grid">
+                  <!-- Dynamically rendered day cells with compact task chips -->
+                </div>
+              </div>
+
+              <!-- Mobile-Friendly Planner & Agenda Experience -->
+              <div class="calendar-mobile-planner">
+                <div id="mobileCalDateStrip" class="mobile-cal-date-strip">
+                  <!-- Horizontal day selector pills (MON 21, TUE 22 selected, etc.) -->
+                </div>
+                <div class="mobile-agenda-container">
+                  <h3 id="mobileAgendaDateTitle" class="mobile-agenda-title">Today</h3>
+                  <ul id="mobileAgendaList" class="mobile-agenda-list">
+                    <!-- Chronological agenda task cards -->
+                  </ul>
+                </div>
+              </div>
             </section>
           </div>
 
@@ -608,6 +660,240 @@
         </div>
         <button type="submit" class="primary-btn full-width mobile-submit-btn">Add task</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Task Details Slide-Over Drawer -->
+  <div id="drawerOverlay" class="drawer-overlay" aria-hidden="true"></div>
+  <aside id="taskDetailsDrawer" class="task-details-drawer" aria-label="Task Details" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="drawer-header">
+      <div class="drawer-header-left">
+        <button id="drawerCloseBtn" class="icon-btn" type="button" aria-label="Close task details">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <button id="drawerToggleStatusBtn" class="drawer-status-btn" type="button" aria-label="Toggle task completion">
+          <span class="status-indicator-dot" aria-hidden="true"></span>
+          <span id="drawerStatusText">Incomplete</span>
+        </button>
+      </div>
+      <div class="drawer-header-right">
+        <span id="drawerSaveStatus" class="drawer-save-status" aria-live="polite">Saved ✓</span>
+        <button id="drawerDuplicateBtn" class="icon-btn" type="button" title="Duplicate task" aria-label="Duplicate task">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+        <button id="drawerDeleteBtn" class="icon-btn icon-btn-danger" type="button" title="Delete task" aria-label="Delete task">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Primary Title Textarea (Accessible, auto-resizing, editorial) -->
+      <div class="drawer-section drawer-title-section">
+        <label for="drawerTitleInput" class="sr-only">Task title</label>
+        <textarea id="drawerTitleInput" class="drawer-title-input" rows="1" placeholder="What needs to be done?" required></textarea>
+      </div>
+
+      <!-- Description Textarea -->
+      <div class="drawer-section drawer-desc-section">
+        <label for="drawerDescInput" class="drawer-field-label">Description</label>
+        <textarea id="drawerDescInput" class="drawer-desc-input" rows="2" placeholder="Add description or context..."></textarea>
+      </div>
+
+      <!-- Properties Grid -->
+      <div class="drawer-section drawer-props-grid">
+        <div class="drawer-prop-field">
+          <label for="drawerPriorityInput" class="drawer-field-label">Priority</label>
+          <select id="drawerPriorityInput" class="select-input">
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
+        <div class="drawer-prop-field">
+          <label for="drawerProjectInput" class="drawer-field-label">Project</label>
+          <select id="drawerProjectInput" class="select-input">
+            <option value="">Inbox</option>
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <div class="drawer-prop-field">
+          <label for="drawerDueDateInput" class="drawer-field-label">Due Date</label>
+          <input id="drawerDueDateInput" type="date" class="date-input">
+        </div>
+
+        <div class="drawer-prop-field">
+          <label for="drawerDueTimeInput" class="drawer-field-label">Due Time</label>
+          <input id="drawerDueTimeInput" type="time" class="time-input">
+        </div>
+
+        <div class="drawer-prop-field">
+          <label for="drawerRecurrenceInput" class="drawer-field-label">Recurrence</label>
+          <select id="drawerRecurrenceInput" class="select-input">
+            <option value="none">Does not repeat</option>
+            <option value="daily">Daily</option>
+            <option value="weekdays">Weekdays (Mon–Fri)</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+
+        <div class="drawer-prop-field">
+          <label for="drawerReminderInput" class="drawer-field-label">Reminder</label>
+          <select id="drawerReminderInput" class="select-input">
+            <option value="">No reminder</option>
+            <option value="0">At time of event</option>
+            <option value="15">15 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="1440">1 day before</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tags Section -->
+      <div class="drawer-section drawer-tags-section">
+        <label for="drawerTagsInput" class="drawer-field-label">Tags</label>
+        <div class="drawer-tags-editor">
+          <div id="drawerTagsList" class="drawer-tags-list"></div>
+          <input id="drawerTagsInput" type="text" placeholder="Type tag and press Enter" class="drawer-tag-input">
+        </div>
+      </div>
+
+      <!-- Subtasks Checklist Section -->
+      <div class="drawer-section drawer-subtasks-section">
+        <div class="drawer-subtasks-header">
+          <span class="drawer-field-label">Subtasks</span>
+          <span id="drawerSubtasksProgressText" class="drawer-subtasks-count">0 / 0</span>
+        </div>
+        <div class="progress-bar-wrap subtask-progress-wrap">
+          <div id="drawerSubtaskProgressBar" class="progress-bar-fill" style="width: 0%;"></div>
+        </div>
+        <ul id="drawerSubtaskList" class="drawer-subtask-list"></ul>
+        <form id="drawerAddSubtaskForm" class="drawer-add-subtask-form" autocomplete="off">
+          <input id="newSubtaskInput" type="text" placeholder="+ Add subtask (press Enter)" class="subtask-add-input">
+          <button type="submit" class="ghost-btn subtask-add-btn" id="addSubtaskBtn">Add</button>
+        </form>
+      </div>
+
+      <!-- Notes Section -->
+      <div class="drawer-section drawer-notes-section">
+        <label for="drawerNotesInput" class="drawer-field-label">Notes</label>
+        <textarea id="drawerNotesInput" class="drawer-notes-input" rows="4" placeholder="Additional notes, links, or scratchpad..."></textarea>
+      </div>
+
+      <!-- Metadata Footer -->
+      <div class="drawer-footer-meta">
+        <span id="drawerCreatedAtLabel">Created: —</span>
+        <span id="drawerCompletedAtLabel"></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Project Creation & Edit Modal -->
+  <div id="projectModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div id="projectModal" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="projectModalTitle">
+      <div class="modal-header">
+        <h3 id="projectModalTitle" class="modal-title">New Project</h3>
+        <button id="closeProjectModalBtn" class="icon-btn" type="button" aria-label="Close project modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <form id="projectModalForm" autocomplete="off">
+        <input type="hidden" id="projectModalEditId" value="">
+        <div class="modal-field">
+          <label for="projectNameInput" class="modal-label">Project Name</label>
+          <input id="projectNameInput" type="text" class="modal-input" placeholder="e.g. University, Mobile App" required maxlength="40">
+        </div>
+        <div class="modal-field">
+          <label class="modal-label">Color Theme</label>
+          <div id="projectColorPalette" class="color-swatches-grid" role="radiogroup" aria-label="Project color">
+            <!-- Dynamically populated / selectable color buttons -->
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="deleteProjectBtn" type="button" class="danger-btn modal-delete-btn" style="display: none;">Delete Project</button>
+          <div class="modal-actions-right">
+            <button id="cancelProjectModalBtn" type="button" class="ghost-btn">Cancel</button>
+            <button id="saveProjectModalBtn" type="submit" class="primary-btn">Save Project</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Task Context Menu Popover -->
+  <div id="taskContextMenu" class="context-menu" role="menu" aria-hidden="true">
+    <button class="context-menu-item" id="ctxOpenDetails" type="button" role="menuitem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      <span>Open Details</span>
+    </button>
+    <button class="context-menu-item" id="ctxDuplicate" type="button" role="menuitem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      <span>Duplicate Task</span>
+    </button>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-submenu-title">Move to Project</div>
+    <div id="ctxProjectSubmenu" class="context-menu-project-list"></div>
+    <div class="context-menu-divider"></div>
+    <button class="context-menu-item item-danger" id="ctxDelete" type="button" role="menuitem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      <span>Delete Task</span>
+    </button>
+  </div>
+
+  <!-- Command Palette Modal (Cmd+K / Ctrl+K) -->
+  <div id="commandPaletteOverlay" class="cmd-palette-overlay" aria-hidden="true">
+    <div id="commandPaletteModal" class="cmd-palette-modal" role="dialog" aria-modal="true" aria-label="Command Palette">
+      <div class="cmd-palette-search-wrap">
+        <svg class="cmd-palette-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input id="cmdPaletteInput" type="search" placeholder="Search or run a command…" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="cmdPaletteResults">
+        <kbd class="cmd-palette-kbd">ESC</kbd>
+      </div>
+      <div id="cmdPaletteResults" class="cmd-palette-results" role="listbox">
+        <!-- Dynamically rendered search results -->
+      </div>
+      <div class="cmd-palette-footer">
+        <span class="cmd-footer-hint"><kbd>↑</kbd> <kbd>↓</kbd> Navigate</span>
+        <span class="cmd-footer-hint"><kbd>↵</kbd> Select</span>
+        <span class="cmd-footer-hint"><kbd>ESC</kbd> Close</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Reference Modal (?) -->
+  <div id="shortcutsModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div id="shortcutsModal" class="modal-card shortcuts-modal-card" role="dialog" aria-modal="true" aria-labelledby="shortcutsModalTitle">
+      <div class="modal-header">
+        <h3 id="shortcutsModalTitle" class="modal-title">Keyboard Shortcuts</h3>
+        <button id="closeShortcutsModalBtn" class="icon-btn" type="button" aria-label="Close shortcuts modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="shortcuts-grid">
+        <div class="shortcut-row"><span class="shortcut-desc">New Task</span><span class="shortcut-keys"><kbd>N</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Focus Search</span><span class="shortcut-keys"><kbd>/</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Command Palette</span><span class="shortcut-keys"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Today’s Board</span><span class="shortcut-keys"><kbd>T</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Inbox</span><span class="shortcut-keys"><kbd>I</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Upcoming</span><span class="shortcut-keys"><kbd>U</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Calendar</span><span class="shortcut-keys"><kbd>C</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Show Shortcuts</span><span class="shortcut-keys"><kbd>?</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Close Overlay / Drawer</span><span class="shortcut-keys"><kbd>ESC</kbd></span></div>
+      </div>
     </div>
   </div>
 

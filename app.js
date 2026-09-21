@@ -1,7 +1,7 @@
 /**
  * Momentum Todo V2 — Core Application & Ambient WebGL Engine
- * Pure Vanilla JavaScript (ES6+)
- * Calm, Cinematic, Editorial, Offline-First
+ * Checkpoint 3: Power Features
+ * Pure Vanilla JavaScript (ES6+) — Offline-First & Cloud-Ready
  */
 
 // ==========================================================================
@@ -10,25 +10,204 @@
 const STORAGE_KEY = "momentum-todos-v1";
 const STORAGE_PROJECTS_KEY = "momentum-projects-v1";
 const STORAGE_THEME_KEY = "momentum-theme";
+const STORAGE_SORT_KEY = "momentum-sort";
 
 const DEFAULT_PROJECTS = [
-  { id: "work", name: "Work", color: "#f08352" },
-  { id: "personal", name: "Personal", color: "#4e9d75" },
-  { id: "university", name: "University", color: "#d7a34b" },
-  { id: "finance", name: "Finance", color: "#a569bd" }
+  { id: "e1b2c3d4-0001-4000-8000-000000000001", name: "Work", color: "#f08352", createdAt: "2026-01-01T00:00:00.000Z" },
+  { id: "e1b2c3d4-0002-4000-8000-000000000002", name: "Personal", color: "#4e9d75", createdAt: "2026-01-01T00:00:00.000Z" },
+  { id: "e1b2c3d4-0003-4000-8000-000000000003", name: "University", color: "#d7a34b", createdAt: "2026-01-01T00:00:00.000Z" },
+  { id: "e1b2c3d4-0004-4000-8000-000000000004", name: "Finance", color: "#a569bd", createdAt: "2026-01-01T00:00:00.000Z" }
+];
+
+const PROJECT_COLORS = [
+  "#f08352", "#4e9d75", "#d7a34b", "#a569bd", "#3498db", "#e74c3c"
 ];
 
 // ==========================================================================
-// 2. DATASTORE ABSTRACTION LAYER (Centralized Storage & Cloud-Sync Ready)
+// 2. DATA UTILITIES & NORMALIZATION (Schema Migration & Idempotency)
+// ==========================================================================
+function normalizeTag(tag) {
+  if (typeof tag !== "string") return "";
+  return tag.trim().replace(/^#/, "").toLowerCase();
+}
+
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  const set = new Set();
+  const result = [];
+  for (const t of tags) {
+    const norm = normalizeTag(t);
+    if (norm && !set.has(norm)) {
+      set.add(norm);
+      result.push(norm);
+    }
+  }
+  return result;
+}
+
+function normalizeProject(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  return {
+    id: typeof raw.id === "string" && raw.id ? raw.id : crypto.randomUUID(),
+    name: typeof raw.name === "string" ? raw.name.trim() : "Untitled Project",
+    color: typeof raw.color === "string" ? raw.color : "#f08352",
+    createdAt: typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString()
+  };
+}
+
+function resolveProjectId(rawProjectVal, projects) {
+  if (!rawProjectVal) return null;
+  const str = String(rawProjectVal).trim();
+  if (!str) return null;
+
+  // Direct match by ID
+  const byId = projects.find((p) => p.id === str);
+  if (byId) return byId.id;
+
+  // Case-insensitive match by name or legacy slug
+  const byNameOrSlug = projects.find(
+    (p) => p.name.toLowerCase() === str.toLowerCase() || p.id.toLowerCase() === str.toLowerCase()
+  );
+  if (byNameOrSlug) return byNameOrSlug.id;
+
+  // Unknown project -> Inbox (null)
+  return null;
+}
+
+function normalizeSubtask(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  return {
+    id: typeof raw.id === "string" && raw.id ? raw.id : crypto.randomUUID(),
+    title: typeof raw.title === "string" ? raw.title.trim() : "",
+    completed: Boolean(raw.completed),
+    createdAt: typeof raw.createdAt === "string" && raw.createdAt ? raw.createdAt : new Date().toISOString()
+  };
+}
+
+function normalizeTodo(raw, projects = DEFAULT_PROJECTS) {
+  if (!raw || typeof raw !== "object") return null;
+
+  const rawProject = raw.projectId !== undefined ? raw.projectId : raw.project;
+  const projectId = resolveProjectId(rawProject, projects);
+
+  return {
+    id: typeof raw.id === "string" && raw.id ? raw.id : crypto.randomUUID(),
+    title: typeof raw.title === "string" ? raw.title.trim() : "",
+    description: typeof raw.description === "string" ? raw.description : "",
+    priority: ["high", "medium", "low"].includes(raw.priority) ? raw.priority : "medium",
+    dueDate: typeof raw.dueDate === "string" ? raw.dueDate : "",
+    dueTime: typeof raw.dueTime === "string" ? raw.dueTime : "",
+    projectId: projectId, // canonical UUID or null
+    tags: normalizeTags(raw.tags),
+    completed: Boolean(raw.completed),
+    createdAt: typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
+    completedAt: raw.completed
+      ? typeof raw.completedAt === "string" && raw.completedAt
+        ? raw.completedAt
+        : raw.createdAt || new Date().toISOString()
+      : null,
+    subtasks: Array.isArray(raw.subtasks)
+      ? raw.subtasks.map(normalizeSubtask).filter(Boolean)
+      : [],
+    notes: typeof raw.notes === "string" ? raw.notes : "",
+    reminder: typeof raw.reminder === "string" && raw.reminder ? raw.reminder : null,
+    recurrence: ["none", "daily", "weekdays", "weekly", "monthly"].includes(raw.recurrence)
+      ? raw.recurrence
+      : "none",
+    recurrenceSeriesId: typeof raw.recurrenceSeriesId === "string" && raw.recurrenceSeriesId ? raw.recurrenceSeriesId : null,
+    generatedNextOccurrenceId: typeof raw.generatedNextOccurrenceId === "string" && raw.generatedNextOccurrenceId ? raw.generatedNextOccurrenceId : null
+  };
+}
+
+function duplicateTodo(todo) {
+  return {
+    ...JSON.parse(JSON.stringify(todo)),
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    completed: false,
+    completedAt: null,
+    recurrenceSeriesId: null,
+    generatedNextOccurrenceId: null,
+    subtasks: (todo.subtasks || []).map((s) => ({
+      id: crypto.randomUUID(),
+      title: s.title,
+      completed: false,
+      createdAt: new Date().toISOString()
+    }))
+  };
+}
+
+// ==========================================================================
+// 3. RECURRENCE ENGINE DATE CALCULATIONS
+// ==========================================================================
+function calculateNextDueDate(currentDueDateStr, recurrence) {
+  if (!currentDueDateStr || recurrence === "none") return null;
+
+  const [year, month, day] = currentDueDateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  if (recurrence === "daily") {
+    date.setDate(date.getDate() + 1);
+  } else if (recurrence === "weekdays") {
+    const dayOfWeek = date.getDay(); // 0 = Sun, 1 = Mon, ..., 5 = Fri, 6 = Sat
+    if (dayOfWeek === 5) {
+      // Friday -> Monday (+3 days)
+      date.setDate(date.getDate() + 3);
+    } else if (dayOfWeek === 6) {
+      // Saturday -> Monday (+2 days)
+      date.setDate(date.getDate() + 2);
+    } else {
+      date.setDate(date.getDate() + 1);
+    }
+  } else if (recurrence === "weekly") {
+    date.setDate(date.getDate() + 7);
+  } else if (recurrence === "monthly") {
+    const targetMonth = date.getMonth() + 1;
+    date.setMonth(targetMonth);
+    // Month-end edge cases: if month wrapped around (e.g. Jan 31 -> March 3), clamp back to last day of month
+    if (date.getMonth() !== targetMonth % 12) {
+      date.setDate(0);
+    }
+  }
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+// ==========================================================================
+// 4. DATASTORE ABSTRACTION LAYER (Centralized Storage & Cloud-Sync Ready)
 // ==========================================================================
 const DataStore = {
-  getTodos() {
+  getProjects() {
     try {
+      const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
+      if (!raw) return [...DEFAULT_PROJECTS];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed) || parsed.length === 0) return [...DEFAULT_PROJECTS];
+      return parsed.map(normalizeProject).filter(Boolean);
+    } catch {
+      return [...DEFAULT_PROJECTS];
+    }
+  },
+
+  saveProjects(projects) {
+    try {
+      localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(projects));
+    } catch (err) {
+      console.error("Failed to persist projects to localStorage", err);
+    }
+  },
+
+  getTodos(projects = null) {
+    try {
+      const activeProjects = projects || this.getProjects();
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
-      return parsed.map(normalizeTodo).filter(Boolean);
+      return parsed.map((t) => normalizeTodo(t, activeProjects)).filter(Boolean);
     } catch (err) {
       console.warn("Could not parse existing todos from storage", err);
       return [];
@@ -40,26 +219,6 @@ const DataStore = {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
     } catch (err) {
       console.error("Failed to persist todos to localStorage", err);
-    }
-  },
-
-  getProjects() {
-    try {
-      const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
-      if (!raw) return [...DEFAULT_PROJECTS];
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed) || parsed.length === 0) return [...DEFAULT_PROJECTS];
-      return parsed;
-    } catch {
-      return [...DEFAULT_PROJECTS];
-    }
-  },
-
-  saveProjects(projects) {
-    try {
-      localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(projects));
-    } catch (err) {
-      console.error("Failed to persist projects to localStorage", err);
     }
   },
 
@@ -77,6 +236,44 @@ const DataStore = {
     } catch (err) {
       console.error("Failed to persist theme preference", err);
     }
+  },
+
+  getSortPreference() {
+    try {
+      return localStorage.getItem(STORAGE_SORT_KEY) || "smart";
+    } catch {
+      return "smart";
+    }
+  },
+
+  saveSortPreference(sort) {
+    try {
+      localStorage.setItem(STORAGE_SORT_KEY, sort);
+    } catch (err) {
+      console.error("Failed to persist sort preference", err);
+    }
+  },
+
+  deleteProject(projectId) {
+    const deletedProject = state.projects.find((p) => p.id === projectId);
+    const nextProjects = state.projects.filter((p) => p.id !== projectId);
+    const affectedTodoIds = state.todos.filter((t) => t.projectId === projectId).map((t) => t.id);
+    const nextTodos = state.todos.map((t) =>
+      t.projectId === projectId ? { ...t, projectId: null } : t
+    );
+
+    if (deletedProject) {
+      state.undoManager.push({
+        type: "DELETE_PROJECT",
+        project: deletedProject,
+        affectedTodoIds
+      });
+    }
+
+    state.projects = nextProjects;
+    state.todos = nextTodos;
+    this.saveProjects(nextProjects);
+    this.saveTodos(nextTodos);
   },
 
   exportData() {
@@ -100,69 +297,91 @@ const DataStore = {
   }
 };
 
-/**
- * Normalizes any task object (legacy or new) to guarantee backward compatibility and schema stability.
- */
-function normalizeTodo(raw) {
-  if (!raw || typeof raw !== "object") return null;
+// ==========================================================================
+// 5. STRUCTURED UNDO MANAGER
+// ==========================================================================
+class UndoManager {
+  constructor() {
+    this.stack = [];
+  }
 
-  return {
-    id: typeof raw.id === "string" && raw.id ? raw.id : crypto.randomUUID(),
-    title: typeof raw.title === "string" ? raw.title.trim() : "",
-    description: typeof raw.description === "string" ? raw.description : "",
-    priority: ["high", "medium", "low"].includes(raw.priority) ? raw.priority : "medium",
-    dueDate: typeof raw.dueDate === "string" ? raw.dueDate : "",
-    dueTime: typeof raw.dueTime === "string" ? raw.dueTime : "",
-    project: typeof raw.project === "string" ? raw.project : "",
-    tags: Array.isArray(raw.tags)
-      ? raw.tags
-          .map((t) => String(t).trim().toLowerCase())
-          .filter((t) => t.length > 0)
-      : [],
-    completed: Boolean(raw.completed),
-    createdAt: typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
-    completedAt: raw.completed
-      ? typeof raw.completedAt === "string" && raw.completedAt
-        ? raw.completedAt
-        : raw.createdAt || new Date().toISOString()
-      : "",
-    subtasks: Array.isArray(raw.subtasks)
-      ? raw.subtasks.map((s) => ({
-          id: s.id || crypto.randomUUID(),
-          title: typeof s.title === "string" ? s.title.trim() : "",
-          completed: Boolean(s.completed)
-        }))
-      : [],
-    notes: typeof raw.notes === "string" ? raw.notes : "",
-    reminder: typeof raw.reminder === "string" ? raw.reminder : "",
-    recurrence: ["none", "daily", "weekdays", "weekly", "monthly"].includes(raw.recurrence)
-      ? raw.recurrence
-      : "none"
-  };
-}
+  push(action) {
+    this.stack.push({
+      ...action,
+      timestamp: Date.now()
+    });
+    if (this.stack.length > 20) {
+      this.stack.shift();
+    }
+  }
 
-function createTodo(title, priority, dueDate, dueTime, project, tags) {
-  return normalizeTodo({
-    id: crypto.randomUUID(),
-    title,
-    description: "",
-    priority,
-    dueDate,
-    dueTime,
-    project,
-    tags,
-    completed: false,
-    createdAt: new Date().toISOString(),
-    completedAt: "",
-    subtasks: [],
-    notes: "",
-    reminder: "",
-    recurrence: "none"
-  });
+  pop() {
+    return this.stack.pop();
+  }
+
+  hasUndo() {
+    return this.stack.length > 0;
+  }
+
+  undo() {
+    const action = this.pop();
+    if (!action) return false;
+
+    if (action.type === "DELETE_TODO") {
+      const { todo, index } = action;
+      const nextTodos = [...state.todos];
+      const insertAt = typeof index === "number" && index >= 0 && index <= nextTodos.length ? index : 0;
+      nextTodos.splice(insertAt, 0, todo);
+      state.todos = nextTodos;
+      DataStore.saveTodos(state.todos);
+      render();
+      showToast(`Restored "${todo.title}"`, 2200);
+      return true;
+    } else if (action.type === "COMPLETE_TODO") {
+      const { todoId, previousCompleted, previousCompletedAt, generatedOccurrenceId } = action;
+      state.todos = state.todos
+        .filter((t) => t.id !== generatedOccurrenceId)
+        .map((t) => {
+          if (t.id === todoId) {
+            return {
+              ...t,
+              completed: previousCompleted,
+              completedAt: previousCompletedAt,
+              generatedNextOccurrenceId: null
+            };
+          }
+          return t;
+        });
+      DataStore.saveTodos(state.todos);
+      render();
+      showToast("Completion undone", 2000);
+      return true;
+    } else if (action.type === "DELETE_PROJECT") {
+      const { project, affectedTodoIds } = action;
+      state.projects.push(project);
+      state.todos = state.todos.map((t) =>
+        affectedTodoIds.includes(t.id) ? { ...t, projectId: project.id } : t
+      );
+      DataStore.saveProjects(state.projects);
+      DataStore.saveTodos(state.todos);
+      render();
+      showToast(`Restored project "${project.name}"`, 2500);
+      return true;
+    } else if (action.type === "CLEAR_COMPLETED") {
+      const { clearedTodos } = action;
+      state.todos = [...clearedTodos, ...state.todos];
+      DataStore.saveTodos(state.todos);
+      render();
+      showToast(`Restored ${clearedTodos.length} completed task${clearedTodos.length === 1 ? "" : "s"}`, 2500);
+      return true;
+    }
+
+    return false;
+  }
 }
 
 // ==========================================================================
-// 3. DOM ELEMENTS
+// 6. DOM ELEMENTS
 // ==========================================================================
 const appSidebar = document.querySelector("#appSidebar");
 const sidebarOverlay = document.querySelector("#sidebarOverlay");
@@ -180,6 +399,7 @@ const menuToggleThemeBtn = document.querySelector("#menuToggleThemeBtn");
 const menuExportDataBtn = document.querySelector("#menuExportDataBtn");
 const menuClearCompletedBtn = document.querySelector("#menuClearCompletedBtn");
 
+const heroSection = document.querySelector("#heroSection");
 const heroDate = document.querySelector("#heroDate");
 const heroGreetingText = document.querySelector("#heroGreetingText");
 const heroTitle = document.querySelector("#heroTitle");
@@ -228,7 +448,10 @@ const mobileDueTimeInput = document.querySelector("#mobileDueTimeInput");
 const mobileProjectInput = document.querySelector("#mobileProjectInput");
 const mobileTagsInput = document.querySelector("#mobileTagsInput");
 
+const controlsPanel = document.querySelector(".controls-panel");
+const listPanel = document.querySelector(".list-panel");
 const searchInput = document.querySelector("#searchInput");
+const sortSelect = document.querySelector("#sortSelect");
 const clearCompletedBtn = document.querySelector("#clearCompletedBtn");
 const filterButtons = document.querySelectorAll(".filter-chip");
 const navItems = document.querySelectorAll(".nav-item, .mobile-nav-btn:not(#mobileAddBtn):not(#mobileMenuMoreBtn)");
@@ -239,49 +462,149 @@ const summaryText = document.querySelector("#summaryText");
 const todoList = document.querySelector("#todoList");
 const emptyStateTemplate = document.querySelector("#emptyStateTemplate");
 
+// Full Calendar Elements
+const calendarViewSection = document.querySelector("#calendarViewSection");
+const calPrevMonthBtn = document.querySelector("#calPrevMonthBtn");
+const calNextMonthBtn = document.querySelector("#calNextMonthBtn");
+const calCurrentMonthLabel = document.querySelector("#calCurrentMonthLabel");
+const calTodayBtn = document.querySelector("#calTodayBtn");
+const calendarMonthGrid = document.querySelector("#calendarMonthGrid");
+const mobileCalDateStrip = document.querySelector("#mobileCalDateStrip");
+const mobileAgendaDateTitle = document.querySelector("#mobileAgendaDateTitle");
+const mobileAgendaList = document.querySelector("#mobileAgendaList");
+
 // Secondary Desktop Rail Elements
-const workspaceRail = document.querySelector("#workspaceRail");
-const railWeeklyCard = document.querySelector("#railWeeklyCard");
 const weeklyPercent = document.querySelector("#weeklyPercent");
 const weeklyProgressBar = document.querySelector("#weeklyProgressBar");
 const weeklySummary = document.querySelector("#weeklySummary");
-
-const railCalendarCard = document.querySelector("#railCalendarCard");
 const miniCalendarMonth = document.querySelector("#miniCalendarMonth");
 const miniCalendarToday = document.querySelector("#miniCalendarToday");
 const miniCalendarGrid = document.querySelector("#miniCalendarGrid");
-
-const railUpNextCard = document.querySelector("#railUpNextCard");
 const upNextCount = document.querySelector("#upNextCount");
 const upNextList = document.querySelector("#upNextList");
-
-const railProjectsCard = document.querySelector("#railProjectsCard");
 const projectsSnapshotList = document.querySelector("#projectsSnapshotList");
 
 const toastContainer = document.querySelector("#toastContainer");
 
+// Task Details Slide-Over Drawer Elements
+const drawerOverlay = document.querySelector("#drawerOverlay");
+const taskDetailsDrawer = document.querySelector("#taskDetailsDrawer");
+const drawerCloseBtn = document.querySelector("#drawerCloseBtn");
+const drawerToggleStatusBtn = document.querySelector("#drawerToggleStatusBtn");
+const drawerStatusText = document.querySelector("#drawerStatusText");
+const drawerSaveStatus = document.querySelector("#drawerSaveStatus");
+const drawerDuplicateBtn = document.querySelector("#drawerDuplicateBtn");
+const drawerDeleteBtn = document.querySelector("#drawerDeleteBtn");
+const drawerTitleInput = document.querySelector("#drawerTitleInput");
+const drawerDescInput = document.querySelector("#drawerDescInput");
+const drawerPriorityInput = document.querySelector("#drawerPriorityInput");
+const drawerProjectInput = document.querySelector("#drawerProjectInput");
+const drawerDueDateInput = document.querySelector("#drawerDueDateInput");
+const drawerDueTimeInput = document.querySelector("#drawerDueTimeInput");
+const drawerRecurrenceInput = document.querySelector("#drawerRecurrenceInput");
+const drawerReminderInput = document.querySelector("#drawerReminderInput");
+const drawerTagsList = document.querySelector("#drawerTagsList");
+const drawerTagsInput = document.querySelector("#drawerTagsInput");
+const drawerSubtasksProgressText = document.querySelector("#drawerSubtasksProgressText");
+const drawerSubtaskProgressBar = document.querySelector("#drawerSubtaskProgressBar");
+const drawerSubtaskList = document.querySelector("#drawerSubtaskList");
+const drawerAddSubtaskForm = document.querySelector("#drawerAddSubtaskForm");
+const newSubtaskInput = document.querySelector("#newSubtaskInput");
+const drawerNotesInput = document.querySelector("#drawerNotesInput");
+const drawerCreatedAtLabel = document.querySelector("#drawerCreatedAtLabel");
+const drawerCompletedAtLabel = document.querySelector("#drawerCompletedAtLabel");
+
+// Project Modal Elements
+const projectModalOverlay = document.querySelector("#projectModalOverlay");
+const projectModal = document.querySelector("#projectModal");
+const projectModalTitle = document.querySelector("#projectModalTitle");
+const closeProjectModalBtn = document.querySelector("#closeProjectModalBtn");
+const cancelProjectModalBtn = document.querySelector("#cancelProjectModalBtn");
+const projectModalForm = document.querySelector("#projectModalForm");
+const projectModalEditId = document.querySelector("#projectModalEditId");
+const projectNameInput = document.querySelector("#projectNameInput");
+const projectColorPalette = document.querySelector("#projectColorPalette");
+const deleteProjectBtn = document.querySelector("#deleteProjectBtn");
+
+// Task Context Menu Popover Elements
+const taskContextMenu = document.querySelector("#taskContextMenu");
+const ctxOpenDetails = document.querySelector("#ctxOpenDetails");
+const ctxDuplicate = document.querySelector("#ctxDuplicate");
+const ctxProjectSubmenu = document.querySelector("#ctxProjectSubmenu");
+const ctxDelete = document.querySelector("#ctxDelete");
+
+// Command Palette Modal Elements (Cmd+K / Ctrl+K)
+const commandPaletteOverlay = document.querySelector("#commandPaletteOverlay");
+const commandPaletteModal = document.querySelector("#commandPaletteModal");
+const cmdPaletteInput = document.querySelector("#cmdPaletteInput");
+const cmdPaletteResults = document.querySelector("#cmdPaletteResults");
+
+// Keyboard Shortcuts Modal Elements (?)
+const shortcutsModalOverlay = document.querySelector("#shortcutsModalOverlay");
+const closeShortcutsModalBtn = document.querySelector("#closeShortcutsModalBtn");
+
 // ==========================================================================
-// 4. APPLICATION STATE
+// 7. APPLICATION STATE
 // ==========================================================================
+const initialProjects = DataStore.getProjects();
+const initialNow = new Date();
+
 let state = {
   currentView: "today", // 'today' | 'inbox' | 'upcoming' | 'calendar' | 'calendar:<YYYY-MM-DD>' | 'completed' | 'overdue' | 'project:<id>' | 'tag:<tag>'
   filter: "all",        // 'all' | 'open' | 'done'
+  sort: DataStore.getSortPreference(), // 'smart' | 'dueDate' | 'priority' | 'newest' | 'oldest'
   search: "",
   theme: DataStore.getTheme(),
-  todos: DataStore.getTodos(),
-  projects: DataStore.getProjects(),
-  completingTodoIds: new Set()
+  projects: initialProjects,
+  todos: DataStore.getTodos(initialProjects),
+  activeDrawerTodoId: null,
+  activeContextMenuTodoId: null,
+  completingTodoIds: new Set(),
+  lastFocusedElement: null,
+
+  // Calendar State
+  calendarDate: { year: initialNow.getFullYear(), month: initialNow.getMonth() }, // 0-indexed month
+  selectedCalendarDate: getLocalDateString(initialNow),
+
+  // Command Palette State
+  cmdPaletteSelectedIndex: 0,
+  cmdPaletteItems: [],
+
+  // Undo System
+  undoManager: new UndoManager(),
+
+  // Reminder Tracking
+  triggeredReminders: new Set()
 };
 
 // ==========================================================================
-// 5. TOAST NOTIFICATION SYSTEM
+// 8. TOAST NOTIFICATION & UNDO SYSTEM
 // ==========================================================================
-function showToast(message, duration = 3000) {
+function showToast(message, duration = 3000, undoCallback = null) {
   if (!toastContainer) return;
 
   const toast = document.createElement("div");
   toast.className = "toast";
-  toast.innerHTML = `<span>${message}</span>`;
+
+  const msgSpan = document.createElement("span");
+  msgSpan.textContent = message;
+  toast.appendChild(msgSpan);
+
+  if (undoCallback) {
+    const undoBtn = document.createElement("button");
+    undoBtn.type = "button";
+    undoBtn.className = "toast-undo-btn";
+    undoBtn.textContent = "Undo";
+    undoBtn.addEventListener("click", () => {
+      undoCallback();
+      toast.classList.add("toast-fade-out");
+      setTimeout(() => {
+        if (toast.parentElement) toast.remove();
+      }, 200);
+    });
+    toast.appendChild(undoBtn);
+  }
+
   toastContainer.appendChild(toast);
 
   setTimeout(() => {
@@ -293,7 +616,7 @@ function showToast(message, duration = 3000) {
 }
 
 // ==========================================================================
-// 6. THEME MANAGEMENT
+// 9. THEME MANAGEMENT
 // ==========================================================================
 function applyTheme(theme) {
   state.theme = theme;
@@ -323,7 +646,7 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e)
 });
 
 // ==========================================================================
-// 7. DATE & TIME UTILITIES
+// 10. DATE & TIME UTILITIES
 // ==========================================================================
 function getLocalDateString(dateObj = new Date()) {
   const year = dateObj.getFullYear();
@@ -392,6 +715,21 @@ function formatDueDate(dueDate, dueTime) {
   return dateLabel;
 }
 
+function formatTimestamp(isoStr) {
+  if (!isoStr) return "";
+  try {
+    const d = new Date(isoStr);
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    }).format(d);
+  } catch {
+    return isoStr;
+  }
+}
+
 function capitalize(value) {
   if (!value) return "";
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -405,7 +743,7 @@ function getTimeGreeting() {
 }
 
 // ==========================================================================
-// 8. STREAK & STATS CALCULATIONS
+// 11. STREAK & STATS CALCULATIONS
 // ==========================================================================
 function calculateStreak(completedTodos) {
   const completionDays = new Set(
@@ -431,7 +769,62 @@ function calculateStreak(completedTodos) {
 }
 
 // ==========================================================================
-// 9. SMART 2-STATE TASK COMPOSER
+// 12. ADVANCED SORTING ENGINE (Non-Mutating & Deterministic)
+// ==========================================================================
+function sortTodos(todos, mode = state.sort) {
+  const list = [...todos];
+
+  return list.sort((a, b) => {
+    if (mode === "smart") {
+      // 1. Incomplete before completed
+      if (a.completed !== b.completed) {
+        return Number(a.completed) - Number(b.completed);
+      }
+      // 2. Overdue first
+      const aOverdue = isOverdue(a);
+      const bOverdue = isOverdue(b);
+      if (aOverdue !== bOverdue) {
+        return aOverdue ? -1 : 1;
+      }
+      // 3. Priority: high (0) > medium (1) > low (2)
+      const pRank = { high: 0, medium: 1, low: 2 };
+      if (pRank[a.priority] !== pRank[b.priority]) {
+        return pRank[a.priority] - pRank[b.priority];
+      }
+      // 4. Nearest due date
+      if (a.dueDate && b.dueDate && a.dueDate !== b.dueDate) {
+        return a.dueDate.localeCompare(b.dueDate);
+      }
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+    } else if (mode === "dueDate") {
+      if (a.dueDate && b.dueDate && a.dueDate !== b.dueDate) {
+        return a.dueDate.localeCompare(b.dueDate);
+      }
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+    } else if (mode === "priority") {
+      const pRank = { high: 0, medium: 1, low: 2 };
+      if (pRank[a.priority] !== pRank[b.priority]) {
+        return pRank[a.priority] - pRank[b.priority];
+      }
+    } else if (mode === "newest") {
+      const cmp = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (cmp !== 0) return cmp;
+    } else if (mode === "oldest") {
+      const cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (cmp !== 0) return cmp;
+    }
+
+    // Deterministic tie-breakers
+    const createdCmp = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (createdCmp !== 0) return createdCmp;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+// ==========================================================================
+// 13. SMART 2-STATE TASK COMPOSER
 // ==========================================================================
 function expandComposer() {
   if (composerPanel) {
@@ -448,14 +841,12 @@ function collapseComposer() {
 function setupComposerInteractions() {
   if (!todoInput || !composerPanel) return;
 
-  // Expand when user focuses or starts typing in the main input
   todoInput.addEventListener("focus", expandComposer);
   todoInput.addEventListener("input", expandComposer);
   if (composerOptionsRow) {
     composerOptionsRow.addEventListener("click", expandComposer);
   }
 
-  // Auto-collapse when user clicks outside, unless input has text or options are modified
   document.addEventListener("click", (e) => {
     if (!composerPanel.contains(e.target)) {
       const hasText = todoInput.value.trim().length > 0;
@@ -471,7 +862,553 @@ function setupComposerInteractions() {
 }
 
 // ==========================================================================
-// 10. CLICKABLE STAT CARDS SETUP
+// 14. TASK DETAILS DRAWER & DEBOUNCED AUTOSAVE
+// ==========================================================================
+let autosaveTimer = null;
+
+function scheduleDrawerAutosave() {
+  if (!state.activeDrawerTodoId) return;
+
+  if (drawerSaveStatus) {
+    drawerSaveStatus.textContent = "Saving…";
+    drawerSaveStatus.classList.add("saving");
+  }
+
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+
+  autosaveTimer = setTimeout(() => {
+    flushDrawerAutosave();
+  }, 300);
+}
+
+function flushDrawerAutosave() {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+  }
+
+  const todoId = state.activeDrawerTodoId;
+  if (!todoId) return;
+
+  const todo = state.todos.find((t) => t.id === todoId);
+  if (!todo) return;
+
+  const title = drawerTitleInput.value.trim() || todo.title;
+  const description = drawerDescInput.value;
+  const priority = drawerPriorityInput.value;
+  const projectId = drawerProjectInput.value || null;
+  const dueDate = drawerDueDateInput.value;
+  const dueTime = drawerDueTimeInput.value;
+  const recurrence = drawerRecurrenceInput.value;
+  const reminder = drawerReminderInput.value || null;
+  const notes = drawerNotesInput.value;
+
+  const hasChanged =
+    todo.title !== title ||
+    todo.description !== description ||
+    todo.priority !== priority ||
+    todo.projectId !== projectId ||
+    todo.dueDate !== dueDate ||
+    todo.dueTime !== dueTime ||
+    todo.recurrence !== recurrence ||
+    todo.reminder !== reminder ||
+    todo.notes !== notes;
+
+  if (hasChanged) {
+    state.todos = state.todos.map((t) => {
+      if (t.id === todoId) {
+        return {
+          ...t,
+          title,
+          description,
+          priority,
+          projectId,
+          dueDate,
+          dueTime,
+          recurrence,
+          reminder,
+          notes
+        };
+      }
+      return t;
+    });
+
+    DataStore.saveTodos(state.todos);
+    render();
+  }
+
+  if (drawerSaveStatus) {
+    drawerSaveStatus.textContent = "Saved ✓";
+    drawerSaveStatus.classList.remove("saving");
+  }
+}
+
+function openTaskDetails(todoId) {
+  flushDrawerAutosave();
+
+  const todo = state.todos.find((t) => t.id === todoId);
+  if (!todo) return;
+
+  state.lastFocusedElement = document.activeElement;
+  state.activeDrawerTodoId = todoId;
+
+  drawerTitleInput.value = todo.title;
+  drawerDescInput.value = todo.description || "";
+  drawerPriorityInput.value = todo.priority || "medium";
+  drawerDueDateInput.value = todo.dueDate || "";
+  drawerDueTimeInput.value = todo.dueTime || "";
+  drawerRecurrenceInput.value = todo.recurrence || "none";
+  drawerReminderInput.value = todo.reminder || "";
+  drawerNotesInput.value = todo.notes || "";
+
+  drawerProjectInput.innerHTML = '<option value="">Inbox</option>';
+  state.projects.forEach((proj) => {
+    const opt = document.createElement("option");
+    opt.value = proj.id;
+    opt.textContent = proj.name;
+    if (todo.projectId === proj.id) opt.selected = true;
+    drawerProjectInput.appendChild(opt);
+  });
+
+  updateDrawerStatusButton(todo);
+  renderDrawerTags(todo);
+  renderDrawerSubtasks(todo);
+
+  drawerCreatedAtLabel.textContent = `Created: ${formatTimestamp(todo.createdAt)}`;
+  drawerCompletedAtLabel.textContent = todo.completedAt ? `Completed: ${formatTimestamp(todo.completedAt)}` : "";
+
+  drawerSaveStatus.textContent = "Saved ✓";
+  drawerSaveStatus.classList.remove("saving");
+
+  taskDetailsDrawer.classList.add("open");
+  taskDetailsDrawer.setAttribute("aria-hidden", "false");
+  drawerOverlay.classList.add("active");
+  drawerOverlay.setAttribute("aria-hidden", "false");
+}
+
+function closeTaskDetails() {
+  flushDrawerAutosave();
+
+  state.activeDrawerTodoId = null;
+  taskDetailsDrawer.classList.remove("open");
+  taskDetailsDrawer.setAttribute("aria-hidden", "true");
+  drawerOverlay.classList.remove("active");
+  drawerOverlay.setAttribute("aria-hidden", "true");
+
+  if (state.lastFocusedElement && typeof state.lastFocusedElement.focus === "function") {
+    state.lastFocusedElement.focus();
+  }
+}
+
+function updateDrawerStatusButton(todo) {
+  if (!drawerToggleStatusBtn) return;
+  drawerToggleStatusBtn.classList.toggle("is-completed", todo.completed);
+  drawerStatusText.textContent = todo.completed ? "Completed" : "Incomplete";
+}
+
+function renderDrawerTags(todo) {
+  drawerTagsList.innerHTML = "";
+  (todo.tags || []).forEach((tag) => {
+    const chip = document.createElement("span");
+    chip.className = "drawer-tag-chip";
+    chip.innerHTML = `
+      <span>#${tag}</span>
+      <button type="button" class="drawer-tag-remove" aria-label="Remove tag #${tag}">&times;</button>
+    `;
+    chip.querySelector(".drawer-tag-remove").addEventListener("click", () => {
+      todo.tags = todo.tags.filter((t) => t !== tag);
+      DataStore.saveTodos(state.todos);
+      renderDrawerTags(todo);
+      render();
+    });
+    drawerTagsList.appendChild(chip);
+  });
+}
+
+function renderDrawerSubtasks(todo) {
+  const subtasks = todo.subtasks || [];
+  const completedCount = subtasks.filter((s) => s.completed).length;
+  const totalCount = subtasks.length;
+  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  drawerSubtasksProgressText.textContent = `${completedCount} / ${totalCount}`;
+  drawerSubtaskProgressBar.style.width = `${pct}%`;
+
+  drawerSubtaskList.innerHTML = "";
+
+  subtasks.forEach((st) => {
+    const li = document.createElement("li");
+    li.className = `drawer-subtask-item${st.completed ? " done" : ""}`;
+    li.dataset.id = st.id;
+
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    chk.className = "subtask-checkbox";
+    chk.checked = st.completed;
+    chk.setAttribute("aria-label", `Mark subtask "${st.title}" as ${st.completed ? "incomplete" : "complete"}`);
+    chk.addEventListener("change", () => {
+      st.completed = chk.checked;
+      DataStore.saveTodos(state.todos);
+      renderDrawerSubtasks(todo);
+      render();
+    });
+
+    const titleInput = document.createElement("input");
+    titleInput.type = "text";
+    titleInput.className = "subtask-title-input";
+    titleInput.value = st.title;
+    titleInput.addEventListener("input", () => {
+      st.title = titleInput.value.trim();
+      scheduleDrawerAutosave();
+    });
+    titleInput.addEventListener("blur", () => {
+      flushDrawerAutosave();
+    });
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "icon-btn icon-btn-tiny subtask-delete-btn";
+    delBtn.setAttribute("aria-label", `Delete subtask "${st.title}"`);
+    delBtn.innerHTML = `
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    `;
+    delBtn.addEventListener("click", () => {
+      todo.subtasks = todo.subtasks.filter((s) => s.id !== st.id);
+      DataStore.saveTodos(state.todos);
+      renderDrawerSubtasks(todo);
+      render();
+    });
+
+    li.append(chk, titleInput, delBtn);
+    drawerSubtaskList.appendChild(li);
+  });
+}
+
+function setupDrawerListeners() {
+  if (!taskDetailsDrawer) return;
+
+  drawerCloseBtn.addEventListener("click", closeTaskDetails);
+  drawerOverlay.addEventListener("click", closeTaskDetails);
+
+  drawerToggleStatusBtn.addEventListener("click", () => {
+    if (!state.activeDrawerTodoId) return;
+    toggleTodo(state.activeDrawerTodoId);
+    const todo = state.todos.find((t) => t.id === state.activeDrawerTodoId);
+    if (todo) {
+      updateDrawerStatusButton(todo);
+    }
+  });
+
+  drawerDuplicateBtn.addEventListener("click", () => {
+    if (!state.activeDrawerTodoId) return;
+    const currentId = state.activeDrawerTodoId;
+    closeTaskDetails();
+    handleDuplicateTodo(currentId);
+  });
+
+  drawerDeleteBtn.addEventListener("click", () => {
+    if (!state.activeDrawerTodoId) return;
+    const currentId = state.activeDrawerTodoId;
+    closeTaskDetails();
+    deleteTodo(currentId);
+  });
+
+  [
+    drawerTitleInput,
+    drawerDescInput,
+    drawerPriorityInput,
+    drawerProjectInput,
+    drawerDueDateInput,
+    drawerDueTimeInput,
+    drawerRecurrenceInput,
+    drawerReminderInput,
+    drawerNotesInput
+  ].forEach((inputEl) => {
+    if (inputEl) {
+      inputEl.addEventListener("input", scheduleDrawerAutosave);
+      inputEl.addEventListener("change", scheduleDrawerAutosave);
+    }
+  });
+
+  drawerTagsInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const raw = drawerTagsInput.value.trim();
+      if (!raw || !state.activeDrawerTodoId) return;
+
+      const todo = state.todos.find((t) => t.id === state.activeDrawerTodoId);
+      if (!todo) return;
+
+      const norm = normalizeTag(raw);
+      if (norm && !todo.tags.includes(norm)) {
+        todo.tags.push(norm);
+        DataStore.saveTodos(state.todos);
+        renderDrawerTags(todo);
+        render();
+      }
+      drawerTagsInput.value = "";
+    }
+  });
+
+  drawerAddSubtaskForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = newSubtaskInput.value.trim();
+    if (!title || !state.activeDrawerTodoId) return;
+
+    const todo = state.todos.find((t) => t.id === state.activeDrawerTodoId);
+    if (!todo) return;
+
+    todo.subtasks.push({
+      id: crypto.randomUUID(),
+      title,
+      completed: false,
+      createdAt: new Date().toISOString()
+    });
+
+    DataStore.saveTodos(state.todos);
+    newSubtaskInput.value = "";
+    renderDrawerSubtasks(todo);
+    render();
+  });
+}
+
+// ==========================================================================
+// 15. PROJECT MANAGEMENT MODAL (Create, Rename, Color, Safe Delete)
+// ==========================================================================
+function openProjectModal(editProjectId = null) {
+  state.lastFocusedElement = document.activeElement;
+  projectModalEditId.value = editProjectId || "";
+
+  projectColorPalette.innerHTML = "";
+  const initialColor = editProjectId
+    ? (state.projects.find((p) => p.id === editProjectId) || {}).color || PROJECT_COLORS[0]
+    : PROJECT_COLORS[0];
+
+  PROJECT_COLORS.forEach((hex) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `color-swatch-btn${hex === initialColor ? " selected" : ""}`;
+    btn.style.backgroundColor = hex;
+    btn.style.color = hex;
+    btn.dataset.color = hex;
+    btn.setAttribute("aria-label", `Color ${hex}`);
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".color-swatch-btn").forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    });
+    projectColorPalette.appendChild(btn);
+  });
+
+  if (editProjectId) {
+    const proj = state.projects.find((p) => p.id === editProjectId);
+    if (!proj) return;
+    projectModalTitle.textContent = `Edit Project: ${proj.name}`;
+    projectNameInput.value = proj.name;
+    deleteProjectBtn.style.display = "block";
+  } else {
+    projectModalTitle.textContent = "New Project";
+    projectNameInput.value = "";
+    deleteProjectBtn.style.display = "none";
+  }
+
+  projectModalOverlay.classList.add("active");
+  projectModalOverlay.setAttribute("aria-hidden", "false");
+  projectNameInput.focus();
+}
+
+function closeProjectModal() {
+  projectModalOverlay.classList.remove("active");
+  projectModalOverlay.setAttribute("aria-hidden", "true");
+  projectModalForm.reset();
+
+  if (state.lastFocusedElement && typeof state.lastFocusedElement.focus === "function") {
+    state.lastFocusedElement.focus();
+  }
+}
+
+function setupProjectModalListeners() {
+  if (!projectModal) return;
+
+  if (addProjectBtn) {
+    addProjectBtn.addEventListener("click", () => openProjectModal(null));
+  }
+
+  closeProjectModalBtn.addEventListener("click", closeProjectModal);
+  cancelProjectModalBtn.addEventListener("click", closeProjectModal);
+  projectModalOverlay.addEventListener("click", (e) => {
+    if (e.target === projectModalOverlay) closeProjectModal();
+  });
+
+  projectModalForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = projectNameInput.value.trim();
+    if (!name) return;
+
+    const selectedSwatch = projectColorPalette.querySelector(".color-swatch-btn.selected");
+    const color = selectedSwatch ? selectedSwatch.dataset.color : PROJECT_COLORS[0];
+    const editId = projectModalEditId.value;
+
+    if (editId) {
+      state.projects = state.projects.map((p) =>
+        p.id === editId ? { ...p, name, color } : p
+      );
+      DataStore.saveProjects(state.projects);
+      showToast(`Project "${name}" updated`, 2200);
+    } else {
+      const newProj = {
+        id: crypto.randomUUID(),
+        name,
+        color,
+        createdAt: new Date().toISOString()
+      };
+      state.projects.push(newProj);
+      DataStore.saveProjects(state.projects);
+      showToast(`Project "${name}" created`, 2200);
+    }
+
+    closeProjectModal();
+    render();
+  });
+
+  deleteProjectBtn.addEventListener("click", () => {
+    const editId = projectModalEditId.value;
+    if (!editId) return;
+
+    const proj = state.projects.find((p) => p.id === editId);
+    if (!proj) return;
+
+    const assignedCount = state.todos.filter((t) => t.projectId === editId).length;
+    const confirmMsg = assignedCount > 0
+      ? `Delete project "${proj.name}"? Its ${assignedCount} task${assignedCount === 1 ? "" : "s"} will move to Inbox.`
+      : `Delete project "${proj.name}"?`;
+
+    if (window.confirm(confirmMsg)) {
+      DataStore.deleteProject(editId);
+      closeProjectModal();
+      if (state.currentView === `project:${editId}`) {
+        setView("inbox");
+      } else {
+        render();
+      }
+      showToast(`Project "${proj.name}" deleted. Tasks moved to Inbox.`, 2800, () => {
+        state.undoManager.undo();
+      });
+    }
+  });
+}
+
+// ==========================================================================
+// 16. TASK CONTEXT MENU (••• Action Popover)
+// ==========================================================================
+function openContextMenu(e, todoId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  state.activeContextMenuTodoId = todoId;
+  const todo = state.todos.find((t) => t.id === todoId);
+  if (!todo) return;
+
+  ctxProjectSubmenu.innerHTML = "";
+
+  const inboxBtn = document.createElement("button");
+  inboxBtn.className = "context-menu-item";
+  inboxBtn.innerHTML = `<span>Inbox (Unassigned)</span>`;
+  inboxBtn.addEventListener("click", () => {
+    moveTodoToProject(todoId, null);
+    closeContextMenu();
+  });
+  ctxProjectSubmenu.appendChild(inboxBtn);
+
+  state.projects.forEach((proj) => {
+    const projBtn = document.createElement("button");
+    projBtn.className = `context-menu-item${todo.projectId === proj.id ? " active" : ""}`;
+    projBtn.innerHTML = `
+      <span class="project-dot" style="background:${proj.color}"></span>
+      <span>${proj.name}</span>
+    `;
+    projBtn.addEventListener("click", () => {
+      moveTodoToProject(todoId, proj.id);
+      closeContextMenu();
+    });
+    ctxProjectSubmenu.appendChild(projBtn);
+  });
+
+  const triggerRect = e.currentTarget.getBoundingClientRect();
+  const menuWidth = 190;
+  const menuHeight = 220;
+
+  let left = triggerRect.right - menuWidth;
+  if (left < 10) left = 10;
+  if (left + menuWidth > window.innerWidth - 10) left = window.innerWidth - menuWidth - 10;
+
+  let top = triggerRect.bottom + 6;
+  if (top + menuHeight > window.innerHeight - 10) {
+    top = triggerRect.top - menuHeight - 6;
+  }
+
+  taskContextMenu.style.left = `${left}px`;
+  taskContextMenu.style.top = `${top}px`;
+  taskContextMenu.classList.add("open");
+  taskContextMenu.setAttribute("aria-hidden", "false");
+}
+
+function closeContextMenu() {
+  state.activeContextMenuTodoId = null;
+  taskContextMenu.classList.remove("open");
+  taskContextMenu.setAttribute("aria-hidden", "true");
+}
+
+function moveTodoToProject(todoId, nextProjectId) {
+  state.todos = state.todos.map((t) =>
+    t.id === todoId ? { ...t, projectId: nextProjectId } : t
+  );
+  DataStore.saveTodos(state.todos);
+  render();
+  const proj = state.projects.find((p) => p.id === nextProjectId);
+  showToast(proj ? `Moved to ${proj.name}` : "Moved to Inbox", 2000);
+}
+
+function handleDuplicateTodo(todoId) {
+  const original = state.todos.find((t) => t.id === todoId);
+  if (!original) return;
+
+  const clone = duplicateTodo(original);
+  state.todos = [clone, ...state.todos];
+  DataStore.saveTodos(state.todos);
+  render();
+  showToast(`Duplicated "${clone.title}"`, 2200);
+}
+
+function setupContextMenuListeners() {
+  if (!taskContextMenu) return;
+
+  ctxOpenDetails.addEventListener("click", () => {
+    const id = state.activeContextMenuTodoId;
+    closeContextMenu();
+    if (id) openTaskDetails(id);
+  });
+
+  ctxDuplicate.addEventListener("click", () => {
+    const id = state.activeContextMenuTodoId;
+    closeContextMenu();
+    if (id) handleDuplicateTodo(id);
+  });
+
+  ctxDelete.addEventListener("click", () => {
+    const id = state.activeContextMenuTodoId;
+    closeContextMenu();
+    if (id) deleteTodo(id);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!taskContextMenu.contains(e.target)) {
+      closeContextMenu();
+    }
+  });
+}
+
+// ==========================================================================
+// 17. CLICKABLE STAT CARDS & USER PROFILE MENU
 // ==========================================================================
 function setupStatCards() {
   if (cardToday) {
@@ -520,9 +1457,6 @@ function setupStatCards() {
   }
 }
 
-// ==========================================================================
-// 11. USER PROFILE & ACCOUNT MENU SETUP
-// ==========================================================================
 function setupUserProfileMenu() {
   if (!userProfileBtn || !userProfileWrap) return;
 
@@ -563,8 +1497,28 @@ function setupUserProfileMenu() {
 }
 
 // ==========================================================================
-// 12. VIEW & FILTER LOGIC
+// 18. ADVANCED MULTI-FIELD SEARCH LOGIC
 // ==========================================================================
+function matchesAdvancedSearch(todo, query) {
+  if (!query || !query.trim()) return true;
+
+  const needle = query.trim().toLowerCase();
+  const proj = state.projects.find((p) => p.id === todo.projectId);
+  const projName = proj ? proj.name.toLowerCase() : "";
+  const formattedDate = formatDueDate(todo.dueDate, todo.dueTime).toLowerCase();
+
+  const inTitle = (todo.title || "").toLowerCase().includes(needle);
+  const inDesc = (todo.description || "").toLowerCase().includes(needle);
+  const inNotes = (todo.notes || "").toLowerCase().includes(needle);
+  const inPriority = (todo.priority || "").toLowerCase().includes(needle);
+  const inProject = projName.includes(needle);
+  const inDate = formattedDate.includes(needle) || (todo.dueDate || "").includes(needle);
+  const inTags = (todo.tags || []).some((t) => t.toLowerCase().includes(needle));
+  const inSubtasks = (todo.subtasks || []).some((s) => (s.title || "").toLowerCase().includes(needle));
+
+  return inTitle || inDesc || inNotes || inPriority || inProject || inDate || inTags || inSubtasks;
+}
+
 function getVisibleTodos() {
   return state.todos.filter((todo) => {
     let matchesView = true;
@@ -572,7 +1526,7 @@ function getVisibleTodos() {
     if (state.currentView === "today") {
       matchesView = isToday(todo) || (isOverdue(todo) && !todo.completed);
     } else if (state.currentView === "inbox") {
-      matchesView = !todo.project;
+      matchesView = !todo.projectId;
     } else if (state.currentView === "upcoming") {
       matchesView = isUpcoming(todo);
     } else if (state.currentView === "completed") {
@@ -586,10 +1540,10 @@ function getVisibleTodos() {
       matchesView = todo.dueDate === selectedDate;
     } else if (state.currentView.startsWith("project:")) {
       const projectId = state.currentView.slice(8);
-      matchesView = todo.project === projectId;
+      matchesView = todo.projectId === projectId;
     } else if (state.currentView.startsWith("tag:")) {
       const tag = state.currentView.slice(4).toLowerCase();
-      matchesView = todo.tags.includes(tag);
+      matchesView = (todo.tags || []).includes(tag);
     }
 
     if (!matchesView) return false;
@@ -601,52 +1555,258 @@ function getVisibleTodos() {
 
     if (!matchesFilter) return false;
 
-    const searchNeedle = state.search.trim().toLowerCase();
-    if (!searchNeedle) return true;
-
-    const projectObj = state.projects.find((p) => p.id === todo.project);
-    const projectName = projectObj ? projectObj.name.toLowerCase() : "";
-    const formattedDate = formatDueDate(todo.dueDate, todo.dueTime).toLowerCase();
-
-    return (
-      todo.title.toLowerCase().includes(searchNeedle) ||
-      todo.description.toLowerCase().includes(searchNeedle) ||
-      todo.priority.toLowerCase().includes(searchNeedle) ||
-      projectName.includes(searchNeedle) ||
-      formattedDate.includes(searchNeedle) ||
-      todo.tags.some((t) => t.includes(searchNeedle)) ||
-      todo.notes.toLowerCase().includes(searchNeedle)
-    );
+    return matchesAdvancedSearch(todo, state.search);
   });
 }
 
-function sortTodos(a, b) {
-  if (a.completed !== b.completed) {
-    return Number(a.completed) - Number(b.completed);
+// ==========================================================================
+// 19. FULL CALENDAR ENGINE (Month Grid & Mobile Agenda Strip)
+// ==========================================================================
+function renderFullCalendar() {
+  if (!calendarViewSection || !calendarMonthGrid) return;
+
+  const { year, month } = state.calendarDate;
+  const monthDate = new Date(year, month, 1);
+  const currentMonthTitle = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(monthDate);
+  calCurrentMonthLabel.textContent = currentMonthTitle;
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
+  const prevMonthDays = new Date(year, month, 0).getDate();
+
+  calendarMonthGrid.innerHTML = "";
+
+  // 1. Leading days from previous month
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    const prevDayNum = prevMonthDays - i;
+    const cell = document.createElement("div");
+    cell.className = "cal-day-cell is-empty";
+    cell.innerHTML = `
+      <div class="cal-day-cell-header">
+        <span class="cal-day-num">${prevDayNum}</span>
+      </div>
+    `;
+    calendarMonthGrid.appendChild(cell);
   }
 
-  const aOverdue = isOverdue(a);
-  const bOverdue = isOverdue(b);
-  if (aOverdue !== bOverdue) {
-    return aOverdue ? -1 : 1;
+  // 2. Days of current month
+  const todayStr = getLocalDateString();
+  const monthStr = String(month + 1).padStart(2, "0");
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${monthStr}-${String(day).padStart(2, "0")}`;
+    const isTodayDate = dateStr === todayStr;
+    const isSelected = state.selectedCalendarDate === dateStr;
+
+    const dayTasks = state.todos.filter((t) => t.dueDate === dateStr);
+    const sortedDayTasks = sortTodos(dayTasks, "smart");
+
+    const cell = document.createElement("div");
+    cell.className = `cal-day-cell${isTodayDate ? " is-today" : ""}${isSelected ? " is-selected" : ""}`;
+    cell.dataset.date = dateStr;
+
+    const header = document.createElement("div");
+    header.className = "cal-day-cell-header";
+
+    const numSpan = document.createElement("span");
+    numSpan.className = "cal-day-num";
+    numSpan.textContent = String(day);
+
+    header.appendChild(numSpan);
+
+    if (sortedDayTasks.length > 0) {
+      const countSpan = document.createElement("span");
+      countSpan.className = "cal-day-task-count";
+      countSpan.textContent = `${sortedDayTasks.filter((t) => !t.completed).length} open`;
+      header.appendChild(countSpan);
+    }
+
+    const tasksWrap = document.createElement("div");
+    tasksWrap.className = "cal-day-tasks";
+
+    // Show up to 3 task chips
+    const visibleChips = sortedDayTasks.slice(0, 3);
+    visibleChips.forEach((task) => {
+      const proj = state.projects.find((p) => p.id === task.projectId);
+      const dotColor = proj ? proj.color : (task.priority === "high" ? "#e74c3c" : "#f08352");
+
+      const chip = document.createElement("div");
+      chip.className = `cal-task-chip${task.completed ? " is-done" : ""}`;
+      chip.title = task.title;
+
+      let timeText = "";
+      if (task.dueTime) {
+        const [hh, mm] = task.dueTime.split(":");
+        const h = parseInt(hh, 10);
+        const ampm = h >= 12 ? "p" : "a";
+        timeText = `${h % 12 || 12}:${mm}${ampm}`;
+      }
+
+      chip.innerHTML = `
+        <span class="cal-task-dot" style="background-color: ${dotColor};"></span>
+        ${timeText ? `<span class="cal-task-time">${timeText}</span>` : ""}
+        <span class="cal-task-title">${task.title}</span>
+      `;
+
+      chip.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openTaskDetails(task.id);
+      });
+
+      tasksWrap.appendChild(chip);
+    });
+
+    if (sortedDayTasks.length > 3) {
+      const moreChip = document.createElement("div");
+      moreChip.className = "cal-task-chip cal-task-more";
+      moreChip.textContent = `+${sortedDayTasks.length - 3} more`;
+      tasksWrap.appendChild(moreChip);
+    }
+
+    cell.append(header, tasksWrap);
+
+    // Clicking day cell selects date and presets composer
+    cell.addEventListener("click", () => {
+      state.selectedCalendarDate = dateStr;
+      renderFullCalendar();
+      dueDateInput.value = dateStr;
+      mobileDueDateInput.value = dateStr;
+      expandComposer();
+      todoInput.focus();
+    });
+
+    calendarMonthGrid.appendChild(cell);
   }
 
-  const priorityRank = { high: 0, medium: 1, low: 2 };
-  if (priorityRank[a.priority] !== priorityRank[b.priority]) {
-    return priorityRank[a.priority] - priorityRank[b.priority];
+  // 3. Render Mobile Date Strip & Agenda Experience
+  renderMobileCalendarPlanner();
+}
+
+function renderMobileCalendarPlanner() {
+  if (!mobileCalDateStrip || !mobileAgendaList) return;
+
+  const { year, month } = state.calendarDate;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthStr = String(month + 1).padStart(2, "0");
+  const todayStr = getLocalDateString();
+
+  mobileCalDateStrip.innerHTML = "";
+
+  const weekdaysShort = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${monthStr}-${String(day).padStart(2, "0")}`;
+    const d = new Date(year, month, day);
+    const weekday = weekdaysShort[d.getDay()];
+    const isSelected = state.selectedCalendarDate === dateStr;
+    const hasTasks = state.todos.some((t) => t.dueDate === dateStr && !t.completed);
+
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = `mobile-date-pill${isSelected ? " selected" : ""}${dateStr === todayStr ? " is-today" : ""}`;
+    pill.innerHTML = `
+      <span class="mobile-date-pill-weekday">${weekday}</span>
+      <span class="mobile-date-pill-num">${day}</span>
+      ${hasTasks ? '<span class="mobile-date-dot">●</span>' : ""}
+    `;
+
+    pill.addEventListener("click", () => {
+      state.selectedCalendarDate = dateStr;
+      renderFullCalendar();
+    });
+
+    mobileCalDateStrip.appendChild(pill);
   }
 
-  if (a.dueDate && b.dueDate && a.dueDate !== b.dueDate) {
-    return a.dueDate.localeCompare(b.dueDate);
+  // Auto-scroll selected pill into view
+  const selectedPill = mobileCalDateStrip.querySelector(".mobile-date-pill.selected");
+  if (selectedPill) {
+    selectedPill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }
-  if (a.dueDate && !b.dueDate) return -1;
-  if (!a.dueDate && b.dueDate) return 1;
 
-  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  // Render Agenda for selected date
+  const selectedDateTasks = sortTodos(
+    state.todos.filter((t) => t.dueDate === state.selectedCalendarDate),
+    "smart"
+  );
+
+  mobileAgendaDateTitle.textContent = formatDueDate(state.selectedCalendarDate) || "Selected Date";
+  mobileAgendaList.innerHTML = "";
+
+  if (selectedDateTasks.length === 0) {
+    const emptyLi = document.createElement("li");
+    emptyLi.className = "mobile-agenda-empty";
+    emptyLi.innerHTML = `
+      <p>No tasks scheduled for this day.</p>
+      <button type="button" class="ghost-btn empty-state-cta" id="mobileCalAddBtn">+ Add task for this day</button>
+    `;
+    emptyLi.querySelector("#mobileCalAddBtn").addEventListener("click", () => {
+      mobileDueDateInput.value = state.selectedCalendarDate;
+      openMobileBottomSheet();
+    });
+    mobileAgendaList.appendChild(emptyLi);
+  } else {
+    selectedDateTasks.forEach((task) => {
+      const proj = state.projects.find((p) => p.id === task.projectId);
+      const li = document.createElement("li");
+      li.className = `mobile-agenda-item${task.completed ? " done" : ""}`;
+      li.innerHTML = `
+        <div class="mobile-agenda-item-left">
+          <input type="checkbox" class="todo-toggle" ${task.completed ? "checked" : ""} aria-label="Toggle ${task.title}">
+          <div>
+            <p class="mobile-agenda-task-title">${task.title}</p>
+            <div class="mobile-agenda-task-meta">
+              ${proj ? `<span class="todo-meta-item">${proj.name}</span> · ` : ""}
+              ${task.dueTime ? `<span>${task.dueTime}</span> · ` : ""}
+              <span class="badge priority-${task.priority}">${capitalize(task.priority)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      li.querySelector(".todo-toggle").addEventListener("click", (e) => e.stopPropagation());
+      li.querySelector(".todo-toggle").addEventListener("change", () => toggleTodo(task.id));
+      li.addEventListener("click", () => openTaskDetails(task.id));
+      mobileAgendaList.appendChild(li);
+    });
+  }
+}
+
+function setupCalendarNavListeners() {
+  if (!calPrevMonthBtn || !calNextMonthBtn || !calTodayBtn) return;
+
+  calPrevMonthBtn.addEventListener("click", () => {
+    let { year, month } = state.calendarDate;
+    month -= 1;
+    if (month < 0) {
+      month = 11;
+      year -= 1;
+    }
+    state.calendarDate = { year, month };
+    renderFullCalendar();
+  });
+
+  calNextMonthBtn.addEventListener("click", () => {
+    let { year, month } = state.calendarDate;
+    month += 1;
+    if (month > 11) {
+      month = 0;
+      year += 1;
+    }
+    state.calendarDate = { year, month };
+    renderFullCalendar();
+  });
+
+  calTodayBtn.addEventListener("click", () => {
+    const now = new Date();
+    state.calendarDate = { year: now.getFullYear(), month: now.getMonth() };
+    state.selectedCalendarDate = getLocalDateString(now);
+    renderFullCalendar();
+  });
 }
 
 // ==========================================================================
-// 13. RENDERING ENGINE
+// 20. RENDERING ENGINE
 // ==========================================================================
 function render() {
   const openTodos = state.todos.filter((t) => !t.completed);
@@ -654,10 +1814,10 @@ function render() {
 
   const todayTasks = state.todos.filter((t) => isToday(t) && !t.completed);
   const overdueTasks = state.todos.filter((t) => isOverdue(t) && !t.completed);
-  const inboxTasks = state.todos.filter((t) => !t.project && !t.completed);
+  const inboxTasks = state.todos.filter((t) => !t.projectId && !t.completed);
   const upcomingTasks = state.todos.filter((t) => isUpcoming(t) && !t.completed);
 
-  // Update Header Date & Dynamic Greeting
+  // Header Date & Dynamic Greeting
   if (heroDate) {
     heroDate.textContent = getFormattedHeaderDate();
   }
@@ -687,13 +1847,19 @@ function render() {
   } else if (state.currentView.startsWith("project:")) {
     const projectId = state.currentView.slice(8);
     const proj = state.projects.find((p) => p.id === projectId);
-    heroSubtitle.textContent = `Focused workspace for ${proj ? proj.name : "this project"}.`;
+    const projOpen = state.todos.filter((t) => t.projectId === projectId && !t.completed).length;
+    const projDone = state.todos.filter((t) => t.projectId === projectId && t.completed).length;
+    heroSubtitle.textContent = proj
+      ? `${projOpen} open · ${projDone} completed in ${proj.name}.`
+      : "Project workspace.";
   } else if (state.currentView.startsWith("tag:")) {
     const tagName = state.currentView.slice(4);
     heroSubtitle.textContent = `All tasks tagged with #${tagName}.`;
   } else if (state.currentView.startsWith("calendar:")) {
     const calDate = state.currentView.slice(9);
     heroSubtitle.textContent = `Tasks scheduled for ${formatDueDate(calDate)}.`;
+  } else if (state.currentView === "calendar") {
+    heroSubtitle.textContent = "A calm overview of your upcoming schedule and deadlines.";
   } else {
     heroSubtitle.textContent = "A calm schedule of your upcoming tasks.";
   }
@@ -717,21 +1883,32 @@ function render() {
   // Render Tags Cloud Nav
   renderTagsNav();
 
-  // Update Section Header & Subheader
-  updateViewHeaders();
-
-  // Render Task List
-  const visibleTodos = getVisibleTodos();
-  summaryText.textContent = buildSummary(visibleTodos.length, openTodos.length);
-
-  todoList.innerHTML = "";
-
-  if (visibleTodos.length === 0) {
-    todoList.append(buildEmptyStateElement());
+  // Switch between Standard List View and Full Calendar View
+  if (state.currentView === "calendar") {
+    if (calendarViewSection) calendarViewSection.style.display = "block";
+    if (listPanel) listPanel.style.display = "none";
+    if (controlsPanel) controlsPanel.style.display = "none";
+    renderFullCalendar();
   } else {
-    visibleTodos.sort(sortTodos).forEach((todo) => {
-      todoList.append(buildTodoElement(todo));
-    });
+    if (calendarViewSection) calendarViewSection.style.display = "none";
+    if (listPanel) listPanel.style.display = "block";
+    if (controlsPanel) controlsPanel.style.display = "flex";
+
+    updateViewHeaders();
+
+    const visibleTodos = getVisibleTodos();
+    const sortedTodos = sortTodos(visibleTodos, state.sort);
+    summaryText.textContent = buildSummary(sortedTodos.length, openTodos.length);
+
+    todoList.innerHTML = "";
+
+    if (sortedTodos.length === 0) {
+      todoList.append(buildEmptyStateElement());
+    } else {
+      sortedTodos.forEach((todo) => {
+        todoList.append(buildTodoElement(todo));
+      });
+    }
   }
 
   // Render Secondary Desktop Rail (Contextual)
@@ -794,11 +1971,12 @@ function renderProjectsNav() {
 
   state.projects.forEach((proj) => {
     const openInProject = state.todos.filter(
-      (t) => t.project === proj.id && !t.completed
+      (t) => t.projectId === proj.id && !t.completed
     ).length;
 
-    // Sidebar project button
     const li = document.createElement("li");
+    li.className = "sidebar-project-item";
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = `nav-item${state.currentView === `project:${proj.id}` ? " active" : ""}`;
@@ -822,10 +2000,14 @@ function renderProjectsNav() {
       setView(`project:${proj.id}`);
     });
 
+    button.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      openProjectModal(proj.id);
+    });
+
     li.append(button);
     projectsNavList.append(li);
 
-    // Dropdown options
     const option = document.createElement("option");
     option.value = proj.id;
     option.textContent = proj.name;
@@ -837,7 +2019,7 @@ function renderProjectsNav() {
 function renderTagsNav() {
   const allTagsMap = new Map();
   state.todos.forEach((todo) => {
-    todo.tags.forEach((tag) => {
+    (todo.tags || []).forEach((tag) => {
       allTagsMap.set(tag, (allTagsMap.get(tag) || 0) + 1);
     });
   });
@@ -961,15 +2143,16 @@ function buildTodoElement(todo) {
   item.className = `todo-item${todo.completed ? " done" : ""}${isCompleting ? " completing" : ""}`;
   item.dataset.id = todo.id;
 
-  // 1. Animated Circular Checkbox
+  // 1. Animated Checkbox
   const toggle = document.createElement("input");
   toggle.className = "todo-toggle";
   toggle.type = "checkbox";
   toggle.checked = todo.completed || isCompleting;
   toggle.setAttribute("aria-label", `Mark "${todo.title}" as ${todo.completed ? "incomplete" : "complete"}`);
+  toggle.addEventListener("click", (e) => e.stopPropagation());
   toggle.addEventListener("change", () => toggleTodo(todo.id));
 
-  // 2. Content Container (Left Scan Path)
+  // 2. Content Container
   const content = document.createElement("div");
   content.className = "todo-content";
 
@@ -985,14 +2168,14 @@ function buildTodoElement(todo) {
     content.append(desc);
   }
 
-  // Editorial Dot-Separated Secondary Metadata Row
+  // Metadata Row
   const meta = document.createElement("div");
   meta.className = "todo-meta";
   const metaSegments = [];
 
   // Project segment
-  if (todo.project) {
-    const proj = state.projects.find((p) => p.id === todo.project);
+  if (todo.projectId) {
+    const proj = state.projects.find((p) => p.id === todo.projectId);
     if (proj) {
       const projSpan = document.createElement("span");
       projSpan.className = "todo-meta-item";
@@ -1011,16 +2194,24 @@ function buildTodoElement(todo) {
     metaSegments.push(dateSpan);
   }
 
-  // Subtasks counter segment
-  if (todo.subtasks && todo.subtasks.length > 0) {
-    const doneSubtasks = todo.subtasks.filter((s) => s.completed).length;
+  // Recurrence segment
+  if (todo.recurrence && todo.recurrence !== "none") {
+    const recSpan = document.createElement("span");
+    recSpan.className = "todo-meta-item";
+    recSpan.textContent = `↻ ${capitalize(todo.recurrence)}`;
+    metaSegments.push(recSpan);
+  }
+
+  // Subtasks progress segment
+  const subtasks = todo.subtasks || [];
+  if (subtasks.length > 0) {
+    const doneSubtasks = subtasks.filter((s) => s.completed).length;
     const subtaskSpan = document.createElement("span");
     subtaskSpan.className = "todo-meta-item";
-    subtaskSpan.textContent = `${doneSubtasks}/${todo.subtasks.length} subtasks`;
+    subtaskSpan.textContent = `${doneSubtasks}/${subtasks.length} subtasks`;
     metaSegments.push(subtaskSpan);
   }
 
-  // Assemble segments with subtle dot separators
   metaSegments.forEach((seg, idx) => {
     meta.append(seg);
     if (idx < metaSegments.length - 1 || (todo.tags && todo.tags.length > 0)) {
@@ -1054,40 +2245,43 @@ function buildTodoElement(todo) {
 
   content.append(meta);
 
-  // 3. Actions & Priority Badges (Right Scan Path)
+  if (subtasks.length > 0) {
+    const doneSubtasks = subtasks.filter((s) => s.completed).length;
+    const subtaskPct = Math.round((doneSubtasks / subtasks.length) * 100);
+    const pWrap = document.createElement("div");
+    pWrap.className = "todo-subtask-progress-wrap";
+    pWrap.innerHTML = `<div class="todo-subtask-progress-fill" style="width: ${subtaskPct}%;"></div>`;
+    content.append(pWrap);
+  }
+
+  // 3. Actions & Badges
   const actions = document.createElement("div");
   actions.className = "todo-actions";
 
-  // Priority Badge
   actions.append(buildBadge("priority", capitalize(todo.priority), `priority-${todo.priority}`));
 
-  const editButton = document.createElement("button");
-  editButton.className = "icon-btn";
-  editButton.type = "button";
-  editButton.title = "Edit task";
-  editButton.setAttribute("aria-label", `Edit "${todo.title}"`);
-  editButton.innerHTML = `
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  const contextMenuBtn = document.createElement("button");
+  contextMenuBtn.className = "icon-btn";
+  contextMenuBtn.type = "button";
+  contextMenuBtn.title = "Task actions";
+  contextMenuBtn.setAttribute("aria-label", `Actions for "${todo.title}"`);
+  contextMenuBtn.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="1"></circle>
+      <circle cx="19" cy="12" r="1"></circle>
+      <circle cx="5" cy="12" r="1"></circle>
     </svg>
   `;
-  editButton.addEventListener("click", () => editTodo(todo.id));
+  contextMenuBtn.addEventListener("click", (e) => openContextMenu(e, todo.id));
 
-  const deleteButton = document.createElement("button");
-  deleteButton.className = "icon-btn";
-  deleteButton.type = "button";
-  deleteButton.title = "Delete task";
-  deleteButton.setAttribute("aria-label", `Delete "${todo.title}"`);
-  deleteButton.innerHTML = `
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="3 6 5 6 21 6"></polyline>
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-    </svg>
-  `;
-  deleteButton.addEventListener("click", () => deleteTodo(todo.id));
+  actions.append(contextMenuBtn);
 
-  actions.append(editButton, deleteButton);
+  item.style.cursor = "pointer";
+  item.addEventListener("click", (e) => {
+    if (e.target.closest(".todo-toggle") || e.target.closest(".todo-actions")) return;
+    openTaskDetails(todo.id);
+  });
+
   item.append(toggle, content, actions);
   return item;
 }
@@ -1101,7 +2295,7 @@ function buildBadge(kind, text, extraClass = "") {
 }
 
 // ==========================================================================
-// 14. SECONDARY DESKTOP RAIL RENDERER (Contextual & Functional)
+// 21. SECONDARY DESKTOP RAIL RENDERER (Contextual & Functional)
 // ==========================================================================
 function renderSecondaryRail() {
   if (!weeklyPercent || !miniCalendarGrid) return;
@@ -1149,7 +2343,7 @@ function renderSecondaryRail() {
   }
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const firstDayIndex = (new Date(now.getFullYear(), now.getMonth(), 1).getDay() + 6) % 7; // Monday = 0
+  const firstDayIndex = (new Date(now.getFullYear(), now.getMonth(), 1).getDay() + 6) % 7;
 
   const datesWithTasks = new Set(
     state.todos.filter((t) => t.dueDate && !t.completed).map((t) => t.dueDate)
@@ -1203,14 +2397,13 @@ function renderSecondaryRail() {
     miniCalendarGrid.append(dayCell);
   }
 
-  // 3. Up Next Deadlines (Dynamic Priority & Date Sorting)
+  // 3. Up Next Deadlines
   let upcomingTasks = state.todos
     .filter((t) => !t.completed && t.dueDate && t.dueDate > getLocalDateString());
 
-  // If in project view, filter up next to that project
   if (state.currentView.startsWith("project:")) {
     const projId = state.currentView.slice(8);
-    upcomingTasks = upcomingTasks.filter((t) => t.project === projId);
+    upcomingTasks = upcomingTasks.filter((t) => t.projectId === projId);
   }
 
   upcomingTasks = upcomingTasks
@@ -1239,21 +2432,17 @@ function renderSecondaryRail() {
         <span class="rail-task-date">${formatDueDate(task.dueDate)}</span>
       `;
       li.addEventListener("click", () => {
-        if (task.dueDate) {
-          setView(`calendar:${task.dueDate}`);
-        } else {
-          setView("upcoming");
-        }
+        openTaskDetails(task.id);
       });
       upNextList.append(li);
     });
   }
 
-  // 4. Projects Snapshot (Dynamic Velocity Progress)
+  // 4. Projects Snapshot
   projectsSnapshotList.innerHTML = "";
   state.projects.slice(0, 4).forEach((proj) => {
-    const totalProj = state.todos.filter((t) => t.project === proj.id).length;
-    const doneProj = state.todos.filter((t) => t.project === proj.id && t.completed).length;
+    const totalProj = state.todos.filter((t) => t.projectId === proj.id).length;
+    const doneProj = state.todos.filter((t) => t.projectId === proj.id && t.completed).length;
     const projPct = totalProj > 0 ? Math.round((doneProj / totalProj) * 100) : 0;
 
     const item = document.createElement("div");
@@ -1276,7 +2465,7 @@ function renderSecondaryRail() {
 }
 
 // ==========================================================================
-// 15. CRUD ACTIONS & SATISFYING COMPLETION ANIMATION
+// 22. CRUD ACTIONS, RECURRENCE LIFECYCLE & UNDO INTEGRATION
 // ==========================================================================
 function toggleTodo(id) {
   const todo = state.todos.find((t) => t.id === id);
@@ -1285,8 +2474,6 @@ function toggleTodo(id) {
   const willBeDone = !todo.completed;
 
   if (willBeDone) {
-    // 1. Satisfying completion sequence:
-    // Mark as completing immediately to trigger checkmark animation & title strike
     state.completingTodoIds.add(id);
 
     const itemEl = document.querySelector(`.todo-item[data-id="${id}"]`);
@@ -1296,88 +2483,170 @@ function toggleTodo(id) {
       if (chk) chk.checked = true;
     }
 
-    // 2. Delay removal/re-sorting by 320ms so user enjoys the completion feedback
     setTimeout(() => {
       state.completingTodoIds.delete(id);
-      state.todos = state.todos.map((t) => {
+
+      let generatedNextOccurrence = null;
+      const seriesId = todo.recurrenceSeriesId || (todo.recurrence !== "none" ? crypto.randomUUID() : null);
+
+      // Recurrence Engine Handling
+      if (todo.recurrence && todo.recurrence !== "none") {
+        const nextDueDate = calculateNextDueDate(todo.dueDate || getLocalDateString(), todo.recurrence);
+        const existingNext = state.todos.find(
+          (t) => t.recurrenceSeriesId === seriesId && !t.completed && t.id !== id
+        );
+
+        if (!existingNext && nextDueDate) {
+          generatedNextOccurrence = {
+            id: crypto.randomUUID(),
+            title: todo.title,
+            description: todo.description,
+            priority: todo.priority,
+            dueDate: nextDueDate,
+            dueTime: todo.dueTime,
+            projectId: todo.projectId,
+            tags: [...(todo.tags || [])],
+            completed: false,
+            createdAt: new Date().toISOString(),
+            completedAt: null,
+            subtasks: (todo.subtasks || []).map((s) => ({
+              id: crypto.randomUUID(),
+              title: s.title,
+              completed: false,
+              createdAt: new Date().toISOString()
+            })),
+            notes: todo.notes,
+            reminder: todo.reminder,
+            recurrence: todo.recurrence,
+            recurrenceSeriesId: seriesId,
+            generatedNextOccurrenceId: null
+          };
+        }
+      }
+
+      state.undoManager.push({
+        type: "COMPLETE_TODO",
+        todoId: id,
+        previousCompleted: false,
+        previousCompletedAt: todo.completedAt,
+        generatedOccurrenceId: generatedNextOccurrence ? generatedNextOccurrence.id : null
+      });
+
+      let updatedTodos = state.todos.map((t) => {
         if (t.id === id) {
           return {
             ...t,
             completed: true,
-            completedAt: new Date().toISOString()
+            completedAt: new Date().toISOString(),
+            recurrenceSeriesId: seriesId,
+            generatedNextOccurrenceId: generatedNextOccurrence ? generatedNextOccurrence.id : t.generatedNextOccurrenceId
           };
         }
         return t;
       });
+
+      if (generatedNextOccurrence) {
+        updatedTodos = [generatedNextOccurrence, ...updatedTodos];
+      }
+
+      state.todos = updatedTodos;
       DataStore.saveTodos(state.todos);
       render();
-      showToast("Task completed 🎉", 2000);
+
+      if (state.activeDrawerTodoId === id) {
+        const updated = state.todos.find((t) => t.id === id);
+        if (updated) updateDrawerStatusButton(updated);
+      }
+
+      const toastMsg = generatedNextOccurrence
+        ? `Completed. Next occurrence scheduled for ${formatDueDate(generatedNextOccurrence.dueDate)}`
+        : "Task completed 🎉";
+
+      showToast(toastMsg, 3500, () => {
+        state.undoManager.undo();
+      });
     }, 320);
   } else {
+    state.undoManager.push({
+      type: "COMPLETE_TODO",
+      todoId: id,
+      previousCompleted: true,
+      previousCompletedAt: todo.completedAt,
+      generatedOccurrenceId: null
+    });
+
     state.todos = state.todos.map((t) => {
       if (t.id === id) {
         return {
           ...t,
           completed: false,
-          completedAt: ""
+          completedAt: null
         };
       }
       return t;
     });
+
     DataStore.saveTodos(state.todos);
     render();
-    showToast("Task marked incomplete", 1800);
+
+    if (state.activeDrawerTodoId === id) {
+      const updated = state.todos.find((t) => t.id === id);
+      if (updated) updateDrawerStatusButton(updated);
+    }
+
+    showToast("Task marked incomplete", 2500, () => {
+      state.undoManager.undo();
+    });
   }
 }
 
 function deleteTodo(id) {
-  state.todos = state.todos.filter((todo) => todo.id !== id);
+  const index = state.todos.findIndex((t) => t.id === id);
+  if (index === -1) return;
+
+  const todo = state.todos[index];
+
+  state.undoManager.push({
+    type: "DELETE_TODO",
+    todo: { ...todo },
+    index
+  });
+
+  state.todos = state.todos.filter((t) => t.id !== id);
   DataStore.saveTodos(state.todos);
   render();
-  showToast("Task deleted", 2000);
-}
 
-function editTodo(id) {
-  const todo = state.todos.find((entry) => entry.id === id);
-  if (!todo) return;
-
-  const nextTitle = window.prompt("Update task title:", todo.title);
-  if (nextTitle === null) return;
-
-  const trimmed = nextTitle.trim();
-  if (!trimmed) {
-    window.alert("Task title cannot be empty.");
-    return;
-  }
-
-  state.todos = state.todos.map((entry) =>
-    entry.id === id ? { ...entry, title: trimmed } : entry
-  );
-
-  DataStore.saveTodos(state.todos);
-  render();
-  showToast("Task title updated", 2000);
+  showToast(`Deleted "${todo.title}"`, 3500, () => {
+    state.undoManager.undo();
+  });
 }
 
 function clearCompleted() {
-  const completedCount = state.todos.filter((t) => t.completed).length;
-  if (completedCount === 0) {
+  const completedTodos = state.todos.filter((t) => t.completed);
+  if (completedTodos.length === 0) {
     showToast("No completed tasks to clear.", 2000);
     return;
   }
 
-  if (window.confirm(`Clear ${completedCount} completed task${completedCount === 1 ? "" : "s"}?`)) {
+  if (window.confirm(`Clear ${completedTodos.length} completed task${completedTodos.length === 1 ? "" : "s"}?`)) {
+    state.undoManager.push({
+      type: "CLEAR_COMPLETED",
+      clearedTodos: [...completedTodos]
+    });
+
     state.todos = state.todos.filter((todo) => !todo.completed);
     DataStore.saveTodos(state.todos);
     render();
-    showToast(`Cleared ${completedCount} completed task${completedCount === 1 ? "" : "s"}.`, 2500);
+
+    showToast(`Cleared ${completedTodos.length} completed task${completedTodos.length === 1 ? "" : "s"}.`, 3500, () => {
+      state.undoManager.undo();
+    });
   }
 }
 
 function setView(viewName) {
   state.currentView = viewName;
 
-  // Preset Project
   if (viewName.startsWith("project:")) {
     const projId = viewName.slice(8);
     projectInput.value = projId;
@@ -1387,7 +2656,6 @@ function setView(viewName) {
     mobileProjectInput.value = "";
   }
 
-  // Preset Date
   if (viewName === "today") {
     dueDateInput.value = getLocalDateString();
     mobileDueDateInput.value = getLocalDateString();
@@ -1433,173 +2701,528 @@ function closeMobileBottomSheet() {
 }
 
 // ==========================================================================
-// 16. EVENT LISTENERS
+// 23. COMMAND PALETTE (⌘K / Ctrl+K)
 // ==========================================================================
+function openCommandPalette() {
+  if (!commandPaletteOverlay || !cmdPaletteInput) return;
 
-// Desktop Task Creation
-todoForm.addEventListener("submit", (event) => {
-  event.preventDefault();
+  state.lastFocusedElement = document.activeElement;
+  cmdPaletteInput.value = "";
+  state.cmdPaletteSelectedIndex = 0;
 
-  const title = todoInput.value.trim();
-  if (!title) return;
+  commandPaletteOverlay.classList.add("active");
+  commandPaletteOverlay.setAttribute("aria-hidden", "false");
+  cmdPaletteInput.focus();
 
-  const priority = priorityInput.value;
-  const dueDate = dueDateInput.value;
-  const dueTime = dueTimeInput.value;
-  const project = projectInput.value;
-  const rawTags = tagsInput.value;
+  renderCommandPaletteResults("");
+}
 
-  const tags = rawTags
-    .split(",")
-    .map((t) => t.trim().replace(/^#/, "").toLowerCase())
-    .filter((t) => t.length > 0);
+function closeCommandPalette() {
+  if (!commandPaletteOverlay) return;
 
-  const newTodo = createTodo(title, priority, dueDate, dueTime, project, tags);
-  state.todos = [newTodo, ...state.todos];
-  DataStore.saveTodos(state.todos);
+  commandPaletteOverlay.classList.remove("active");
+  commandPaletteOverlay.setAttribute("aria-hidden", "true");
 
-  todoForm.reset();
-  priorityInput.value = "medium";
-  if (state.currentView === "today") {
-    dueDateInput.value = getLocalDateString();
-  } else if (state.currentView.startsWith("calendar:")) {
-    dueDateInput.value = state.currentView.slice(9);
+  if (state.lastFocusedElement && typeof state.lastFocusedElement.focus === "function") {
+    state.lastFocusedElement.focus();
   }
-  if (state.currentView.startsWith("project:")) {
-    projectInput.value = state.currentView.slice(8);
+}
+
+function renderCommandPaletteResults(query = "") {
+  if (!cmdPaletteResults) return;
+
+  const needle = query.trim().toLowerCase();
+  const items = [];
+
+  // Navigation Items
+  const navDefs = [
+    { title: "Today’s Board", meta: "View", icon: "sun", action: () => setView("today") },
+    { title: "Inbox", meta: "View", icon: "inbox", action: () => setView("inbox") },
+    { title: "Upcoming", meta: "View", icon: "calendar", action: () => setView("upcoming") },
+    { title: "Calendar", meta: "View", icon: "calendar", action: () => setView("calendar") },
+    { title: "Completed", meta: "View", icon: "check", action: () => setView("completed") },
+    { title: "Overdue", meta: "View", icon: "alert", action: () => setView("overdue") }
+  ];
+
+  const matchedNav = navDefs.filter((n) => !needle || n.title.toLowerCase().includes(needle));
+
+  // Quick Action Items
+  const actionDefs = [
+    {
+      title: "New Task",
+      meta: "Action",
+      icon: "plus",
+      action: () => {
+        if (window.innerWidth <= 767) {
+          openMobileBottomSheet();
+        } else {
+          expandComposer();
+          todoInput.focus();
+        }
+      }
+    },
+    { title: "New Project", meta: "Action", icon: "folder-plus", action: () => openProjectModal(null) },
+    { title: "Clear Completed Tasks", meta: "Action", icon: "trash", action: () => clearCompleted() },
+    { title: "Toggle Theme (Dark / Light)", meta: "Action", icon: "moon", action: () => toggleTheme() },
+    { title: "Export Backup (JSON)", meta: "Action", icon: "download", action: () => DataStore.exportData() },
+    { title: "Show Keyboard Shortcuts", meta: "Help", icon: "help", action: () => openShortcutsModal() }
+  ];
+
+  const matchedActions = actionDefs.filter((a) => !needle || a.title.toLowerCase().includes(needle));
+
+  // Project Items
+  const matchedProjects = state.projects
+    .filter((p) => !needle || p.name.toLowerCase().includes(needle))
+    .map((p) => ({
+      title: `Project: ${p.name}`,
+      meta: "Project",
+      icon: "folder",
+      color: p.color,
+      action: () => setView(`project:${p.id}`)
+    }));
+
+  // Matching Tasks
+  const matchedTasks = state.todos
+    .filter((t) => needle && matchesAdvancedSearch(t, needle))
+    .slice(0, 8)
+    .map((t) => ({
+      title: t.title,
+      meta: t.dueDate ? formatDueDate(t.dueDate) : (t.completed ? "Done" : "Open"),
+      icon: "task",
+      action: () => openTaskDetails(t.id)
+    }));
+
+  cmdPaletteResults.innerHTML = "";
+
+  const sections = [];
+  if (matchedActions.length > 0) sections.push({ group: "Actions", items: matchedActions });
+  if (matchedNav.length > 0) sections.push({ group: "Navigation", items: matchedNav });
+  if (matchedProjects.length > 0) sections.push({ group: "Projects", items: matchedProjects });
+  if (matchedTasks.length > 0) sections.push({ group: "Tasks", items: matchedTasks });
+
+  let flatIndex = 0;
+  state.cmdPaletteItems = [];
+
+  if (sections.length === 0) {
+    const emptyDiv = document.createElement("div");
+    emptyDiv.className = "cmd-item";
+    emptyDiv.style.cursor = "default";
+    emptyDiv.innerHTML = `<span style="color: var(--muted);">No commands or tasks found</span>`;
+    cmdPaletteResults.appendChild(emptyDiv);
+    return;
   }
 
-  collapseComposer();
-  render();
-  showToast("Task created", 2000);
-});
+  sections.forEach((sec) => {
+    const groupTitle = document.createElement("div");
+    groupTitle.className = "cmd-group-title";
+    groupTitle.textContent = sec.group;
+    cmdPaletteResults.appendChild(groupTitle);
 
-// Mobile Task Creation (Bottom Sheet)
-mobileTodoForm.addEventListener("submit", (event) => {
-  event.preventDefault();
+    sec.items.forEach((item) => {
+      const idx = flatIndex++;
+      state.cmdPaletteItems.push(item);
 
-  const title = mobileTodoInput.value.trim();
-  if (!title) return;
+      const div = document.createElement("div");
+      div.className = `cmd-item${idx === state.cmdPaletteSelectedIndex ? " selected" : ""}`;
+      div.dataset.index = String(idx);
 
-  const priority = mobilePriorityInput.value;
-  const dueDate = mobileDueDateInput.value;
-  const dueTime = mobileDueTimeInput.value;
-  const project = mobileProjectInput.value;
-  const rawTags = mobileTagsInput.value;
+      div.innerHTML = `
+        <div class="cmd-item-left">
+          ${item.color ? `<span class="project-dot" style="background:${item.color};"></span>` : ""}
+          <span class="cmd-item-title">${item.title}</span>
+        </div>
+        <span class="cmd-item-meta">${item.meta}</span>
+      `;
 
-  const tags = rawTags
-    .split(",")
-    .map((t) => t.trim().replace(/^#/, "").toLowerCase())
-    .filter((t) => t.length > 0);
+      div.addEventListener("click", () => {
+        closeCommandPalette();
+        item.action();
+      });
 
-  const newTodo = createTodo(title, priority, dueDate, dueTime, project, tags);
-  state.todos = [newTodo, ...state.todos];
-  DataStore.saveTodos(state.todos);
+      div.addEventListener("mouseenter", () => {
+        state.cmdPaletteSelectedIndex = idx;
+        updateCommandPaletteSelection();
+      });
 
-  closeMobileBottomSheet();
-  render();
-  showToast("Task created", 2000);
-});
-
-if (mobileAddBtn) {
-  mobileAddBtn.addEventListener("click", openMobileBottomSheet);
-}
-if (bottomSheetBackdrop) {
-  bottomSheetBackdrop.addEventListener("click", closeMobileBottomSheet);
-}
-if (closeBottomSheetBtn) {
-  closeBottomSheetBtn.addEventListener("click", closeMobileBottomSheet);
-}
-
-// Search Input
-searchInput.addEventListener("input", (event) => {
-  state.search = event.target.value;
-  render();
-});
-
-// Status Filter Tabs
-filterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    state.filter = button.dataset.filter;
-    filterButtons.forEach((btn) => {
-      const active = btn === button;
-      btn.classList.toggle("active", active);
-      btn.setAttribute("aria-selected", String(active));
+      cmdPaletteResults.appendChild(div);
     });
-    render();
   });
-});
 
-// Clear Completed
-clearCompletedBtn.addEventListener("click", clearCompleted);
+  if (state.cmdPaletteSelectedIndex >= state.cmdPaletteItems.length) {
+    state.cmdPaletteSelectedIndex = 0;
+  }
+  updateCommandPaletteSelection();
+}
 
-// Sidebar & Bottom Nav View Clicks
-navItems.forEach((item) => {
-  item.addEventListener("click", () => {
-    const view = item.dataset.view;
-    if (view) setView(view);
+function updateCommandPaletteSelection() {
+  const resultItems = cmdPaletteResults.querySelectorAll(".cmd-item");
+  resultItems.forEach((el, idx) => {
+    const isSel = idx === state.cmdPaletteSelectedIndex;
+    el.classList.toggle("selected", isSel);
+    if (isSel) {
+      el.scrollIntoView({ block: "nearest" });
+    }
   });
-});
-
-// Mobile Sidebar Controls
-if (mobileMenuBtn) {
-  mobileMenuBtn.addEventListener("click", openMobileSidebar);
-}
-if (mobileMenuMoreBtn) {
-  mobileMenuMoreBtn.addEventListener("click", openMobileSidebar);
-}
-if (sidebarCloseBtn) {
-  sidebarCloseBtn.addEventListener("click", closeMobileSidebar);
-}
-if (sidebarOverlay) {
-  sidebarOverlay.addEventListener("click", closeMobileSidebar);
 }
 
-// Theme Switcher Buttons
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener("click", toggleTheme);
+function setupCommandPaletteListeners() {
+  if (!cmdPaletteInput || !commandPaletteOverlay) return;
+
+  cmdPaletteInput.addEventListener("input", (e) => {
+    state.cmdPaletteSelectedIndex = 0;
+    renderCommandPaletteResults(e.target.value);
+  });
+
+  cmdPaletteInput.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (state.cmdPaletteItems.length > 0) {
+        state.cmdPaletteSelectedIndex = (state.cmdPaletteSelectedIndex + 1) % state.cmdPaletteItems.length;
+        updateCommandPaletteSelection();
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (state.cmdPaletteItems.length > 0) {
+        state.cmdPaletteSelectedIndex = (state.cmdPaletteSelectedIndex - 1 + state.cmdPaletteItems.length) % state.cmdPaletteItems.length;
+        updateCommandPaletteSelection();
+      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const selected = state.cmdPaletteItems[state.cmdPaletteSelectedIndex];
+      if (selected) {
+        closeCommandPalette();
+        selected.action();
+      }
+    } else if (e.key === "Escape") {
+      closeCommandPalette();
+    }
+  });
+
+  commandPaletteOverlay.addEventListener("click", (e) => {
+    if (e.target === commandPaletteOverlay) {
+      closeCommandPalette();
+    }
+  });
+
+  const shortcutHint = document.querySelector(".shortcut-hint");
+  if (shortcutHint) {
+    shortcutHint.style.cursor = "pointer";
+    shortcutHint.addEventListener("click", openCommandPalette);
+  }
 }
-if (mobileThemeToggleBtn) {
-  mobileThemeToggleBtn.addEventListener("click", toggleTheme);
+
+// ==========================================================================
+// 24. KEYBOARD SHORTCUTS ENGINE & HELP MODAL (?)
+// ==========================================================================
+function openShortcutsModal() {
+  state.lastFocusedElement = document.activeElement;
+  shortcutsModalOverlay.classList.add("active");
+  shortcutsModalOverlay.setAttribute("aria-hidden", "false");
 }
 
-// Add Project Button
-if (addProjectBtn) {
-  addProjectBtn.addEventListener("click", () => {
-    const name = window.prompt("Enter new project name:");
-    if (!name || !name.trim()) return;
+function closeShortcutsModal() {
+  shortcutsModalOverlay.classList.remove("active");
+  shortcutsModalOverlay.setAttribute("aria-hidden", "true");
+  if (state.lastFocusedElement && typeof state.lastFocusedElement.focus === "function") {
+    state.lastFocusedElement.focus();
+  }
+}
 
-    const trimmed = name.trim();
-    const id = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+function setupShortcutsModalListeners() {
+  if (!shortcutsModalOverlay || !closeShortcutsModalBtn) return;
 
-    if (state.projects.some((p) => p.id === id)) {
-      window.alert("A project with this name already exists.");
+  closeShortcutsModalBtn.addEventListener("click", closeShortcutsModal);
+  shortcutsModalOverlay.addEventListener("click", (e) => {
+    if (e.target === shortcutsModalOverlay) closeShortcutsModal();
+  });
+}
+
+function isTypingInInput(el) {
+  if (!el) return false;
+  const tag = el.tagName;
+  return ["INPUT", "TEXTAREA", "SELECT"].includes(tag) || el.isContentEditable;
+}
+
+function setupGlobalShortcuts() {
+  window.addEventListener("keydown", (e) => {
+    // 1. Command Palette: ⌘K or Ctrl+K
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      if (commandPaletteOverlay.classList.contains("active")) {
+        closeCommandPalette();
+      } else {
+        openCommandPalette();
+      }
       return;
     }
 
-    const colors = ["#f08352", "#4e9d75", "#d7a34b", "#a569bd", "#3498db", "#e74c3c"];
-    const randomColor = colors[state.projects.length % colors.length];
+    // 2. Global Escape: closes active overlays
+    if (e.key === "Escape") {
+      closeCommandPalette();
+      closeShortcutsModal();
+      closeTaskDetails();
+      closeProjectModal();
+      closeContextMenu();
+      closeMobileSidebar();
+      closeMobileBottomSheet();
+      if (userProfileWrap) {
+        userProfileWrap.classList.remove("open");
+      }
+      return;
+    }
 
-    state.projects.push({ id, name: trimmed, color: randomColor });
-    DataStore.saveProjects(state.projects);
-    render();
-    showToast(`Project "${trimmed}" created`, 2200);
+    // 3. Undo: ⌘Z or Ctrl+Z (when not typing in form inputs)
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      if (!isTypingInInput(document.activeElement)) {
+        e.preventDefault();
+        state.undoManager.undo();
+        return;
+      }
+    }
+
+    // 4. Single-key shortcuts (Suppressed when typing in input/textarea/select)
+    if (isTypingInInput(document.activeElement)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    const key = e.key;
+
+    if (key === "n" || key === "N") {
+      e.preventDefault();
+      if (window.innerWidth <= 767) {
+        openMobileBottomSheet();
+      } else {
+        expandComposer();
+        todoInput.focus();
+      }
+    } else if (key === "/") {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    } else if (key === "t" || key === "T") {
+      e.preventDefault();
+      setView("today");
+    } else if (key === "i" || key === "I") {
+      e.preventDefault();
+      setView("inbox");
+    } else if (key === "u" || key === "U") {
+      e.preventDefault();
+      setView("upcoming");
+    } else if (key === "c" || key === "C") {
+      e.preventDefault();
+      setView("calendar");
+    } else if (key === "?") {
+      e.preventDefault();
+      openShortcutsModal();
+    }
   });
 }
 
-// Keyboard Shortcuts & Global Esc Handler
-window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    closeMobileSidebar();
-    closeMobileBottomSheet();
-    if (userProfileWrap) {
-      userProfileWrap.classList.remove("open");
+// ==========================================================================
+// 25. IN-APP REMINDER FOUNDATION (Periodic In-App Alerts)
+// ==========================================================================
+function checkReminders() {
+  const now = new Date();
+  const currentIso = now.toISOString();
+  const todayStr = getLocalDateString(now);
+
+  state.todos.forEach((todo) => {
+    if (todo.completed || !todo.dueDate || !todo.reminder) return;
+    if (state.triggeredReminders.has(todo.id)) return;
+
+    const offsetMinutes = parseInt(todo.reminder, 10);
+    if (isNaN(offsetMinutes)) return;
+
+    // Calculate target date & time
+    const timeStr = todo.dueTime || "09:00";
+    const [year, month, day] = todo.dueDate.split("-").map(Number);
+    const [hh, mm] = timeStr.split(":").map(Number);
+
+    const targetDate = new Date(year, month - 1, day, hh, mm, 0, 0);
+    const reminderTime = new Date(targetDate.getTime() - offsetMinutes * 60 * 1000);
+
+    if (now >= reminderTime) {
+      state.triggeredReminders.add(todo.id);
+      showToast(`⏰ Reminder: "${todo.title}" is due ${formatDueDate(todo.dueDate, todo.dueTime)}`, 5000);
     }
-  }
-});
+  });
+}
 
 // ==========================================================================
-// 17. LIGHTWEIGHT NATIVE WEBGL ATMOSPHERIC SHADER ENGINE
+// 26. TASK CREATION FORM LISTENERS
+// ==========================================================================
+function setupTaskCreationListeners() {
+  // Desktop Task Creation
+  todoForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const title = todoInput.value.trim();
+    if (!title) return;
+
+    const priority = priorityInput.value;
+    const dueDate = dueDateInput.value;
+    const dueTime = dueTimeInput.value;
+    const projectId = projectInput.value || null;
+    const rawTags = tagsInput.value;
+
+    const tags = normalizeTags(rawTags.split(","));
+
+    const newTodo = {
+      id: crypto.randomUUID(),
+      title,
+      description: "",
+      priority,
+      dueDate,
+      dueTime,
+      projectId,
+      tags,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+      subtasks: [],
+      notes: "",
+      reminder: null,
+      recurrence: "none",
+      recurrenceSeriesId: null,
+      generatedNextOccurrenceId: null
+    };
+
+    state.todos = [newTodo, ...state.todos];
+    DataStore.saveTodos(state.todos);
+
+    todoForm.reset();
+    priorityInput.value = "medium";
+    if (state.currentView === "today") {
+      dueDateInput.value = getLocalDateString();
+    } else if (state.currentView.startsWith("calendar:")) {
+      dueDateInput.value = state.currentView.slice(9);
+    }
+    if (state.currentView.startsWith("project:")) {
+      projectInput.value = state.currentView.slice(8);
+    }
+
+    collapseComposer();
+    render();
+    showToast("Task created", 2000);
+  });
+
+  // Mobile Task Creation (Bottom Sheet)
+  mobileTodoForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const title = mobileTodoInput.value.trim();
+    if (!title) return;
+
+    const priority = mobilePriorityInput.value;
+    const dueDate = mobileDueDateInput.value;
+    const dueTime = mobileDueTimeInput.value;
+    const projectId = mobileProjectInput.value || null;
+    const rawTags = mobileTagsInput.value;
+
+    const tags = normalizeTags(rawTags.split(","));
+
+    const newTodo = {
+      id: crypto.randomUUID(),
+      title,
+      description: "",
+      priority,
+      dueDate,
+      dueTime,
+      projectId,
+      tags,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+      subtasks: [],
+      notes: "",
+      reminder: null,
+      recurrence: "none",
+      recurrenceSeriesId: null,
+      generatedNextOccurrenceId: null
+    };
+
+    state.todos = [newTodo, ...state.todos];
+    DataStore.saveTodos(state.todos);
+
+    closeMobileBottomSheet();
+    render();
+    showToast("Task created", 2000);
+  });
+
+  if (mobileAddBtn) {
+    mobileAddBtn.addEventListener("click", openMobileBottomSheet);
+  }
+  if (bottomSheetBackdrop) {
+    bottomSheetBackdrop.addEventListener("click", closeMobileBottomSheet);
+  }
+  if (closeBottomSheetBtn) {
+    closeBottomSheetBtn.addEventListener("click", closeMobileBottomSheet);
+  }
+
+  // Search Input
+  searchInput.addEventListener("input", (event) => {
+    state.search = event.target.value;
+    render();
+  });
+
+  // Sorting Select
+  if (sortSelect) {
+    sortSelect.value = state.sort;
+    sortSelect.addEventListener("change", (e) => {
+      state.sort = e.target.value;
+      DataStore.saveSortPreference(state.sort);
+      render();
+    });
+  }
+
+  // Status Filter Tabs
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      state.filter = button.dataset.filter;
+      filterButtons.forEach((btn) => {
+        const active = btn === button;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-selected", String(active));
+      });
+      render();
+    });
+  });
+
+  // Clear Completed
+  clearCompletedBtn.addEventListener("click", clearCompleted);
+
+  // Sidebar & Bottom Nav View Clicks
+  navItems.forEach((item) => {
+    item.addEventListener("click", () => {
+      const view = item.dataset.view;
+      if (view) setView(view);
+    });
+  });
+
+  // Mobile Sidebar Controls
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener("click", openMobileSidebar);
+  }
+  if (mobileMenuMoreBtn) {
+    mobileMenuMoreBtn.addEventListener("click", openMobileSidebar);
+  }
+  if (sidebarCloseBtn) {
+    sidebarCloseBtn.addEventListener("click", closeMobileSidebar);
+  }
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", closeMobileSidebar);
+  }
+
+  // Theme Switcher Buttons
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", toggleTheme);
+  }
+  if (mobileThemeToggleBtn) {
+    mobileThemeToggleBtn.addEventListener("click", toggleTheme);
+  }
+}
+
+// ==========================================================================
+// 27. LIGHTWEIGHT NATIVE WEBGL ATMOSPHERIC SHADER ENGINE
 // ==========================================================================
 class AmbientCanvas {
   constructor(canvasId) {
@@ -1823,12 +3446,24 @@ class AmbientCanvas {
 }
 
 // ==========================================================================
-// 18. INITIALIZATION
+// 28. INITIALIZATION
 // ==========================================================================
 applyTheme(state.theme);
 setupComposerInteractions();
 setupStatCards();
 setupUserProfileMenu();
+setupDrawerListeners();
+setupProjectModalListeners();
+setupContextMenuListeners();
+setupCalendarNavListeners();
+setupCommandPaletteListeners();
+setupShortcutsModalListeners();
+setupGlobalShortcuts();
+setupTaskCreationListeners();
+
+// Start In-App Reminder Polling every 30 seconds
+setInterval(checkReminders, 30000);
+checkReminders();
 
 if (state.currentView === "today") {
   dueDateInput.value = getLocalDateString();
