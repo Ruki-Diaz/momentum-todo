@@ -3502,5 +3502,146 @@ button {
   box-shadow: 0 0 6px rgba(217, 119, 6, 0.6);
 }
 
+/* --------------------------------------------------------------------------
+   17. STAGE 4E: IMPORT WORKSPACE BANNER & MODAL
+   -------------------------------------------------------------------------- */
+.import-banner {
+  background: linear-gradient(135deg, rgba(240, 131, 82, 0.08) 0%, rgba(20, 20, 24, 0.6) 100%);
+  border: 1px solid rgba(240, 131, 82, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.35rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+  animation: fadeIn 220ms ease;
+}
+
+.import-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.import-banner-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: rgba(240, 131, 82, 0.15);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.import-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.import-banner-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.import-banner-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.import-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.import-modal-card {
+  max-width: 460px;
+  width: 100%;
+}
+
+.import-modal-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.import-modal-description {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 1.25rem 0;
+}
+
+.import-stats-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.import-stat-box {
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 0.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.import-stat-val {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.import-stat-lbl {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.import-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.import-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+  display: inline-block;
+  margin-left: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .import-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .import-banner-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 
 

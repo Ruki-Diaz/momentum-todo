@@ -385,3 +385,246 @@ export function validateSettingsInput(body: any, isUpdate = false): ValidatedSet
 
   return result;
 }
+
+// -----------------------------------------------------------------------------
+// Workspace Import Validation (Stage 4E)
+// -----------------------------------------------------------------------------
+export const MAX_IMPORT_PROJECTS = 100;
+export const MAX_IMPORT_TASKS = 2000;
+export const MAX_IMPORT_SUBTASKS_PER_TASK = 50;
+export const MAX_IMPORT_TOTAL_SUBTASKS = 10000;
+
+export interface ValidatedImportProject {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: Date | null;
+}
+
+export interface ValidatedImportSubtask {
+  id: string;
+  title: string;
+  completed: boolean;
+  position: number;
+  createdAt: Date | null;
+}
+
+export interface ValidatedImportTask {
+  id: string;
+  title: string;
+  description: string;
+  priority: "low" | "medium" | "high";
+  dueDate: string | null;
+  dueTime: string | null;
+  projectId: string | null;
+  tags: string[];
+  completed: boolean;
+  completedAt: Date | null;
+  subtasks: ValidatedImportSubtask[];
+  notes: string;
+  reminder: string | null;
+  recurrence: "none" | "daily" | "weekdays" | "weekly" | "monthly";
+  recurrenceSeriesId: string | null;
+  generatedNextOccurrenceId: string | null;
+  createdAt: Date | null;
+}
+
+export interface ValidatedWorkspaceImportInput {
+  importId: string;
+  source: string;
+  workspace: {
+    projects: ValidatedImportProject[];
+    tasks: ValidatedImportTask[];
+  };
+}
+
+export function validateWorkspaceImportInput(body: any): ValidatedWorkspaceImportInput {
+  if (!body || typeof body !== "object") {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request body must be a JSON object");
+  }
+
+  const importId = validateUuid(body.importId, "importId");
+  const source = typeof body.source === "string" && body.source.trim().length > 0
+    ? body.source.trim().slice(0, 50)
+    : "momentum-local-v2";
+
+  const workspaceObj = (body.workspace && typeof body.workspace === "object")
+    ? body.workspace
+    : body;
+
+  const rawProjects = Array.isArray(workspaceObj.projects) ? workspaceObj.projects : [];
+  const rawTasks = Array.isArray(workspaceObj.tasks) ? workspaceObj.tasks : [];
+
+  if (rawProjects.length > MAX_IMPORT_PROJECTS) {
+    throw new ApiError(400, "VALIDATION_ERROR", `Import exceeds maximum project limit of ${MAX_IMPORT_PROJECTS}`);
+  }
+
+  if (rawTasks.length > MAX_IMPORT_TASKS) {
+    throw new ApiError(400, "VALIDATION_ERROR", `Import exceeds maximum task limit of ${MAX_IMPORT_TASKS}`);
+  }
+
+  // Validate Projects
+  const validatedProjects: ValidatedImportProject[] = [];
+  for (let i = 0; i < rawProjects.length; i++) {
+    const p = rawProjects[i];
+    if (!p || typeof p !== "object") {
+      throw new ApiError(400, "VALIDATION_ERROR", `Invalid project object at index ${i}`);
+    }
+
+    if (typeof p.id !== "string" || p.id.trim().length === 0) {
+      throw new ApiError(400, "VALIDATION_ERROR", `Project ID at index ${i} is required and must not be empty`);
+    }
+    const id = p.id.trim().slice(0, 255);
+
+    if (typeof p.name !== "string" || p.name.trim().length === 0) {
+      throw new ApiError(400, "VALIDATION_ERROR", `Project name at index ${i} is required and must not be empty`);
+    }
+
+    const name = p.name.trim().slice(0, 100);
+    const color = typeof p.color === "string" && HEX_COLOR_REGEX.test(p.color.trim())
+      ? p.color.trim()
+      : "#f08352";
+
+    let createdAt: Date | null = null;
+    if (p.createdAt) {
+      const d = new Date(p.createdAt);
+      if (!isNaN(d.getTime())) createdAt = d;
+    }
+
+    validatedProjects.push({ id, name, color, createdAt });
+  }
+
+  // Validate Tasks & Subtasks
+  let totalSubtasks = 0;
+  const validatedTasks: ValidatedImportTask[] = [];
+
+  for (let i = 0; i < rawTasks.length; i++) {
+    const t = rawTasks[i];
+    if (!t || typeof t !== "object") {
+      throw new ApiError(400, "VALIDATION_ERROR", `Invalid task object at index ${i}`);
+    }
+
+    if (typeof t.id !== "string" || t.id.trim().length === 0) {
+      throw new ApiError(400, "VALIDATION_ERROR", `Task ID at index ${i} is required and must not be empty`);
+    }
+    const id = t.id.trim().slice(0, 255);
+
+    if (typeof t.title !== "string" || t.title.trim().length === 0) {
+      throw new ApiError(400, "VALIDATION_ERROR", `Task title at index ${i} is required and must not be empty`);
+    }
+
+    const title = t.title.trim().slice(0, 255);
+    const description = typeof t.description === "string" ? t.description : "";
+    const priority = ALLOWED_PRIORITIES.includes(t.priority) ? t.priority : "medium";
+
+    let dueDate: string | null = null;
+    if (typeof t.dueDate === "string" && DATE_REGEX.test(t.dueDate)) {
+      const [year, month, day] = t.dueDate.split("-").map(Number);
+      const d = new Date(year, month - 1, day);
+      if (d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day) {
+        dueDate = t.dueDate;
+      }
+    }
+
+    let dueTime: string | null = null;
+    if (typeof t.dueTime === "string" && TIME_REGEX.test(t.dueTime)) {
+      dueTime = t.dueTime;
+    }
+
+    const projectId = typeof t.projectId === "string" && t.projectId.trim().length > 0
+      ? t.projectId.trim().slice(0, 255)
+      : null;
+    const tags = validateTags(t.tags);
+    const completed = Boolean(t.completed);
+
+    let completedAt: Date | null = null;
+    if (t.completedAt) {
+      const d = new Date(t.completedAt);
+      if (!isNaN(d.getTime())) completedAt = d;
+    }
+
+    const notes = typeof t.notes === "string" ? t.notes : "";
+    const reminder = ALLOWED_REMINDERS.includes(t.reminder) ? t.reminder : null;
+    const recurrence = ALLOWED_RECURRENCES.includes(t.recurrence) ? t.recurrence : "none";
+    const recurrenceSeriesId = typeof t.recurrenceSeriesId === "string" && t.recurrenceSeriesId.trim().length > 0
+      ? t.recurrenceSeriesId.trim().slice(0, 255)
+      : null;
+    const generatedNextOccurrenceId = typeof t.generatedNextOccurrenceId === "string" && t.generatedNextOccurrenceId.trim().length > 0
+      ? t.generatedNextOccurrenceId.trim().slice(0, 255)
+      : null;
+
+    let createdAt: Date | null = null;
+    if (t.createdAt) {
+      const d = new Date(t.createdAt);
+      if (!isNaN(d.getTime())) createdAt = d;
+    }
+
+    // Subtasks
+    const rawSubtasks = Array.isArray(t.subtasks) ? t.subtasks : [];
+    if (rawSubtasks.length > MAX_IMPORT_SUBTASKS_PER_TASK) {
+      throw new ApiError(400, "VALIDATION_ERROR", `Task '${title}' exceeds limit of ${MAX_IMPORT_SUBTASKS_PER_TASK} subtasks`);
+    }
+
+    totalSubtasks += rawSubtasks.length;
+    if (totalSubtasks > MAX_IMPORT_TOTAL_SUBTASKS) {
+      throw new ApiError(400, "VALIDATION_ERROR", `Import exceeds total subtask limit of ${MAX_IMPORT_TOTAL_SUBTASKS}`);
+    }
+
+    const validatedSubtasks: ValidatedImportSubtask[] = [];
+    for (let sIdx = 0; sIdx < rawSubtasks.length; sIdx++) {
+      const s = rawSubtasks[sIdx];
+      if (!s || typeof s !== "object") continue;
+
+      const subtaskId = typeof s.id === "string" && s.id.trim().length > 0
+        ? s.id.trim().slice(0, 255)
+        : crypto.randomUUID();
+      const subtaskTitle = typeof s.title === "string" && s.title.trim().length > 0
+        ? s.title.trim().slice(0, 255)
+        : "Untitled Subtask";
+
+      let subCreatedAt: Date | null = null;
+      if (s.createdAt) {
+        const d = new Date(s.createdAt);
+        if (!isNaN(d.getTime())) subCreatedAt = d;
+      }
+
+      validatedSubtasks.push({
+        id: subtaskId,
+        title: subtaskTitle,
+        completed: Boolean(s.completed),
+        position: typeof s.position === "number" && Number.isInteger(s.position) && s.position >= 0 ? s.position : sIdx,
+        createdAt: subCreatedAt
+      });
+    }
+
+    validatedTasks.push({
+      id,
+      title,
+      description,
+      priority,
+      dueDate,
+      dueTime,
+      projectId,
+      tags,
+      completed,
+      completedAt,
+      subtasks: validatedSubtasks,
+      notes,
+      reminder,
+      recurrence,
+      recurrenceSeriesId,
+      generatedNextOccurrenceId,
+      createdAt
+    });
+  }
+
+  return {
+    importId,
+    source,
+    workspace: {
+      projects: validatedProjects,
+      tasks: validatedTasks
+    }
+  };
+}
+

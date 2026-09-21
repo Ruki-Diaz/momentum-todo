@@ -13,11 +13,13 @@ import taskCompleteHandler from "../api/tasks/[id]/complete.js";
 import taskSubtasksIndexHandler from "../api/tasks/[id]/subtasks/index.js";
 import taskSubtaskIdHandler from "../api/tasks/[id]/subtasks/[subtaskId].js";
 import settingsHandler from "../api/settings/index.js";
+import workspaceImportHandler from "../api/workspace/import.js";
 
 dotenv.config({ override: true });
 
 const PORT = parseInt(process.env.PORT || "8088", 10);
 const PUBLIC_DIR = process.cwd();
+const MAX_BODY_BYTES = 5 * 1024 * 1024; // 5 MB early rejection limit
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -49,7 +51,7 @@ const server = http.createServer(async (req, res) => {
   const origin = req.headers.origin || "http://localhost:8088";
   res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-test-user-id");
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
   if (req.method === "OPTIONS") {
@@ -61,13 +63,29 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost:8088"}`);
   const pathname = url.pathname;
 
-  // Read body buffer for non-GET requests
+  // Read body buffer with early payload size enforcement
   let parsedBody: any = undefined;
   if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "OPTIONS") {
     const chunks: Buffer[] = [];
+    let receivedBytes = 0;
+    let payloadTooLarge = false;
+
     for await (const chunk of req) {
-      chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+      const buf = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+      receivedBytes += buf.length;
+      if (receivedBytes > MAX_BODY_BYTES) {
+        payloadTooLarge = true;
+        break;
+      }
+      chunks.push(buf);
     }
+
+    if (payloadTooLarge) {
+      res.writeHead(413, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request payload exceeds maximum limit of 5MB" } }));
+      return;
+    }
+
     const rawBody = Buffer.concat(chunks).toString("utf-8");
     if (rawBody) {
       try {
@@ -95,6 +113,12 @@ const server = http.createServer(async (req, res) => {
   }
   if (pathname === "/api/auth/config") {
     await authConfigHandler(vercelReq, vercelRes);
+    return;
+  }
+
+  // Workspace Import Endpoint (Stage 4E)
+  if (pathname === "/api/workspace/import") {
+    await workspaceImportHandler(vercelReq, vercelRes);
     return;
   }
 

@@ -503,6 +503,19 @@ const CloudDataStore = {
     return res.data;
   },
 
+  async importWorkspace(importId, snapshot) {
+    const res = await ApiClient.request("/workspace/import", {
+      method: "POST",
+      body: {
+        importId,
+        projects: snapshot.projects || [],
+        tasks: snapshot.tasks || [],
+        settings: snapshot.settings || {}
+      }
+    });
+    return res.data;
+  },
+
   // Serialized Task Save Execution (Coalesces edits & avoids 409 collisions)
   queueTaskSave(taskId, updatedFields, onStatusChange) {
     let queue = this.saveQueues.get(taskId);
@@ -2792,6 +2805,269 @@ const AuthManager = {
 };
 
 // ==========================================================================
+// 17B. STAGE 4E: IMPORT WORKSPACE MANAGER
+// ==========================================================================
+const ImportManager = {
+  isImporting: false,
+
+  checkAndPromptImport() {
+    const banner = document.getElementById("importWorkspaceBanner");
+    const menuBtn = document.getElementById("menuImportWorkspaceBtn");
+
+    // Only available when connected in Cloud mode
+    if (!WorkspaceRepository.isCloud() || state.cloudStatus !== "connected") {
+      if (banner) banner.style.display = "none";
+      if (menuBtn) menuBtn.style.display = "none";
+      return;
+    }
+
+    const localTodos = LocalDataStore.getTodos();
+    const localProjects = LocalDataStore.getProjects();
+    const totalLocalItems = localTodos.length + localProjects.length;
+
+    // No local data -> hide banner & menu button
+    if (totalLocalItems === 0) {
+      if (banner) banner.style.display = "none";
+      if (menuBtn) menuBtn.style.display = "none";
+      return;
+    }
+
+    // Has local data -> show menu button for explicit invocation
+    if (menuBtn) menuBtn.style.display = "flex";
+
+    // Check banner suppression (session dismissal or previously recorded import)
+    const userId = AuthManager.currentUser?.id;
+    const isSessionDismissed = userId && sessionStorage.getItem(`momentum_import_dismissed_${userId}`) === "true";
+
+    let isAlreadyImported = false;
+    try {
+      const history = JSON.parse(localStorage.getItem("momentum_import_history_v1") || "{}");
+      if (userId && history[userId]) {
+        isAlreadyImported = true;
+      }
+    } catch {
+      isAlreadyImported = false;
+    }
+
+    if (!isSessionDismissed && !isAlreadyImported) {
+      if (banner) {
+        banner.style.display = "flex";
+        const taskCountEl = document.getElementById("importBannerTaskCount");
+        const projCountEl = document.getElementById("importBannerProjectCount");
+        if (taskCountEl) taskCountEl.textContent = localTodos.length;
+        if (projCountEl) projCountEl.textContent = localProjects.length;
+      }
+    } else {
+      if (banner) banner.style.display = "none";
+    }
+  },
+
+  dismissBanner() {
+    const banner = document.getElementById("importWorkspaceBanner");
+    if (banner) banner.style.display = "none";
+    const userId = AuthManager.currentUser?.id;
+    if (userId) {
+      sessionStorage.setItem(`momentum_import_dismissed_${userId}`, "true");
+    }
+  },
+
+  openImportModal() {
+    if (userProfileWrap) userProfileWrap.classList.remove("open");
+    if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
+
+    const localTodos = LocalDataStore.getTodos();
+    const localProjects = LocalDataStore.getProjects();
+    const localSubtasks = localTodos.reduce((sum, t) => sum + (Array.isArray(t.subtasks) ? t.subtasks.length : 0), 0);
+
+    const taskCountEl = document.getElementById("importModalTaskCount");
+    const projCountEl = document.getElementById("importModalProjectCount");
+    const subtaskCountEl = document.getElementById("importModalSubtaskCount");
+    const errorEl = document.getElementById("importModalError");
+    const confirmBtn = document.getElementById("importModalConfirmBtn");
+    const spinner = confirmBtn?.querySelector(".import-btn-spinner");
+
+    if (taskCountEl) taskCountEl.textContent = localTodos.length;
+    if (projCountEl) projCountEl.textContent = localProjects.length;
+    if (subtaskCountEl) subtaskCountEl.textContent = localSubtasks;
+
+    if (errorEl) {
+      errorEl.style.display = "none";
+      errorEl.textContent = "";
+    }
+
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      const btnText = confirmBtn.querySelector(".btn-text");
+      if (btnText) btnText.textContent = "Import Workspace";
+    }
+    if (spinner) spinner.style.display = "none";
+
+    const modalOverlay = document.getElementById("importModalOverlay");
+    if (modalOverlay) {
+      modalOverlay.classList.add("active");
+      modalOverlay.setAttribute("aria-hidden", "false");
+    }
+  },
+
+  closeImportModal() {
+    const modalOverlay = document.getElementById("importModalOverlay");
+    if (modalOverlay) {
+      modalOverlay.classList.remove("active");
+      modalOverlay.setAttribute("aria-hidden", "true");
+    }
+  },
+
+  async handleImport() {
+    if (this.isImporting) return;
+
+    const confirmBtn = document.getElementById("importModalConfirmBtn");
+    const spinner = confirmBtn?.querySelector(".import-btn-spinner");
+    const errorEl = document.getElementById("importModalError");
+
+    if (errorEl) {
+      errorEl.style.display = "none";
+      errorEl.textContent = "";
+    }
+
+    this.isImporting = true;
+    if (confirmBtn) confirmBtn.disabled = true;
+    if (spinner) spinner.style.display = "inline-block";
+
+    try {
+      const localProjects = LocalDataStore.getProjects();
+      const localTodos = LocalDataStore.getTodos();
+      const localTheme = LocalDataStore.getTheme();
+      const localSort = LocalDataStore.getSortPreference();
+
+      // Build payload matching server schema
+      const snapshot = {
+        projects: localProjects.map((p) => ({
+          id: p.id,
+          name: p.name,
+          color: p.color,
+          createdAt: p.createdAt || new Date().toISOString()
+        })),
+        tasks: localTodos.map((t) => ({
+          id: t.id,
+          title: t.title,
+          description: t.description || "",
+          priority: t.priority || "medium",
+          dueDate: t.dueDate || null,
+          dueTime: t.dueTime || null,
+          projectId: t.projectId || null,
+          tags: t.tags || [],
+          completed: !!t.completed,
+          createdAt: t.createdAt || new Date().toISOString(),
+          completedAt: t.completedAt || null,
+          subtasks: (t.subtasks || []).map((s) => ({
+            id: s.id,
+            title: s.title,
+            completed: !!s.completed,
+            createdAt: s.createdAt || new Date().toISOString()
+          })),
+          notes: t.notes || "",
+          reminder: t.reminder || null,
+          recurrence: t.recurrence || "none",
+          recurrenceSeriesId: t.recurrenceSeriesId || null,
+          generatedNextOccurrenceId: t.generatedNextOccurrenceId || null
+        })),
+        settings: {
+          theme: localTheme,
+          sortPreference: localSort
+        }
+      };
+
+      const importId = crypto.randomUUID();
+      const result = await CloudDataStore.importWorkspace(importId, snapshot);
+
+      // Record non-sensitive minimal import metadata in local UX history
+      const userId = AuthManager.currentUser?.id;
+      if (userId) {
+        try {
+          const history = JSON.parse(localStorage.getItem("momentum_import_history_v1") || "{}");
+          history[userId] = {
+            importId,
+            importedAt: new Date().toISOString(),
+            taskCount: result.taskCount || 0,
+            projectCount: result.projectCount || 0
+          };
+          localStorage.setItem("momentum_import_history_v1", JSON.stringify(history));
+        } catch (storageErr) {
+          console.warn("[ImportManager] Failed to write import history:", storageErr);
+        }
+      }
+
+      this.closeImportModal();
+
+      const banner = document.getElementById("importWorkspaceBanner");
+      if (banner) banner.style.display = "none";
+
+      const addedTasks = result.taskCount || 0;
+      const addedProjects = result.projectCount || 0;
+      showToast(`Import complete! Added ${addedTasks} task${addedTasks === 1 ? "" : "s"} and ${addedProjects} project${addedProjects === 1 ? "" : "s"}.`, 4000);
+
+      // Authoritative Cloud Refresh
+      await WorkspaceRepository.switchToCloud(AuthManager.currentUser);
+    } catch (err) {
+      console.error("[ImportManager] Workspace import failed:", err);
+      if (errorEl) {
+        errorEl.textContent = err.message || "An error occurred while importing the workspace. Please try again.";
+        errorEl.style.display = "block";
+      }
+      if (confirmBtn) confirmBtn.disabled = false;
+      if (spinner) spinner.style.display = "none";
+    } finally {
+      this.isImporting = false;
+    }
+  },
+
+  setupListeners() {
+    const bannerDismissBtn = document.getElementById("importBannerDismissBtn");
+    const bannerActionBtn = document.getElementById("importBannerActionBtn");
+    const menuImportBtn = document.getElementById("menuImportWorkspaceBtn");
+    const closeImportModalBtn = document.getElementById("closeImportModalBtn");
+    const cancelImportModalBtn = document.getElementById("importModalCancelBtn");
+    const confirmImportModalBtn = document.getElementById("importModalConfirmBtn");
+    const importModalOverlay = document.getElementById("importModalOverlay");
+
+    if (bannerDismissBtn) {
+      bannerDismissBtn.addEventListener("click", () => this.dismissBanner());
+    }
+
+    if (bannerActionBtn) {
+      bannerActionBtn.addEventListener("click", () => this.openImportModal());
+    }
+
+    if (menuImportBtn) {
+      menuImportBtn.addEventListener("click", () => this.openImportModal());
+    }
+
+    if (closeImportModalBtn) {
+      closeImportModalBtn.addEventListener("click", () => this.closeImportModal());
+    }
+
+    if (cancelImportModalBtn) {
+      cancelImportModalBtn.addEventListener("click", () => {
+        this.closeImportModal();
+        this.dismissBanner();
+      });
+    }
+
+    if (confirmImportModalBtn) {
+      confirmImportModalBtn.addEventListener("click", () => this.handleImport());
+    }
+
+    if (importModalOverlay) {
+      importModalOverlay.addEventListener("click", (e) => {
+        if (e.target === importModalOverlay && !this.isImporting) {
+          this.closeImportModal();
+        }
+      });
+    }
+  }
+};
+
+// ==========================================================================
 // 18. ADVANCED MULTI-FIELD SEARCH LOGIC
 // ==========================================================================
 function matchesAdvancedSearch(todo, query) {
@@ -3217,6 +3493,9 @@ function render() {
 
   // Update Active Navigation State
   updateNavActiveStates();
+
+  // Check and prompt workspace import if eligible
+  ImportManager.checkAndPromptImport();
 }
 
 function updateViewHeaders() {
@@ -4879,6 +5158,7 @@ setupCommandPaletteListeners();
 setupShortcutsModalListeners();
 setupGlobalShortcuts();
 setupTaskCreationListeners();
+ImportManager.setupListeners();
 AuthManager.init();
 
 // Start In-App Reminder Polling every 30 seconds

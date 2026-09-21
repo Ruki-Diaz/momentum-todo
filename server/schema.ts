@@ -62,12 +62,17 @@ export const projects = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 100 }).notNull(),
     color: varchar("color", { length: 20 }).notNull().default("#f08352"),
+    legacySource: varchar("legacy_source", { length: 50 }),
+    legacyId: varchar("legacy_id", { length: 255 }),
     version: integer("version").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
-    index("idx_projects_user_created").on(table.userId, table.createdAt)
+    index("idx_projects_user_created").on(table.userId, table.createdAt),
+    uniqueIndex("idx_projects_user_legacy_unique")
+      .on(table.userId, table.legacySource, table.legacyId)
+      .where(sql`${table.legacyId} IS NOT NULL`)
   ]
 );
 
@@ -94,6 +99,8 @@ export const tasks = pgTable(
     recurrence: varchar("recurrence", { length: 20 }).notNull().default("none"),
     recurrenceSeriesId: uuid("recurrence_series_id"),
     generatedNextOccurrenceId: uuid("generated_next_occurrence_id"),
+    legacySource: varchar("legacy_source", { length: 50 }),
+    legacyId: varchar("legacy_id", { length: 255 }),
     version: integer("version").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
@@ -106,7 +113,11 @@ export const tasks = pgTable(
     // Recurrence Database Invariant: prevents duplicate occurrence generation in same series on same due date
     uniqueIndex("idx_tasks_recurrence_unique")
       .on(table.userId, table.recurrenceSeriesId, table.dueDate)
-      .where(sql`${table.recurrenceSeriesId} IS NOT NULL AND ${table.dueDate} IS NOT NULL`)
+      .where(sql`${table.recurrenceSeriesId} IS NOT NULL AND ${table.dueDate} IS NOT NULL`),
+    // Provenance Database Invariant: prevents duplicate import of the same local task under different import IDs
+    uniqueIndex("idx_tasks_user_legacy_unique")
+      .on(table.userId, table.legacySource, table.legacyId)
+      .where(sql`${table.legacyId} IS NOT NULL`)
   ]
 );
 
@@ -159,7 +170,7 @@ export const taskTags = pgTable(
 );
 
 // =============================================================================
-// 7. WORKSPACE IMPORTS TABLE (Migration Tracking & Idempotency)
+// 7. WORKSPACE IMPORTS TABLE (Migration Tracking, Idempotency & Replay)
 // =============================================================================
 export const workspaceImports = pgTable(
   "workspace_imports",
@@ -169,9 +180,14 @@ export const workspaceImports = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     importId: uuid("import_id").notNull(), // Client-generated idempotency UUID
-    source: varchar("source", { length: 50 }).notNull().default("local_storage"),
+    source: varchar("source", { length: 50 }).notNull().default("momentum-local-v2"),
     taskCount: integer("task_count").notNull().default(0),
     projectCount: integer("project_count").notNull().default(0),
+    subtaskCount: integer("subtask_count").notNull().default(0),
+    tagCount: integer("tag_count").notNull().default(0),
+    remappedProjectCount: integer("remapped_project_count").notNull().default(0),
+    remappedTaskCount: integer("remapped_task_count").notNull().default(0),
+    remappedSubtaskCount: integer("remapped_subtask_count").notNull().default(0),
     importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
     status: varchar("status", { length: 20 }).notNull().default("completed")
   },
