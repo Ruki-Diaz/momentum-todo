@@ -19,7 +19,7 @@ dotenv.config({ override: true });
 
 const PORT = parseInt(process.env.PORT || "8088", 10);
 const PUBLIC_DIR = process.cwd();
-const MAX_BODY_BYTES = 5 * 1024 * 1024; // 5 MB early rejection limit
+const MAX_BODY_BYTES = 4 * 1024 * 1024; // 4 MB — must stay below Vercel's 4.5 MB hard platform limit
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",

@@ -1,0 +1,48 @@
+# .vercelignore — controls what Vercel excludes from the entire deployment
+#
+# IMPORTANT: .vercelignore works like .gitignore for Vercel.
+# Any file listed here is excluded from BOTH:
+#   - the function bundling step (api/*.ts compilation)
+#   - static CDN serving
+#
+# Therefore: only exclude files that are genuinely not needed at build or runtime.
+# Do NOT exclude server/ (imported by api/*.ts), package.json (needed by Vercel
+# for dependency installation), tsconfig.json (needed for TypeScript compilation),
+# or node_modules/ (Vercel installs these itself — never committed to source).
+#
+# Vercel natively protects:  .env*, .git/, node_modules/
+# These do not need to be listed here.
+
+# ── Migration SQL scripts ────────────────────────────────────────────────────
+# Applied manually via npm run db:migrate before deployment.
+# Not imported by any api/*.ts file. Not needed at Vercel build or runtime.
+migrations/
+
+# ── Drizzle schema generator config ─────────────────────────────────────────
+# Only used by drizzle-kit (local schema diff/migrate tooling).
+# Not imported by any api/*.ts file.
+drizzle.config.ts
+
+# ── Local development server ─────────────────────────────────────────────────
+# server/dev-server.ts is the local HTTP shim only.
+# It is NOT imported by any api/*.ts file.
+# Vercel handles its own request routing — dev-server.ts is never invoked.
+server/dev-server.ts
+
+# ── Local database migration runner ─────────────────────────────────────────
+# server/migrate.ts is run manually and never invoked by serverless functions.
+server/migrate.ts
+
+# ── Local verification tools ─────────────────────────────────────────────────
+# These scripts are local diagnostics, never imported by api/*.ts.
+server/test-health.ts
+server/verify-neon.ts
+
+# ── Environment variable documentation ──────────────────────────────────────
+# Contains only placeholder values — no secrets.
+# Not required at build or runtime.
+.env.example
+
+# ── Artifact / scratch directories ──────────────────────────────────────────
+# Local agent workspace — never part of the application.
+.agents/
