@@ -33,8 +33,8 @@ Momentum Todo is a lightweight, polished todo app built with plain HTML, CSS, an
 Open `index.html` directly in your browser, or serve the folder locally:
 
 ```bash
-cd "/Users/rukshandias/Documents/Momentum Todo"
-python3 -m http.server 8000
+cd momentum-todo
+npm run dev
 ```
 
 Then open `http://localhost:8000`.

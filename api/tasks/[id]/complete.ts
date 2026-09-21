@@ -58,6 +58,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         recurrence: rows[0].recurrence,
         recurrenceSeriesId: rows[0].recurrence_series_id,
         generatedNextOccurrenceId: rows[0].generated_next_occurrence_id,
+        legacySource: rows[0].legacy_source || null,
+        legacyId: rows[0].legacy_id || null,
         version: rows[0].version,
         createdAt: new Date(rows[0].created_at),
         updatedAt: new Date(rows[0].updated_at)

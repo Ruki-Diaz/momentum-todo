@@ -159,10 +159,12 @@
       <div class="sidebar-footer">
         <div class="user-profile-wrap">
           <button id="userProfileBtn" class="user-profile-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Open workspace options">
-            <div class="user-avatar" aria-hidden="true">R</div>
+            <div class="user-avatar" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg>
+            </div>
             <div class="user-info">
-              <span class="user-name">Rukshan</span>
-              <span class="user-status">Personal Workspace</span>
+              <span class="user-name">Local Workspace</span>
+              <span class="user-status">Local Mode</span>
             </div>
             <svg class="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="6 9 12 15 18 9"></polyline>
@@ -269,8 +271,7 @@
               <div class="hero-text-wrap">
                 <p id="heroDate" class="hero-date-eyebrow">TODAY</p>
                 <h1 id="heroTitle" class="hero-title">
-                  <span id="heroGreetingText">Good morning,</span>
-                  <span class="hero-name-highlight">Rukshan</span>.
+                  <span id="heroGreetingText">Good morning.</span>
                 </h1>
                 <p id="heroSubtitle" class="hero-copy">You have 0 tasks planned for today.</p>
               </div>
@@ -1012,7 +1013,7 @@
           <div class="auth-header-text">
             <h2 class="auth-title">Check your email</h2>
             <p class="auth-subtitle">We sent a verification code to:</p>
-            <p id="authTargetEmailLabel" class="auth-target-email">user@example.com</p>
+            <p id="authTargetEmailLabel" class="auth-target-email">—</p>
           </div>
 
           <form id="authCodeForm" class="auth-form" novalidate>

@@ -12,12 +12,7 @@ const STORAGE_PROJECTS_KEY = "momentum-projects-v1";
 const STORAGE_THEME_KEY = "momentum-theme";
 const STORAGE_SORT_KEY = "momentum-sort";
 
-const DEFAULT_PROJECTS = [
-  { id: "e1b2c3d4-0001-4000-8000-000000000001", name: "Work", color: "#f08352", createdAt: "2026-01-01T00:00:00.000Z" },
-  { id: "e1b2c3d4-0002-4000-8000-000000000002", name: "Personal", color: "#4e9d75", createdAt: "2026-01-01T00:00:00.000Z" },
-  { id: "e1b2c3d4-0003-4000-8000-000000000003", name: "University", color: "#d7a34b", createdAt: "2026-01-01T00:00:00.000Z" },
-  { id: "e1b2c3d4-0004-4000-8000-000000000004", name: "Finance", color: "#a569bd", createdAt: "2026-01-01T00:00:00.000Z" }
-];
+const DEFAULT_PROJECTS = [];
 
 const PROJECT_COLORS = [
   "#f08352", "#4e9d75", "#d7a34b", "#a569bd", "#3498db", "#e74c3c"
@@ -2365,7 +2360,7 @@ const AuthManager = {
       const tempSecret = `M0m!_${crypto.randomUUID()}#9Z`;
       this.flowState.tempSecret = tempSecret;
 
-      console.log("[Momentum Auth] Starting email flow for:", email);
+
 
       // 1. Try initiating Sign-In with email code
       let signInSuccess = false;
@@ -2373,7 +2368,7 @@ const AuthManager = {
         const signIn = await this.clerk.client.signIn.create({
           identifier: email
         });
-        console.log("[Momentum Auth] SignIn attempt created:", signIn);
+
 
         // Check for direct email_code factor in supportedFirstFactors
         const emailCodeFactor = signIn.supportedFirstFactors?.find(
@@ -2381,7 +2376,7 @@ const AuthManager = {
         );
 
         if (emailCodeFactor && emailCodeFactor.emailAddressId) {
-          console.log("[Momentum Auth] Preparing direct email_code factor");
+
           await signIn.prepareFirstFactor({
             strategy: "email_code",
             emailAddressId: emailCodeFactor.emailAddressId
@@ -2400,7 +2395,7 @@ const AuthManager = {
         );
 
         if (resetCodeFactor && resetCodeFactor.emailAddressId) {
-          console.log("[Momentum Auth] Preparing reset_password_email_code factor");
+
           await signIn.prepareFirstFactor({
             strategy: "reset_password_email_code",
             emailAddressId: resetCodeFactor.emailAddressId
@@ -2413,13 +2408,13 @@ const AuthManager = {
           return;
         }
       } catch (signInErr) {
-        console.log("[Momentum Auth] SignIn create error (user likely new):", signInErr);
+        // User is new or sign-in not applicable; proceeding to sign-up flow
       }
 
       if (signInSuccess) return;
 
       // 2. User is new or needs Sign-Up -> Initiate Sign-Up
-      console.log("[Momentum Auth] Initiating SignUp for:", email);
+
       let signUp = null;
       try {
         // Attempt with temp secret to satisfy any instance password requirements seamlessly
@@ -2428,19 +2423,19 @@ const AuthManager = {
           password: tempSecret
         });
       } catch (signUpWithPwErr) {
-        console.log("[Momentum Auth] SignUp with password failed; trying email-only create:", signUpWithPwErr);
+        // Password-based create failed; retrying with email-only
         signUp = await this.clerk.client.signUp.create({
           emailAddress: email
         });
       }
 
-      console.log("[Momentum Auth] SignUp created:", signUp);
+
 
       await signUp.prepareEmailAddressVerification({
         strategy: "email_code"
       });
 
-      console.log("[Momentum Auth] Prepared SignUp email verification");
+
       this.flowState.mode = "sign_up";
       this.flowState.emailAddressId = null;
       this.setStep(2);
@@ -2474,14 +2469,14 @@ const AuthManager = {
 
     try {
       let createdSessionId = null;
-      console.log(`[Momentum Auth] Submitting code for mode: ${this.flowState.mode}`);
+
 
       if (this.flowState.mode === "sign_in_email_code") {
         const result = await this.clerk.client.signIn.attemptFirstFactor({
           strategy: "email_code",
           code: code
         });
-        console.log("[Momentum Auth] SignIn attemptFirstFactor result:", result);
+
 
         if (result.status === "complete") {
           createdSessionId = result.createdSessionId;
@@ -2494,7 +2489,7 @@ const AuthManager = {
           code: code,
           password: this.flowState.tempSecret
         });
-        console.log("[Momentum Auth] SignIn reset_password attemptFirstFactor result:", result);
+
 
         if (result.status === "complete") {
           createdSessionId = result.createdSessionId;
@@ -2505,7 +2500,7 @@ const AuthManager = {
         let result = await this.clerk.client.signUp.attemptEmailAddressVerification({
           code: code
         });
-        console.log("[Momentum Auth] SignUp attemptEmailAddressVerification result:", result);
+
 
         if (result.status === "complete") {
           createdSessionId = result.createdSessionId;
@@ -2520,7 +2515,7 @@ const AuthManager = {
             const updated = await this.clerk.client.signUp.update({
               password: this.flowState.tempSecret || `M0m!_${crypto.randomUUID()}#9Z`
             });
-            console.log("[Momentum Auth] Updated SignUp after fulfilling password:", updated);
+
             if (updated.status === "complete") {
               createdSessionId = updated.createdSessionId;
             } else {
@@ -2535,7 +2530,7 @@ const AuthManager = {
       }
 
       if (createdSessionId) {
-        console.log("[Momentum Auth] Verification successful. Setting active session:", createdSessionId);
+
         await this.clerk.setActive({ session: createdSessionId });
         if (this.clerk.session) {
           await this.syncUserWithBackend(this.clerk.session);
@@ -2682,13 +2677,20 @@ const AuthManager = {
     const nameEl = document.querySelector("#userProfileBtn .user-name");
     const statusEl = document.querySelector("#userProfileBtn .user-status");
 
-    const displayName = user.displayName || (user.email ? user.email.split("@")[0] : "Account");
+    // Identity hierarchy: verified display/full name → first name → "Momentum User"
+    const displayName = (user.displayName && user.displayName.trim()) || user.firstName || "Momentum User";
+    const avatarInitial = displayName !== "Momentum User" ? (displayName[0] || "M").toUpperCase() : "M";
 
     if (avatarEl) {
       if (user.avatarUrl) {
-        avatarEl.innerHTML = `<img src="${user.avatarUrl}" class="user-avatar-img" alt="${displayName}">`;
+        const img = document.createElement("img");
+        img.src = user.avatarUrl;
+        img.className = "user-avatar-img";
+        img.alt = "Profile photo";
+        avatarEl.textContent = "";
+        avatarEl.appendChild(img);
       } else {
-        avatarEl.textContent = (displayName[0] || "U").toUpperCase();
+        avatarEl.textContent = avatarInitial;
       }
     }
 
@@ -2702,7 +2704,7 @@ const AuthManager = {
     }
 
     if (accountMenuHeaderTitle) accountMenuHeaderTitle.textContent = displayName;
-    if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = user.email || "Verified Account";
+    if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = user.email || "Cloud Account";
 
     if (menuSignInBtn) menuSignInBtn.style.display = "none";
     if (menuManageAccountBtn) menuManageAccountBtn.style.display = "flex";
@@ -2720,16 +2722,16 @@ const AuthManager = {
     const statusEl = document.querySelector("#userProfileBtn .user-status");
 
     if (avatarEl) {
-      avatarEl.textContent = "R";
+      avatarEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg>`;
     }
 
     if (nameEl) {
-      nameEl.textContent = "Rukshan";
+      nameEl.textContent = "Local Workspace";
     }
 
     if (statusEl) {
       statusEl.className = "user-status";
-      statusEl.textContent = "Personal Workspace";
+      statusEl.textContent = "Local Mode";
     }
 
     if (accountMenuHeaderTitle) accountMenuHeaderTitle.textContent = "Local Workspace";
@@ -3395,7 +3397,31 @@ function render() {
 
   const greeting = getTimeGreeting();
   if (heroGreetingText) {
-    heroGreetingText.textContent = `${greeting},`;
+    const authUser = typeof AuthManager !== "undefined" ? AuthManager.currentUser : null;
+    // Extract first name: prefer Clerk first name, otherwise first word of displayName
+    let firstName = "";
+    if (authUser) {
+      if (authUser.firstName && authUser.firstName.trim()) {
+        firstName = authUser.firstName.trim();
+      } else if (authUser.displayName && authUser.displayName.trim()) {
+        firstName = authUser.displayName.trim().split(/\s+/)[0];
+      }
+    }
+
+    // Clear the span and rebuild using safe DOM methods (never innerHTML with user data)
+    heroGreetingText.textContent = "";
+    const greetingNode = document.createTextNode(
+      firstName ? `${greeting}, ` : `${greeting}.`
+    );
+    heroGreetingText.appendChild(greetingNode);
+
+    if (firstName) {
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "hero-name-highlight";
+      nameSpan.textContent = firstName;
+      heroGreetingText.appendChild(nameSpan);
+      heroGreetingText.appendChild(document.createTextNode("."));
+    }
   }
 
   if (state.currentView === "today") {
