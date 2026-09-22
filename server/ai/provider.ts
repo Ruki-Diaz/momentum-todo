@@ -37,40 +37,31 @@ export interface AIProvider {
 
 // ---------------------------------------------------------------------------
 // Provider factory — returns the configured provider singleton
-// ---------------------------------------------------------------------------
+import { getAIConfig } from "./config.js";
+import { stubProvider } from "./adapters/stub.js";
+import { openaiProvider } from "./adapters/openai.js";
+import { googleProvider } from "./adapters/google.js";
 
 let _provider: AIProvider | null = null;
-
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
 
 export function getProvider(): AIProvider {
   if (_provider) return _provider;
 
-  // Use dynamic require to avoid circular deps at module load time
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { getAIConfig } = require("./config.js") as typeof import("./config.js");
   const cfg = getAIConfig();
 
   if (!cfg.enabled || cfg.provider === "stub") {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { stubProvider } = require("./adapters/stub.js") as typeof import("./adapters/stub.js");
     _provider = stubProvider;
-    return _provider!;
+    return _provider;
   }
 
   if (cfg.provider === "openai") {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { openaiProvider } = require("./adapters/openai.js") as typeof import("./adapters/openai.js");
     _provider = openaiProvider;
-    return _provider!;
+    return _provider;
   }
 
   if (cfg.provider === "google") {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { googleProvider } = require("./adapters/google.js") as typeof import("./adapters/google.js");
     _provider = googleProvider;
-    return _provider!;
+    return _provider;
   }
 
   throw new Error(
