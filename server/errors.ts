@@ -11,7 +11,16 @@ export type ApiErrorCode =
   | "STALE_VERSION"
   | "CONFLICT"
   | "RATE_LIMITED"
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  // Stage 6 — Momentum Intelligence error codes
+  | "AI_DISABLED"
+  | "AI_UNAVAILABLE"
+  | "AI_TIMEOUT"
+  | "AI_RATE_LIMITED"
+  | "AI_RESPONSE_INVALID"
+  | "AI_CONTEXT_TOO_LARGE"
+  | "AI_PROVIDER_ERROR"
+  | "AI_DESTRUCTIVE_BLOCKED";
 
 export class ApiError extends Error {
   public readonly statusCode: number;

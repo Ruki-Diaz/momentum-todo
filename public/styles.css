@@ -4048,3 +4048,893 @@ button {
   gap: 0.75rem;
   margin-top: 1rem;
 }
+
+/* ==========================================================================
+   STAGE 6: MOMENTUM INTELLIGENCE STYLES
+   ========================================================================== */
+
+/* AI Navigation & Badges */
+.badge-ai-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full, 9999px);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.25));
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  margin-left: auto;
+}
+
+[data-theme="light"] .badge-ai-pill {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(37, 99, 235, 0.15));
+  color: #6d28d9;
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.nav-item-intelligence:hover .badge-ai-pill {
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+/* AI Action Buttons */
+.hero-ai-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.btn-ai-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border-radius: var(--radius-full, 9999px);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(59, 130, 246, 0.18));
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.32);
+  cursor: pointer;
+  transition: all 180ms var(--ease-smooth);
+}
+
+[data-theme="light"] .btn-ai-pill {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(37, 99, 235, 0.1));
+  color: #5b21b6;
+  border-color: rgba(124, 58, 237, 0.25);
+}
+
+.btn-ai-pill:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+  border-color: rgba(139, 92, 246, 0.55);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-ai-ghost-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-ai-ghost-sm:hover {
+  background: var(--panel-subtle);
+  color: var(--text);
+  border-color: var(--border-hover);
+}
+
+/* AI Modal Header Badges */
+.ai-modal-header-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #a78bfa;
+}
+
+[data-theme="light"] .ai-modal-header-badge {
+  color: #6d28d9;
+}
+
+.ai-badge-text {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* AI Thinking Animation */
+.ai-thinking-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  gap: 1rem;
+  text-align: center;
+}
+
+.ai-thinking-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(139, 92, 246, 0.2);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+.ai-thinking-text {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.ai-thinking-state-sm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.ai-thinking-spinner-sm {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+/* 1. AI Disclosure Modal */
+.ai-disclosure-card {
+  width: min(100% - 2rem, 540px);
+}
+
+.ai-disclosure-headline {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.ai-disclosure-intro {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.ai-disclosure-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .ai-disclosure-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-disclosure-box {
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+}
+
+.ai-box-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.ai-box-included .ai-box-title {
+  color: #60a5fa;
+}
+
+.ai-box-excluded .ai-box-title {
+  color: #34d399;
+}
+
+.ai-box-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ai-box-list li {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  position: relative;
+  padding-left: 0.85rem;
+}
+
+.ai-box-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--muted);
+}
+
+.ai-disclosure-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+  border-top: 1px solid var(--border-light);
+  padding-top: 0.85rem;
+}
+
+.ai-disclosure-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+/* 2. AI Task Preview */
+.ai-preview-card {
+  width: min(100% - 2rem, 500px);
+}
+
+.ai-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-field-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.ai-preview-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+@media (max-width: 500px) {
+  .ai-preview-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+/* 3. Plan My Day Modal */
+.plan-day-card {
+  width: min(100% - 2rem, 600px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.plan-day-body {
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.plan-day-focus-banner {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.12));
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.plan-focus-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a78bfa;
+  margin-bottom: 0.2rem;
+}
+
+.plan-focus-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.plan-day-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.timeline-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.plan-date-badge {
+  font-size: 0.76rem;
+  color: var(--muted);
+  background: var(--panel-subtle);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.plan-day-blocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.plan-block-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.95rem;
+  transition: border-color 150ms ease;
+}
+
+.plan-block-item:hover {
+  border-color: var(--border-hover);
+}
+
+.plan-block-time {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #a78bfa;
+  min-width: 95px;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+}
+
+[data-theme="light"] .plan-block-time {
+  color: #6d28d9;
+}
+
+.plan-block-details {
+  flex: 1;
+}
+
+.plan-block-title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.plan-block-notes {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.plan-day-disclaimer {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.plan-day-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-light);
+}
+
+/* 4. Task Breakdown (Drawer) */
+.drawer-subtasks-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-breakdown-container {
+  margin-bottom: 0.85rem;
+}
+
+.ai-breakdown-card {
+  background: var(--panel-subtle);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.ai-breakdown-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-breakdown-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a78bfa;
+}
+
+.ai-breakdown-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ai-breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.ai-breakdown-item-input {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.84rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.ai-breakdown-item-input:focus {
+  background: var(--panel-strong);
+  border-color: var(--border);
+  outline: none;
+}
+
+.ai-breakdown-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+/* 5. Project Planner Modal */
+.project-planner-card {
+  width: min(100% - 2rem, 640px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-planner-body {
+  overflow-y: auto;
+}
+
+.planner-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.planner-generate-btn {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+.planner-results-header {
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.planner-project-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.25rem 0;
+}
+
+.planner-project-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.planner-tasks-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.preview-count {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.preview-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.planner-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.planner-task-card {
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.95rem;
+}
+
+.planner-task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.planner-task-title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.planner-task-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.planner-task-subtasks {
+  list-style: none;
+  padding: 0.4rem 0 0 0.85rem;
+  margin: 0.35rem 0 0 0;
+  border-top: 1px dashed var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.planner-task-subtasks li {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  position: relative;
+  padding-left: 0.75rem;
+}
+
+.planner-task-subtasks li::before {
+  content: "–";
+  position: absolute;
+  left: 0;
+  color: var(--muted);
+}
+
+.project-planner-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-light);
+}
+
+/* 6. Briefing Modal */
+.briefing-card {
+  width: min(100% - 2rem, 520px);
+}
+
+.briefing-greeting {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.4rem 0;
+}
+
+.briefing-summary {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 1.25rem 0;
+}
+
+.briefing-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 500px) {
+  .briefing-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.briefing-stat-chip {
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.65rem;
+  text-align: center;
+}
+
+.briefing-stat-chip .chip-val {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.briefing-stat-chip .chip-lbl {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.chip-overdue .chip-val {
+  color: #f87171;
+}
+
+.chip-high .chip-val {
+  color: #fbbf24;
+}
+
+.briefing-top-task {
+  background: var(--panel-subtle);
+  border-left: 3px solid #8b5cf6;
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+}
+
+.top-task-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #a78bfa;
+  margin-bottom: 0.2rem;
+}
+
+.top-task-title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text);
+  margin: 0;
+}
+
+.briefing-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-light);
+}
+
+/* 7. Weekly Review Modal */
+.weekly-review-card {
+  width: min(100% - 2rem, 580px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.weekly-review-body {
+  overflow-y: auto;
+}
+
+.review-date-range {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #a78bfa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.review-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 500px) {
+  .review-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.review-stat-item {
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.stat-big-number {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-sub-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+.review-section-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 1.15rem 0 0.4rem 0;
+}
+
+.review-prose {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.weekly-review-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-light);
+}
+
+/* 8. Bulk Confirm Modal */
+.bulk-confirm-card {
+  width: min(100% - 2rem, 460px);
+}
+
+.bulk-confirm-desc {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.45;
+  margin: 0 0 1rem 0;
+}
+
+.bulk-confirm-summary-box {
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.bulk-confirm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+/* 9. Intelligence Hub Modal */
+.intelligence-hub-card {
+  width: min(100% - 2rem, 540px);
+}
+
+.ai-hub-nl-box {
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.ai-hub-input-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.ai-hub-input-row input {
+  flex: 1;
+}
+
+.ai-hub-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+@media (max-width: 500px) {
+  .ai-hub-actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-hub-action-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.95rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 180ms ease;
+  font-family: inherit;
+}
+
+.ai-hub-action-card:hover {
+  border-color: rgba(139, 92, 246, 0.45);
+  background: var(--panel-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.hub-action-icon {
+  color: #a78bfa;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+[data-theme="light"] .hub-action-icon {
+  color: #6d28d9;
+}
+
+.hub-action-text strong {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+}
+
+.hub-action-text span {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+

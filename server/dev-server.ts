@@ -14,6 +14,14 @@ import taskSubtasksIndexHandler from "../api/tasks/[id]/subtasks/index.js";
 import taskSubtaskIdHandler from "../api/tasks/[id]/subtasks/[subtaskId].js";
 import settingsHandler from "../api/settings/index.js";
 import workspaceImportHandler from "../api/workspace/import.js";
+import aiStatusHandler from "../api/ai/status.js";
+import aiParseTaskHandler from "../api/ai/parse-task.js";
+import aiPlanDayHandler from "../api/ai/plan-day.js";
+import aiBreakDownHandler from "../api/ai/break-down.js";
+import aiProjectPlanHandler from "../api/ai/project-plan.js";
+import aiBriefingHandler from "../api/ai/briefing.js";
+import aiWeeklyReviewHandler from "../api/ai/weekly-review.js";
+import aiCommandIntentHandler from "../api/ai/command-intent.js";
 
 dotenv.config({ override: true });
 
@@ -175,6 +183,40 @@ const server = http.createServer(async (req, res) => {
   // Settings Endpoints
   if (pathname === "/api/settings") {
     await settingsHandler(vercelReq, vercelRes);
+    return;
+  }
+
+  // Momentum Intelligence Endpoints (Stage 6)
+  if (pathname === "/api/ai/status") {
+    await aiStatusHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/ai/parse-task") {
+    await aiParseTaskHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/ai/plan-day") {
+    await aiPlanDayHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/ai/break-down") {
+    await aiBreakDownHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/ai/project-plan") {
+    await aiProjectPlanHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/ai/briefing") {
+    await aiBriefingHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/ai/weekly-review") {
+    await aiWeeklyReviewHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/ai/command-intent") {
+    await aiCommandIntentHandler(vercelReq, vercelRes);
     return;
   }
 

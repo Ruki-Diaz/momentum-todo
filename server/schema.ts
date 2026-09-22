@@ -220,3 +220,27 @@ export type NewTaskTag = typeof taskTags.$inferInsert;
 
 export type WorkspaceImport = typeof workspaceImports.$inferSelect;
 export type NewWorkspaceImport = typeof workspaceImports.$inferInsert;
+
+// =============================================================================
+// 8. AI DAILY USAGE TABLE (Application Safety Quota)
+// =============================================================================
+export const aiDailyUsage = pgTable(
+  "ai_daily_usage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    usageDate: date("usage_date").notNull(),
+    requestCount: integer("request_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    unique("uq_ai_daily_usage_user_date").on(table.userId, table.usageDate),
+    index("idx_ai_daily_usage_user_date").on(table.userId, table.usageDate)
+  ]
+);
+
+export type AIDailyUsage = typeof aiDailyUsage.$inferSelect;
+export type NewAIDailyUsage = typeof aiDailyUsage.$inferInsert;
