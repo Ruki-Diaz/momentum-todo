@@ -5231,11 +5231,13 @@ function setView(viewName) {
 function openMobileSidebar() {
   appSidebar.classList.add("open");
   sidebarOverlay.classList.add("active");
+  document.body.classList.add("sidebar-open");
 }
 
 function closeMobileSidebar() {
   appSidebar.classList.remove("open");
   sidebarOverlay.classList.remove("active");
+  document.body.classList.remove("sidebar-open");
 }
 
 function openMobileBottomSheet() {

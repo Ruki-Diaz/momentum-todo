@@ -430,12 +430,12 @@
        ========================================================= -->
   <div id="appShell">
 
-  <!-- WebGL Ambient Atmospheric Canvas (Layer 0) -->
-  <canvas id="ambientCanvas" class="ambient-canvas" aria-hidden="true"></canvas>
-
-  <!-- Ambient Light Orbs (Layer 1 depth) -->
-  <div class="ambient ambient-one" aria-hidden="true"></div>
-  <div class="ambient ambient-two" aria-hidden="true"></div>
+  <!-- WebGL Ambient Atmospheric Canvas & Orbs (Layer 0) -->
+  <div id="ambientContainer" class="ambient-container" aria-hidden="true">
+    <canvas id="ambientCanvas" class="ambient-canvas"></canvas>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+  </div>
 
   <!-- Mobile Overlay Backdrop -->
   <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
