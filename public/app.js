@@ -1008,6 +1008,7 @@ const userProfileWrap = document.querySelector(".user-profile-wrap");
 const userProfileBtn = document.querySelector("#userProfileBtn");
 const userAccountMenu = document.querySelector("#userAccountMenu");
 const menuSignInBtn = document.querySelector("#menuSignInBtn");
+const menuEditProfileBtn = document.querySelector("#menuEditProfileBtn");
 const menuManageAccountBtn = document.querySelector("#menuManageAccountBtn");
 const menuToggleThemeBtn = document.querySelector("#menuToggleThemeBtn");
 const menuExportDataBtn = document.querySelector("#menuExportDataBtn");
@@ -1023,6 +1024,22 @@ const authModal = document.querySelector("#authModal");
 const closeAuthModalBtn = document.querySelector("#closeAuthModalBtn");
 const clerkAuthMount = document.querySelector("#clerkAuthMount");
 const authLoadingSpinner = document.querySelector("#authLoadingSpinner");
+
+// Display Name Onboarding & Profile Editor Modals
+const displayNameModalOverlay = document.querySelector("#displayNameModalOverlay");
+const dnModalInput = document.querySelector("#dnModalInput");
+const dnModalSubmitBtn = document.querySelector("#dnModalSubmitBtn");
+const dnModalSpinner = document.querySelector("#dnModalSpinner");
+const dnModalError = document.querySelector("#dnModalError");
+
+const profileEditorOverlay = document.querySelector("#profileEditorOverlay");
+const profileEditorCloseBtn = document.querySelector("#profileEditorCloseBtn");
+const profileEditorCancelBtn = document.querySelector("#profileEditorCancelBtn");
+const profileEditorSaveBtn = document.querySelector("#profileEditorSaveBtn");
+const profileEditorSpinner = document.querySelector("#profileEditorSpinner");
+const profileEditorError = document.querySelector("#profileEditorError");
+const profileEditorNameInput = document.querySelector("#profileEditorNameInput");
+const profileEditorEmailDisplay = document.querySelector("#profileEditorEmailDisplay");
 
 
 const heroSection = document.querySelector("#heroSection");
@@ -2121,6 +2138,14 @@ function setupUserProfileMenu() {
     });
   }
 
+  if (menuEditProfileBtn) {
+    menuEditProfileBtn.addEventListener("click", () => {
+      userProfileWrap.classList.remove("open");
+      userProfileBtn.setAttribute("aria-expanded", "false");
+      AuthManager.openProfileEditor();
+    });
+  }
+
   if (menuManageAccountBtn) {
     menuManageAccountBtn.addEventListener("click", () => {
       userProfileWrap.classList.remove("open");
@@ -2182,8 +2207,44 @@ const AuthManager = {
     return this.status === "signed_in" && Boolean(this.currentUser);
   },
 
+  showLanding() {
+    const appShellEl = document.getElementById("appShell");
+    if (appShellEl) {
+      appShellEl.classList.remove("app-shell-visible");
+      appShellEl.hidden = true;
+    }
+    if (typeof LandingPage !== "undefined") {
+      LandingPage.show();
+    }
+  },
+
+  showAppShell() {
+    if (typeof LandingPage !== "undefined") {
+      LandingPage.hide();
+    }
+    const appShellEl = document.getElementById("appShell");
+    if (appShellEl) {
+      appShellEl.classList.add("app-shell-visible");
+      appShellEl.hidden = false;
+    }
+  },
+
   async init() {
     this.setupListeners();
+
+    // Register LandingPage CTA handlers
+    if (typeof LandingPage !== "undefined") {
+      LandingPage.registerCTAHandlers({
+        onGetStarted: () => this.openSignIn(),
+        onSignIn: () => this.openSignIn(),
+        onContinueLocal: () => {
+          localStorage.setItem("momentum-workspace-intent", "local");
+          this.showAppShell();
+          this.setSignedOutState();
+          WorkspaceRepository.switchToLocal();
+        }
+      });
+    }
 
     try {
       // 1. Fetch Clerk Publishable Key safely from backend config endpoint
@@ -2195,8 +2256,16 @@ const AuthManager = {
       this.publishableKey = config.publishableKey;
 
       if (!this.publishableKey) {
-        console.warn("Clerk publishable key not configured; running in Local Mode.");
-        this.setSignedOutState();
+        console.warn("Clerk publishable key not configured; evaluating workspace intent.");
+        const intent = localStorage.getItem("momentum-workspace-intent");
+        if (intent === "local") {
+          this.showAppShell();
+          this.setSignedOutState();
+          await WorkspaceRepository.switchToLocal();
+        } else {
+          this.setSignedOutState();
+          this.showLanding();
+        }
         return;
       }
 
@@ -2217,25 +2286,48 @@ const AuthManager = {
       this.clerk.addListener(async (emission) => {
         const { user, session } = emission || {};
         if (user && session) {
+          this.showAppShell();
           await this.syncUserWithBackend(session);
         } else {
-          this.setSignedOutState();
-          await WorkspaceRepository.switchToLocal();
+          const intent = localStorage.getItem("momentum-workspace-intent");
+          if (intent === "local") {
+            this.showAppShell();
+            this.setSignedOutState();
+            await WorkspaceRepository.switchToLocal();
+          } else {
+            this.setSignedOutState();
+            this.showLanding();
+          }
         }
       });
 
       // 5. Initial auth evaluation
       if (this.clerk.user && this.clerk.session) {
+        this.showAppShell();
         await this.syncUserWithBackend(this.clerk.session);
       } else {
-        this.setSignedOutState();
-        await WorkspaceRepository.switchToLocal();
+        const intent = localStorage.getItem("momentum-workspace-intent");
+        if (intent === "local") {
+          this.showAppShell();
+          this.setSignedOutState();
+          await WorkspaceRepository.switchToLocal();
+        } else {
+          this.setSignedOutState();
+          this.showLanding();
+        }
       }
     } catch (err) {
-      console.warn("Auth initialization fallback to Local Mode:", err);
+      console.warn("Auth initialization fallback:", err);
       this.status = "signed_out";
-      this.setSignedOutState();
-      await WorkspaceRepository.switchToLocal();
+      const intent = localStorage.getItem("momentum-workspace-intent");
+      if (intent === "local") {
+        this.showAppShell();
+        this.setSignedOutState();
+        await WorkspaceRepository.switchToLocal();
+      } else {
+        this.setSignedOutState();
+        this.showLanding();
+      }
     }
   },
 
@@ -2360,8 +2452,6 @@ const AuthManager = {
       const tempSecret = `M0m!_${crypto.randomUUID()}#9Z`;
       this.flowState.tempSecret = tempSecret;
 
-
-
       // 1. Try initiating Sign-In with email code
       let signInSuccess = false;
       try {
@@ -2369,14 +2459,12 @@ const AuthManager = {
           identifier: email
         });
 
-
         // Check for direct email_code factor in supportedFirstFactors
         const emailCodeFactor = signIn.supportedFirstFactors?.find(
           (f) => f.strategy === "email_code"
         );
 
         if (emailCodeFactor && emailCodeFactor.emailAddressId) {
-
           await signIn.prepareFirstFactor({
             strategy: "email_code",
             emailAddressId: emailCodeFactor.emailAddressId
@@ -2395,7 +2483,6 @@ const AuthManager = {
         );
 
         if (resetCodeFactor && resetCodeFactor.emailAddressId) {
-
           await signIn.prepareFirstFactor({
             strategy: "reset_password_email_code",
             emailAddressId: resetCodeFactor.emailAddressId
@@ -2414,27 +2501,21 @@ const AuthManager = {
       if (signInSuccess) return;
 
       // 2. User is new or needs Sign-Up -> Initiate Sign-Up
-
       let signUp = null;
       try {
-        // Attempt with temp secret to satisfy any instance password requirements seamlessly
         signUp = await this.clerk.client.signUp.create({
           emailAddress: email,
           password: tempSecret
         });
       } catch (signUpWithPwErr) {
-        // Password-based create failed; retrying with email-only
         signUp = await this.clerk.client.signUp.create({
           emailAddress: email
         });
       }
 
-
-
       await signUp.prepareEmailAddressVerification({
         strategy: "email_code"
       });
-
 
       this.flowState.mode = "sign_up";
       this.flowState.emailAddressId = null;
@@ -2470,13 +2551,11 @@ const AuthManager = {
     try {
       let createdSessionId = null;
 
-
       if (this.flowState.mode === "sign_in_email_code") {
         const result = await this.clerk.client.signIn.attemptFirstFactor({
           strategy: "email_code",
           code: code
         });
-
 
         if (result.status === "complete") {
           createdSessionId = result.createdSessionId;
@@ -2490,7 +2569,6 @@ const AuthManager = {
           password: this.flowState.tempSecret
         });
 
-
         if (result.status === "complete") {
           createdSessionId = result.createdSessionId;
         } else {
@@ -2501,7 +2579,6 @@ const AuthManager = {
           code: code
         });
 
-
         if (result.status === "complete") {
           createdSessionId = result.createdSessionId;
         } else if (result.status === "missing_requirements") {
@@ -2511,7 +2588,6 @@ const AuthManager = {
           console.warn("[Momentum Auth] SignUp missing requirements:", allMissing);
 
           if (allMissing.includes("password")) {
-            // Fulfill password requirement automatically so user is never blocked
             const updated = await this.clerk.client.signUp.update({
               password: this.flowState.tempSecret || `M0m!_${crypto.randomUUID()}#9Z`
             });
@@ -2530,7 +2606,6 @@ const AuthManager = {
       }
 
       if (createdSessionId) {
-
         await this.clerk.setActive({ session: createdSessionId });
         if (this.clerk.session) {
           await this.syncUserWithBackend(this.clerk.session);
@@ -2618,16 +2693,227 @@ const AuthManager = {
       this.status = "signed_in";
       this.setSignedInState(user);
       this.closeSignInModal();
-      showToast(`Welcome back, ${user.displayName || user.email || "Explorer"}!`, 3000);
+
+      // Check if user needs display name onboarding
+      const hasDisplayName = Boolean(user.displayName && user.displayName.trim());
+      if (!hasDisplayName) {
+        this.openDisplayNameModal(user);
+      } else {
+        showToast(`Welcome back, ${user.displayName || "Explorer"}!`, 3000);
+      }
 
       // Switch to Cloud Workspace
       await WorkspaceRepository.switchToCloud(user);
+      render();
     } catch (err) {
       console.error("Backend identity verification failed:", err);
       this.status = "signed_out";
-      this.setSignedOutState();
-      await WorkspaceRepository.switchToLocal();
+      const intent = localStorage.getItem("momentum-workspace-intent");
+      if (intent === "local") {
+        this.showAppShell();
+        this.setSignedOutState();
+        await WorkspaceRepository.switchToLocal();
+      } else {
+        this.setSignedOutState();
+        this.showLanding();
+      }
       showToast("Authentication sync failed. Running in Local Mode.", 3500);
+    }
+  },
+
+  // --------------------------------------------------------------------------
+  // Display Name Onboarding Modal
+  // --------------------------------------------------------------------------
+  openDisplayNameModal(user) {
+    const overlay = document.getElementById("displayNameModalOverlay");
+    const input = document.getElementById("dnModalInput");
+    const error = document.getElementById("dnModalError");
+    if (error) {
+      error.textContent = "";
+      error.style.display = "none";
+    }
+    if (input) {
+      input.value = "";
+    }
+    if (overlay) {
+      overlay.classList.add("active");
+      overlay.setAttribute("aria-hidden", "false");
+      setTimeout(() => input?.focus(), 50);
+    }
+  },
+
+  closeDisplayNameModal() {
+    const overlay = document.getElementById("displayNameModalOverlay");
+    if (overlay) {
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+  },
+
+  async handleDisplayNameSubmit() {
+    const input = document.getElementById("dnModalInput");
+    const error = document.getElementById("dnModalError");
+    const spinner = document.getElementById("dnModalSpinner");
+    const btnText = document.querySelector("#dnModalSubmitBtn .dn-modal-btn-text");
+    const btn = document.getElementById("dnModalSubmitBtn");
+
+    const rawName = (input?.value || "").trim();
+    if (!rawName) {
+      if (error) {
+        error.textContent = "Please enter a name.";
+        error.style.display = "block";
+      }
+      return;
+    }
+    if (rawName.length > 50) {
+      if (error) {
+        error.textContent = "Display name cannot exceed 50 characters.";
+        error.style.display = "block";
+      }
+      return;
+    }
+
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.style.display = "none";
+    if (spinner) spinner.style.display = "inline-block";
+    if (error) error.style.display = "none";
+
+    try {
+      const session = this.clerk?.session;
+      const token = session ? await session.getToken() : null;
+      if (!token) throw new Error("Not authenticated");
+
+      const res = await fetch("/api/auth/me", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ displayName: rawName })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || "Failed to update display name.");
+      }
+
+      const { user: updatedUser } = await res.json();
+      this.currentUser = updatedUser;
+      this.setSignedInState(updatedUser);
+      this.closeDisplayNameModal();
+      render();
+      showToast(`Welcome to Momentum, ${updatedUser.displayName}!`, 3000);
+    } catch (err) {
+      console.error("Display name update error:", err);
+      if (error) {
+        error.textContent = err.message || "Failed to save display name. Please try again.";
+        error.style.display = "block";
+      }
+    } finally {
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.style.display = "inline";
+      if (spinner) spinner.style.display = "none";
+    }
+  },
+
+  // --------------------------------------------------------------------------
+  // Profile Editor Modal
+  // --------------------------------------------------------------------------
+  openProfileEditor() {
+    if (!this.currentUser) return;
+    const overlay = document.getElementById("profileEditorOverlay");
+    const nameInput = document.getElementById("profileEditorNameInput");
+    const emailInput = document.getElementById("profileEditorEmailDisplay");
+    const error = document.getElementById("profileEditorError");
+
+    if (error) {
+      error.textContent = "";
+      error.style.display = "none";
+    }
+    if (nameInput) {
+      nameInput.value = this.currentUser.displayName || "";
+    }
+    if (emailInput) {
+      emailInput.value = this.currentUser.email || "";
+    }
+    if (overlay) {
+      overlay.classList.add("active");
+      overlay.setAttribute("aria-hidden", "false");
+      setTimeout(() => nameInput?.focus(), 50);
+    }
+  },
+
+  closeProfileEditor() {
+    const overlay = document.getElementById("profileEditorOverlay");
+    if (overlay) {
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+  },
+
+  async handleProfileSave() {
+    const nameInput = document.getElementById("profileEditorNameInput");
+    const error = document.getElementById("profileEditorError");
+    const spinner = document.getElementById("profileEditorSpinner");
+    const btnText = document.querySelector("#profileEditorSaveBtn .profile-editor-btn-text");
+    const btn = document.getElementById("profileEditorSaveBtn");
+
+    const rawName = (nameInput?.value || "").trim();
+    if (!rawName) {
+      if (error) {
+        error.textContent = "Display name cannot be empty.";
+        error.style.display = "block";
+      }
+      return;
+    }
+    if (rawName.length > 50) {
+      if (error) {
+        error.textContent = "Display name cannot exceed 50 characters.";
+        error.style.display = "block";
+      }
+      return;
+    }
+
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.style.display = "none";
+    if (spinner) spinner.style.display = "inline-block";
+    if (error) error.style.display = "none";
+
+    try {
+      const session = this.clerk?.session;
+      const token = session ? await session.getToken() : null;
+      if (!token) throw new Error("Not authenticated");
+
+      const res = await fetch("/api/auth/me", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ displayName: rawName })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || "Failed to update profile.");
+      }
+
+      const { user: updatedUser } = await res.json();
+      this.currentUser = updatedUser;
+      this.setSignedInState(updatedUser);
+      this.closeProfileEditor();
+      render();
+      showToast("Profile updated successfully.", 3000);
+    } catch (err) {
+      console.error("Profile save error:", err);
+      if (error) {
+        error.textContent = err.message || "Failed to save profile. Please try again.";
+        error.style.display = "block";
+      }
+    } finally {
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.style.display = "inline";
+      if (spinner) spinner.style.display = "none";
     }
   },
 
@@ -2665,11 +2951,12 @@ const AuthManager = {
       }
     }
 
+    localStorage.removeItem("momentum-workspace-intent");
     this.currentUser = null;
     this.status = "signed_out";
     this.setSignedOutState();
-    await WorkspaceRepository.switchToLocal();
-    showToast("Signed out. Local workspace is active.", 2500);
+    this.showLanding();
+    showToast("Signed out.", 2500);
   },
 
   setSignedInState(user) {
@@ -2707,6 +2994,7 @@ const AuthManager = {
     if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = user.email || "Cloud Account";
 
     if (menuSignInBtn) menuSignInBtn.style.display = "none";
+    if (menuEditProfileBtn) menuEditProfileBtn.style.display = "flex";
     if (menuManageAccountBtn) menuManageAccountBtn.style.display = "flex";
     if (menuSignOutBtn) menuSignOutBtn.style.display = "flex";
 
@@ -2738,6 +3026,7 @@ const AuthManager = {
     if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = "Offline-Ready";
 
     if (menuSignInBtn) menuSignInBtn.style.display = "flex";
+    if (menuEditProfileBtn) menuEditProfileBtn.style.display = "none";
     if (menuManageAccountBtn) menuManageAccountBtn.style.display = "none";
     if (menuSignOutBtn) menuSignOutBtn.style.display = "none";
 
@@ -2757,6 +3046,18 @@ const AuthManager = {
     const resendCodeBtn = document.getElementById("authResendCodeBtn");
     const changeEmailBtn = document.getElementById("authChangeEmailBtn");
     const codeInput = document.getElementById("authCodeInput");
+
+    // Display Name Onboarding Modal elements
+    const dnModalSubmitBtn = document.getElementById("dnModalSubmitBtn");
+    const dnModalInput = document.getElementById("dnModalInput");
+    const displayNameModalOverlay = document.getElementById("displayNameModalOverlay");
+
+    // Profile Editor Modal elements
+    const profileEditorCloseBtn = document.getElementById("profileEditorCloseBtn");
+    const profileEditorCancelBtn = document.getElementById("profileEditorCancelBtn");
+    const profileEditorSaveBtn = document.getElementById("profileEditorSaveBtn");
+    const profileEditorOverlay = document.getElementById("profileEditorOverlay");
+    const profileEditorNameInput = document.getElementById("profileEditorNameInput");
 
     if (closeAuthModalBtn) {
       closeAuthModalBtn.addEventListener("click", () => this.closeSignInModal());
@@ -2793,7 +3094,13 @@ const AuthManager = {
     }
 
     if (continueLocalBtn) {
-      continueLocalBtn.addEventListener("click", () => this.closeSignInModal());
+      continueLocalBtn.addEventListener("click", () => {
+        this.closeSignInModal();
+        localStorage.setItem("momentum-workspace-intent", "local");
+        this.showAppShell();
+        this.setSignedOutState();
+        WorkspaceRepository.switchToLocal();
+      });
     }
 
     if (resendCodeBtn) {
@@ -2803,6 +3110,59 @@ const AuthManager = {
     if (changeEmailBtn) {
       changeEmailBtn.addEventListener("click", () => this.setStep(1));
     }
+
+    // Display Name Onboarding Modal listeners
+    if (dnModalSubmitBtn) {
+      dnModalSubmitBtn.addEventListener("click", () => this.handleDisplayNameSubmit());
+    }
+
+    if (dnModalInput) {
+      dnModalInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.handleDisplayNameSubmit();
+        }
+      });
+    }
+
+    // Profile Editor Modal listeners
+    if (profileEditorCloseBtn) {
+      profileEditorCloseBtn.addEventListener("click", () => this.closeProfileEditor());
+    }
+
+    if (profileEditorCancelBtn) {
+      profileEditorCancelBtn.addEventListener("click", () => this.closeProfileEditor());
+    }
+
+    if (profileEditorSaveBtn) {
+      profileEditorSaveBtn.addEventListener("click", () => this.handleProfileSave());
+    }
+
+    if (profileEditorNameInput) {
+      profileEditorNameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.handleProfileSave();
+        }
+      });
+    }
+
+    if (profileEditorOverlay) {
+      profileEditorOverlay.addEventListener("click", (e) => {
+        if (e.target === profileEditorOverlay) {
+          this.closeProfileEditor();
+        }
+      });
+    }
+
+    // Global modal Escape handler
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if (profileEditorOverlay && profileEditorOverlay.classList.contains("active")) {
+          this.closeProfileEditor();
+        }
+      }
+    });
   }
 };
 
@@ -3398,13 +3758,13 @@ function render() {
   const greeting = getTimeGreeting();
   if (heroGreetingText) {
     const authUser = typeof AuthManager !== "undefined" ? AuthManager.currentUser : null;
-    // Extract first name: prefer Clerk first name, otherwise first word of displayName
+    // Extract first name: prefer first word of authoritative displayName, otherwise firstName
     let firstName = "";
     if (authUser) {
-      if (authUser.firstName && authUser.firstName.trim()) {
-        firstName = authUser.firstName.trim();
-      } else if (authUser.displayName && authUser.displayName.trim()) {
+      if (authUser.displayName && authUser.displayName.trim()) {
         firstName = authUser.displayName.trim().split(/\s+/)[0];
+      } else if (authUser.firstName && authUser.firstName.trim()) {
+        firstName = authUser.firstName.trim();
       }
     }
 

@@ -75,6 +75,52 @@ export function validateTags(rawTags: unknown): string[] {
 }
 
 // -----------------------------------------------------------------------------
+// Display Name Validation
+// -----------------------------------------------------------------------------
+
+/**
+ * Validates and normalizes a Momentum display name.
+ * - Trims whitespace
+ * - Rejects empty result
+ * - Counts Unicode codepoints (not bytes) — max 50 codepoints
+ * - Accepts international names, punctuation, accents, scripts
+ * - Rejects ASCII/Unicode control characters and line breaks
+ */
+export function validateDisplayName(value: unknown): string {
+  if (typeof value !== "string") {
+    throw new ApiError(400, "VALIDATION_ERROR", "displayName must be a string");
+  }
+
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    throw new ApiError(400, "VALIDATION_ERROR", "displayName cannot be empty");
+  }
+
+  // Count Unicode codepoints using spread (handles surrogate pairs correctly)
+  const codepoints = [...trimmed];
+  if (codepoints.length > 50) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      "displayName must be 50 characters or fewer"
+    );
+  }
+
+  // Reject control characters (U+0000–U+001F, U+007F–U+009F) and vertical whitespace
+  // This covers line feeds, carriage returns, tabs, null bytes, etc.
+  if (/[\u0000-\u001F\u007F-\u009F\u2028\u2029]/.test(trimmed)) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      "displayName contains invalid characters"
+    );
+  }
+
+  return trimmed;
+}
+
+// -----------------------------------------------------------------------------
 // Project Validation
 // -----------------------------------------------------------------------------
 export interface ValidatedProjectInput {

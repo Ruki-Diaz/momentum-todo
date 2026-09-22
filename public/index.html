@@ -7,6 +7,7 @@
   <meta name="description" content="A calm, editorial, and cinematic personal productivity workspace.">
   <meta name="color-scheme" content="dark light">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="landing.css">
   <script>
     // Initialize theme instantly to avoid Flash of Unstyled Content
     (function() {
@@ -25,6 +26,381 @@
   </script>
 </head>
 <body>
+
+  <!-- =========================================================
+       LANDING PAGE LAYER — shown to unauthenticated visitors
+       that have NOT chosen Local Mode.
+       Controlled exclusively by AuthManager in app.js.
+       ========================================================= -->
+
+  <!-- Landing WebGL atmospheric canvas (separate from dashboard canvas) -->
+  <canvas id="landingCanvas" class="landing-canvas" aria-hidden="true"></canvas>
+
+  <!-- Landing Page -->
+  <div id="landingPage" class="landing-page landing-hidden" role="main" aria-label="Momentum landing page">
+
+    <!-- ── Navigation ── -->
+    <nav class="landing-nav" role="navigation" aria-label="Momentum main navigation">
+      <a class="landing-nav-brand" href="#" aria-label="Momentum home">
+        <span class="landing-nav-brand-name">Momentum</span>
+        <span class="landing-nav-brand-dot" aria-hidden="true">●</span>
+      </a>
+      <div class="landing-nav-actions">
+        <button id="landingNavSignInBtn" class="landing-nav-link" type="button">Sign in</button>
+        <button id="landingNavGetStartedBtn" class="landing-nav-cta" type="button">Get started</button>
+      </div>
+    </nav>
+
+    <!-- ── Hero ── -->
+    <section class="landing-hero" aria-labelledby="heroHeadline">
+      <div class="landing-hero-content">
+        <span class="landing-hero-eyebrow">
+          <span class="landing-hero-eyebrow-line" aria-hidden="true"></span>
+          Personal Productivity
+        </span>
+        <h1 id="heroHeadline" class="landing-hero-headline">
+          Your day,<br>
+          with <em>intention.</em>
+        </h1>
+        <p class="landing-hero-sub">
+          A focused workspace for planning what matters,
+          organising your day, and building momentum that lasts.
+        </p>
+        <div class="landing-hero-actions">
+          <button id="landingHeroGetStartedBtn" class="landing-btn-primary" type="button">Get started — it's free</button>
+          <button id="landingExploreBtn" class="landing-btn-secondary" type="button">Explore Momentum</button>
+        </div>
+        <button id="landingLocalModeBtn" class="landing-local-mode-link" type="button" aria-label="Continue without an account in local mode">
+          Continue in Local Mode →
+        </button>
+      </div>
+
+      <!-- CSS-rendered product preview mock -->
+      <div class="landing-hero-preview" aria-hidden="true">
+        <div class="preview-window">
+          <!-- Window chrome -->
+          <div class="preview-chrome">
+            <div class="preview-chrome-dot"></div>
+            <div class="preview-chrome-dot"></div>
+            <div class="preview-chrome-dot"></div>
+            <span class="preview-chrome-title">Momentum</span>
+          </div>
+          <!-- App body -->
+          <div class="preview-body">
+            <!-- Sidebar -->
+            <div class="preview-sidebar">
+              <div class="preview-brand-row">
+                <span class="preview-brand-name">Momentum</span>
+                <span class="preview-brand-dot">●</span>
+              </div>
+              <p class="preview-nav-label">Navigation</p>
+              <div class="preview-nav-item active">
+                <div class="preview-nav-dot"></div>
+                Today
+                <span class="preview-nav-badge">3</span>
+              </div>
+              <div class="preview-nav-item">
+                <div class="preview-nav-dot"></div>
+                Inbox
+              </div>
+              <div class="preview-nav-item">
+                <div class="preview-nav-dot"></div>
+                Upcoming
+              </div>
+              <div class="preview-nav-item">
+                <div class="preview-nav-dot"></div>
+                Calendar
+              </div>
+              <p class="preview-nav-label">Projects</p>
+              <div class="preview-nav-item">
+                <div class="preview-nav-dot" style="background:#f08352"></div>
+                Design Work
+              </div>
+              <div class="preview-nav-item">
+                <div class="preview-nav-dot" style="background:#4e9d75"></div>
+                Personal
+              </div>
+            </div>
+            <!-- Main -->
+            <div class="preview-main">
+              <div class="preview-header-row">
+                <div class="preview-date-label">Monday, September 22</div>
+                <div class="preview-greeting">Good morning, <em>Alex.</em></div>
+              </div>
+              <div class="preview-stats">
+                <div class="preview-stat">
+                  <span class="preview-stat-val">3</span>
+                  <span class="preview-stat-lbl">Today</span>
+                </div>
+                <div class="preview-stat">
+                  <span class="preview-stat-val">1</span>
+                  <span class="preview-stat-lbl">Overdue</span>
+                </div>
+                <div class="preview-stat">
+                  <span class="preview-stat-val">12</span>
+                  <span class="preview-stat-lbl">Done</span>
+                </div>
+                <div class="preview-stat">
+                  <span class="preview-stat-val">5🔥</span>
+                  <span class="preview-stat-lbl">Streak</span>
+                </div>
+              </div>
+              <div class="preview-task-list">
+                <div class="preview-task">
+                  <div class="preview-task-check"></div>
+                  <div class="preview-task-title">Review product brief</div>
+                  <div class="preview-task-priority high">High</div>
+                </div>
+                <div class="preview-task">
+                  <div class="preview-task-check"></div>
+                  <div class="preview-task-title">Write weekly report</div>
+                  <div class="preview-task-priority medium">Med</div>
+                </div>
+                <div class="preview-task completed">
+                  <div class="preview-task-check checked"></div>
+                  <div class="preview-task-title">Morning planning session</div>
+                  <div class="preview-task-priority low">Low</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Scroll sections ── -->
+    <div class="landing-sections">
+
+      <!-- Section 1: Today -->
+      <section class="landing-section" aria-labelledby="sectionTodayHeading">
+        <div class="landing-section-content">
+          <div class="landing-section-tag">Today</div>
+          <h2 id="sectionTodayHeading" class="landing-section-heading">Start every day<br>with <em>clarity.</em></h2>
+          <p class="landing-section-body">
+            Your Today view surfaces the three things that actually matter right now.
+            Overdue tasks surface automatically — nothing slips through unnoticed.
+          </p>
+        </div>
+        <div class="landing-section-visual" aria-hidden="true">
+          <div class="vis-tasks">
+            <div class="vis-task-row">
+              <div class="vis-task-circle"></div>
+              <div class="vis-task-bar" style="max-width:140px"></div>
+              <div class="vis-task-tag"></div>
+            </div>
+            <div class="vis-task-row">
+              <div class="vis-task-circle"></div>
+              <div class="vis-task-bar" style="max-width:100px"></div>
+              <div class="vis-task-tag" style="background:rgba(78,157,117,0.15)"></div>
+            </div>
+            <div class="vis-task-row" style="opacity:0.5">
+              <div class="vis-task-circle done"></div>
+              <div class="vis-task-bar" style="max-width:80px;opacity:0.4"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Plan -->
+      <section class="landing-section reverse" aria-labelledby="sectionPlanHeading">
+        <div class="landing-section-content">
+          <div class="landing-section-tag">Plan</div>
+          <h2 id="sectionPlanHeading" class="landing-section-heading">A calm view<br>of what lies <em>ahead.</em></h2>
+          <p class="landing-section-body">
+            The calendar and Upcoming views let you plan across days and weeks without anxiety.
+            Projects keep related tasks together, so nothing gets scattered.
+          </p>
+        </div>
+        <div class="landing-section-visual" aria-hidden="true">
+          <div class="vis-calendar">
+            <div class="vis-cal-header">M</div>
+            <div class="vis-cal-header">T</div>
+            <div class="vis-cal-header">W</div>
+            <div class="vis-cal-header">T</div>
+            <div class="vis-cal-header">F</div>
+            <div class="vis-cal-header">S</div>
+            <div class="vis-cal-header">S</div>
+            <div class="vis-cal-day">20</div>
+            <div class="vis-cal-day">21</div>
+            <div class="vis-cal-day today">22</div>
+            <div class="vis-cal-day has-task">23</div>
+            <div class="vis-cal-day has-task">24</div>
+            <div class="vis-cal-day">25</div>
+            <div class="vis-cal-day">26</div>
+            <div class="vis-cal-day has-task">27</div>
+            <div class="vis-cal-day">28</div>
+            <div class="vis-cal-day">29</div>
+            <div class="vis-cal-day">30</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Momentum -->
+      <section class="landing-section" aria-labelledby="sectionMomentumHeading">
+        <div class="landing-section-content">
+          <div class="landing-section-tag">Momentum</div>
+          <h2 id="sectionMomentumHeading" class="landing-section-heading">Build a streak.<br>Keep the <em>momentum.</em></h2>
+          <p class="landing-section-body">
+            A daily completion streak rewards consistency, not busyness.
+            Your history shows everything you've achieved — not just what remains.
+          </p>
+        </div>
+        <div class="landing-section-visual" aria-hidden="true">
+          <div class="vis-streak">
+            <div class="vis-streak-number">12</div>
+            <div class="vis-streak-label">Day streak — keep going.</div>
+            <div class="vis-streak-days">
+              <div class="vis-day-dot filled"></div>
+              <div class="vis-day-dot filled"></div>
+              <div class="vis-day-dot filled"></div>
+              <div class="vis-day-dot filled"></div>
+              <div class="vis-day-dot filled"></div>
+              <div class="vis-day-dot filled"></div>
+              <div class="vis-day-dot"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Data Ownership -->
+      <section class="landing-section reverse" aria-labelledby="sectionDataHeading">
+        <div class="landing-section-content">
+          <div class="landing-section-tag">Your Data</div>
+          <h2 id="sectionDataHeading" class="landing-section-heading">Local or cloud.<br><em>Your choice.</em></h2>
+          <p class="landing-section-body">
+            Start in Local Mode — no account required, your data stays on this device.
+            Sign in anytime to sync your workspace across devices with Momentum Cloud.
+          </p>
+        </div>
+        <div class="landing-section-visual" aria-hidden="true">
+          <div class="vis-data">
+            <div class="vis-data-row local">
+              <div class="vis-data-icon local-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="vis-data-text">
+                <div class="vis-data-title">Local Mode</div>
+                <div class="vis-data-sub">Private · Offline-ready · This device</div>
+              </div>
+            </div>
+            <div class="vis-data-row cloud">
+              <div class="vis-data-icon cloud-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+              </div>
+              <div class="vis-data-text">
+                <div class="vis-data-title">Cloud Workspace</div>
+                <div class="vis-data-sub">Synced · Backed up · Any device</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /.landing-sections -->
+
+    <!-- ── Final CTA ── -->
+    <section class="landing-cta" aria-labelledby="ctaHeading">
+      <h2 id="ctaHeading" class="landing-cta-headline">Start building<br><em>momentum.</em></h2>
+      <p class="landing-cta-sub">Free. No credit card. Works offline. Your data, your rules.</p>
+      <div class="landing-cta-actions">
+        <button id="landingCtaGetStartedBtn" class="landing-btn-primary" type="button">Create a free account</button>
+        <button class="landing-btn-secondary" type="button" id="landingCtaLocalBtn">Continue in Local Mode</button>
+      </div>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer class="landing-footer" role="contentinfo">
+      <span class="landing-footer-brand">
+        <span class="landing-footer-name">Momentum</span>
+        <span class="landing-footer-dot">●</span>
+      </span>
+      <span class="landing-footer-text">A personal productivity workspace.</span>
+    </footer>
+
+  </div><!-- /#landingPage -->
+
+  <!-- Display Name Onboarding Modal (shown after auth when displayName is missing) -->
+  <div id="displayNameModalOverlay" class="dn-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="dnModalHeadline" aria-hidden="true">
+    <div class="dn-modal-card">
+      <div class="dn-modal-brand">
+        <span class="dn-modal-brand-name">Momentum</span>
+        <span class="dn-modal-brand-dot" aria-hidden="true">●</span>
+      </div>
+      <h2 id="dnModalHeadline" class="dn-modal-headline">What should we<br>call you?</h2>
+      <p class="dn-modal-sub">This is how Momentum will greet you and display your name across your workspace.</p>
+      <div id="dnModalError" class="dn-modal-error" role="alert"></div>
+      <div class="dn-modal-field">
+        <label for="dnModalInput" class="dn-modal-label">Display Name</label>
+        <input
+          id="dnModalInput"
+          class="dn-modal-input"
+          type="text"
+          placeholder="Your name"
+          maxlength="60"
+          autocomplete="given-name"
+          spellcheck="false"
+        />
+        <p class="dn-modal-hint">Your first name works great. Up to 50 characters, any language.</p>
+      </div>
+      <div class="dn-modal-actions">
+        <button id="dnModalSubmitBtn" class="dn-modal-submit" type="button">
+          <span class="dn-modal-btn-text">Continue to Workspace</span>
+          <div class="dn-spinner" id="dnModalSpinner" style="display:none"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Editor Modal -->
+  <div id="profileEditorOverlay" class="profile-editor-overlay" role="dialog" aria-modal="true" aria-labelledby="profileEditorTitle" aria-hidden="true">
+    <div class="profile-editor-card">
+      <div class="profile-editor-header">
+        <h3 id="profileEditorTitle" class="profile-editor-title">Edit Profile</h3>
+        <button id="profileEditorCloseBtn" class="profile-editor-close" type="button" aria-label="Close profile editor">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="profileEditorError" class="profile-editor-error" role="alert"></div>
+      <div class="profile-editor-field">
+        <label for="profileEditorNameInput" class="profile-editor-label">Display Name</label>
+        <input
+          id="profileEditorNameInput"
+          class="profile-editor-input"
+          type="text"
+          placeholder="Your name"
+          maxlength="60"
+          spellcheck="false"
+        />
+        <p class="profile-editor-hint">Shown in greetings and your workspace profile. Up to 50 characters.</p>
+      </div>
+      <div class="profile-editor-field">
+        <label for="profileEditorEmailDisplay" class="profile-editor-label">Email</label>
+        <input
+          id="profileEditorEmailDisplay"
+          class="profile-editor-input"
+          type="email"
+          readonly
+          aria-readonly="true"
+          aria-label="Email address (managed by authentication provider, read only)"
+        />
+        <p class="profile-editor-hint">Managed by your authentication provider.</p>
+      </div>
+      <div class="profile-editor-footer">
+        <button id="profileEditorCancelBtn" class="profile-editor-cancel" type="button">Cancel</button>
+        <button id="profileEditorSaveBtn" class="profile-editor-save" type="button">
+          <span class="profile-editor-btn-text">Save</span>
+          <div class="dn-spinner" id="profileEditorSpinner" style="display:none"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       APP SHELL — Momentum dashboard
+       Hidden by default; shown by AuthManager routing.
+       ========================================================= -->
+  <div id="appShell">
+
   <!-- WebGL Ambient Atmospheric Canvas (Layer 0) -->
   <canvas id="ambientCanvas" class="ambient-canvas" aria-hidden="true"></canvas>
 
@@ -181,6 +557,10 @@
             <button class="account-menu-item" id="menuSignInBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
               <span>Sign In / Create Account</span>
+            </button>
+            <button class="account-menu-item" id="menuEditProfileBtn" type="button" role="menuitem" style="display: none;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span>Edit Profile</span>
             </button>
             <button class="account-menu-item" id="menuManageAccountBtn" type="button" role="menuitem" style="display: none;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -937,6 +1317,8 @@
     </div>
   </div>
 
+  </div><!-- /#appShell -->
+
   <!-- Authentication Modal (Email-Only Passwordless + Google + Local Mode) -->
   <div id="authModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="authModal" class="modal-card auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="authStepTitle">
@@ -1048,6 +1430,8 @@
         </div>
       </div>
     </div>
+  </div>
+
   <!-- Workspace Import Modal -->
   <div id="importModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="importModal" class="modal-card import-modal-card" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
@@ -1092,6 +1476,7 @@
     </div>
   </div>
 
+  <script src="landing.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

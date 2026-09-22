@@ -139,7 +139,10 @@ export async function requireAuthUser(req: VercelRequest | Request) {
       target: schema.users.authProviderId,
       set: {
         email,
-        displayName,
+        // Only overwrite displayName when Clerk provides a real name.
+        // If Clerk has no name (null), preserve the existing Neon displayName
+        // so that Momentum-set display names are never erased on login.
+        ...(displayName !== null ? { displayName } : {}),
         avatarUrl,
         updatedAt: new Date()
       }
