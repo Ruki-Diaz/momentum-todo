@@ -24,6 +24,18 @@
   ],
   "rewrites": [
     {
+      "source": "/api/auth/config",
+      "destination": "/api/auth/me?action=config"
+    },
+    {
+      "source": "/api/tasks/:id/complete",
+      "destination": "/api/tasks/:id?action=complete"
+    },
+    {
+      "source": "/api/ai/status",
+      "destination": "/api/ai?action=status"
+    },
+    {
       "source": "/",
       "destination": "/index.html"
     }

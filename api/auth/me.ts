@@ -31,6 +31,23 @@ function serializeUser(user: {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ==========================================================================
+  // GET /api/auth/config — Return public Clerk publishable key
+  // ==========================================================================
+  if (req.query.action === "config" || req.url?.includes("/api/auth/config") || req.url?.includes("/config")) {
+    if (req.method !== "GET") {
+      res.setHeader("Allow", "GET");
+      return res.status(405).json({
+        error: {
+          code: "METHOD_NOT_ALLOWED",
+          message: `Method ${req.method} is not allowed on this endpoint.`
+        }
+      });
+    }
+    const publishableKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || "";
+    return res.status(200).json({ publishableKey });
+  }
+
+  // ==========================================================================
   // GET /api/auth/me — Return current authenticated user profile
   // ==========================================================================
   if (req.method === "GET") {

@@ -160,3 +160,5 @@ export async function requireAuthUser(req: VercelRequest | Request) {
 
   return user;
 }
+
+export type AuthUser = typeof schema.users.$inferSelect;

@@ -41,6 +41,9 @@ export interface AIProvider {
 
 let _provider: AIProvider | null = null;
 
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
 export function getProvider(): AIProvider {
   if (_provider) return _provider;
 

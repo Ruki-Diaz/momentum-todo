@@ -6128,9 +6128,9 @@ const MomentumAI = {
 
   async apiCall(endpoint, payload = {}) {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    const res = await ApiClient.request(`/ai/${endpoint}`, {
+    const res = await ApiClient.request(`/ai`, {
       method: "POST",
-      body: { ...payload, timezone: tz }
+      body: { action: endpoint, ...payload, timezone: tz }
     });
     return res.data;
   },
