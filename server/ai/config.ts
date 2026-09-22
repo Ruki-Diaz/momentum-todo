@@ -36,7 +36,7 @@ export function getAIConfig(): AIConfig {
   const provider = process.env.AI_PROVIDER || "stub";
   const model = process.env.AI_MODEL || (provider === "google" ? "gemini-3.1-flash-lite" : "gpt-5.6-luna");
   const maxContextTasks = parseInt(process.env.AI_MAX_CONTEXT_TASKS || "50", 10);
-  const timeoutMs = parseInt(process.env.AI_TIMEOUT_MS || "15000", 10);
+  const timeoutMs = parseInt(process.env.AI_TIMEOUT_MS || "50000", 10);
   const dailyRequestLimit = parseInt(process.env.AI_DAILY_REQUEST_LIMIT || "25", 10);
 
   _config = {
@@ -44,7 +44,7 @@ export function getAIConfig(): AIConfig {
     provider,
     model,
     maxContextTasks: isNaN(maxContextTasks) ? 50 : Math.min(maxContextTasks, 100),
-    timeoutMs: isNaN(timeoutMs) ? 15000 : Math.min(timeoutMs, 30000),
+    timeoutMs: isNaN(timeoutMs) ? 50000 : Math.min(timeoutMs, 60000),
     maxInputChars: 8000,
     maxOutputTokens: 1024,
     dailyRequestLimit: isNaN(dailyRequestLimit) || dailyRequestLimit <= 0 ? 25 : dailyRequestLimit,

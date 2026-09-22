@@ -165,6 +165,7 @@ Guidelines:
 - Include brief lunch/break or buffer blocks where appropriate (taskRef: null).
 - Match taskRef accurately to candidate tasks ("t1", "t2", etc.).
 - Set focus to a concise 1-sentence guiding focus for the day.
+- Generate 3 to 5 focused blocks max. Keep descriptions concise.
 - Set disclaimer: "Suggested schedule. Adjust blocks anytime to fit your actual workday."`;
 
   // Enforce daily per-user safety quota
@@ -175,7 +176,7 @@ Guidelines:
     input: `Plan my day for ${targetDate}. Total candidate tasks: ${contexts.length}.`,
     schema: planDaySchema,
     schemaName: "plan_day_schedule",
-    maxOutputTokens: 1024
+    maxOutputTokens: 512
   });
 
   const validatedPlan = validatePlanDayResponse(rawResponse);
@@ -277,7 +278,7 @@ Target deadline: ${targetDate || "Flexible"}.
 Guidelines:
 - Create an inspiring and clear projectName (e.g. "Brand Redesign 2026").
 - Provide a brief 1-2 sentence description summarizing the mission.
-- Propose 4 to 8 sequential, high-impact tasks.
+- Propose 4 to 6 sequential, high-impact tasks. Keep task descriptions concise.
 - For each task, designate priority ("high", "medium", "low"), an estimated dueDate (YYYY-MM-DD on or after ${today}), 1 to 3 relevant tags, and 1 to 4 subtasks.
 - Ensure task due dates are in realistic chronological order leading up to ${targetDate || "completion"}.
 - Do NOT perform any database operations. Return only the proposal structure.`;
@@ -290,7 +291,7 @@ Guidelines:
     input: `Project goal: ${escapeUserContent(goal.trim())}${targetDate ? ` | Target: ${targetDate}` : ""}`,
     schema: projectPlanSchema,
     schemaName: "project_plan_proposal",
-    maxOutputTokens: 1024
+    maxOutputTokens: 600
   });
 
   const proposal = validateProjectPlanResponse(rawResponse);

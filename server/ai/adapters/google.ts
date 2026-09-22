@@ -40,69 +40,89 @@ class GoogleProvider implements AIProvider {
     const model = params.model ?? cfg.model;
 
     let response: any;
-    try {
-      // Execute generateContent with timeout control
-      const generatePromise = client.models.generateContent({
-        model,
-        contents: params.input,
-        config: {
-          systemInstruction: params.system,
-          responseMimeType: "application/json",
-          responseSchema: params.schema,
-          temperature: params.temperature ?? 0.2,
-          maxOutputTokens: params.maxOutputTokens ?? cfg.maxOutputTokens
+    let attempts = 0;
+    const maxAttempts = 2;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        // Execute generateContent with timeout control
+        const generatePromise = client.models.generateContent({
+          model,
+          contents: params.input,
+          config: {
+            systemInstruction: params.system,
+            responseMimeType: "application/json",
+            responseSchema: params.schema,
+            temperature: params.temperature ?? 0.2,
+            maxOutputTokens: params.maxOutputTokens ?? cfg.maxOutputTokens
+          }
+        });
+
+        // Wrap with timeout
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new AIError(500, "AI_TIMEOUT", `Gemini request timed out after ${cfg.timeoutMs}ms.`));
+          }, cfg.timeoutMs);
+        });
+
+        response = await Promise.race([generatePromise, timeoutPromise]);
+        break;
+      } catch (err: any) {
+        if (err instanceof AIError && err.code === "AI_TIMEOUT") {
+          throw err;
         }
-      });
 
-      // Wrap with timeout
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new AIError(500, "AI_TIMEOUT", `Gemini request timed out after ${cfg.timeoutMs}ms.`));
-        }, cfg.timeoutMs);
-      });
+        const status = err?.status ?? err?.statusCode;
+        const msg = String(err?.message || "");
 
-      response = await Promise.race([generatePromise, timeoutPromise]);
-    } catch (err: any) {
-      if (err instanceof AIError) {
-        throw err;
+        // If it's a 503 / UNAVAILABLE / capacity error and we have retries remaining, wait 1s and retry
+        if (
+          attempts < maxAttempts &&
+          (status === 503 ||
+            msg.includes("UNAVAILABLE") ||
+            msg.includes("high demand") ||
+            msg.includes("capacity"))
+        ) {
+          console.warn(`[Gemini Adapter] Transient provider capacity error (attempt ${attempts}/${maxAttempts}), retrying in 1s...`);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          continue;
+        }
+
+        // Handle 429 / quota exhaustion
+        if (
+          status === 429 ||
+          msg.includes("RESOURCE_EXHAUSTED") ||
+          msg.includes("quota") ||
+          msg.includes("rate limit")
+        ) {
+          throw new AIError(
+            429,
+            "AI_RATE_LIMITED",
+            "Momentum Intelligence has reached its current AI capacity. Please try again later."
+          );
+        }
+
+        // Handle 503 / UNAVAILABLE / temporary provider capacity problems
+        if (
+          status === 503 ||
+          msg.includes("UNAVAILABLE") ||
+          msg.includes("high demand") ||
+          msg.includes("capacity")
+        ) {
+          throw new AIError(
+            503,
+            "AI_UNAVAILABLE",
+            "Momentum Intelligence is temporarily unavailable. Please try again shortly."
+          );
+        }
+
+        if (err?.code === "ETIMEDOUT" || err?.code === "ECONNABORTED" || msg.includes("timeout")) {
+          throw new AIError(500, "AI_TIMEOUT", `Gemini request timed out after ${cfg.timeoutMs}ms.`);
+        }
+
+        throw new AIError(500, "AI_PROVIDER_ERROR", `Gemini API error: ${msg}`);
       }
-
-      const status = err?.status ?? err?.statusCode;
-      const msg = String(err?.message || "");
-
-      // Handle 429 / quota exhaustion
-      if (
-        status === 429 ||
-        msg.includes("RESOURCE_EXHAUSTED") ||
-        msg.includes("quota") ||
-        msg.includes("rate limit")
-      ) {
-        throw new AIError(
-          429,
-          "AI_RATE_LIMITED",
-          "Momentum Intelligence has reached its current AI capacity. Please try again later."
-        );
-      }
-
-      // Handle 503 / UNAVAILABLE / temporary provider capacity problems
-      if (
-        status === 503 ||
-        msg.includes("UNAVAILABLE") ||
-        msg.includes("high demand") ||
-        msg.includes("capacity")
-      ) {
-        throw new AIError(
-          503,
-          "AI_UNAVAILABLE",
-          "Momentum Intelligence is temporarily unavailable. Please try again shortly."
-        );
-      }
-
-      if (err?.code === "ETIMEDOUT" || err?.code === "ECONNABORTED" || msg.includes("timeout")) {
-        throw new AIError(500, "AI_TIMEOUT", `Gemini request timed out after ${cfg.timeoutMs}ms.`);
-      }
-
-      throw new AIError(500, "AI_PROVIDER_ERROR", `Gemini API error: ${msg}`);
     }
 
     // Extract structured text output
