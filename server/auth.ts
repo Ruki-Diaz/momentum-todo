@@ -19,8 +19,10 @@ export const clerkClient = createClerkClient({
   publishableKey: publishableKey || ""
 });
 
-// Configured authorized parties for local development and production
-const defaultAuthorizedParties = [
+const isProduction = process.env.NODE_ENV === "production";
+
+// Configured authorized parties: environment-driven in production, localhost in development
+const devAuthorizedParties = [
   "http://localhost:8088",
   "http://127.0.0.1:8088",
   "http://localhost:3000",
@@ -33,7 +35,9 @@ const customAuthorizedParties = process.env.AUTHORIZED_PARTIES
   ? process.env.AUTHORIZED_PARTIES.split(",").map((s) => s.trim()).filter(Boolean)
   : [];
 
-export const authorizedParties = Array.from(new Set([...defaultAuthorizedParties, ...customAuthorizedParties]));
+export const authorizedParties = isProduction
+  ? customAuthorizedParties
+  : Array.from(new Set([...devAuthorizedParties, ...customAuthorizedParties]));
 
 /**
  * Converts incoming Node/Vercel request to standard Web Request for Clerk SDK

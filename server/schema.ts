@@ -44,6 +44,8 @@ export const userSettings = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     theme: varchar("theme", { length: 20 }).notNull().default("dark"),
     sortPreference: varchar("sort_preference", { length: 30 }).notNull().default("smart"),
+    onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+    timezone: varchar("timezone", { length: 100 }).notNull().default("UTC"),
     version: integer("version").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()

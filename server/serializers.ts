@@ -102,6 +102,8 @@ export function serializeTask(
 export interface SerializedUserSettings {
   theme: string;
   sortPreference: string;
+  onboardingCompleted: boolean;
+  timezone: string;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -111,6 +113,8 @@ export function serializeUserSettings(settings: UserSettings): SerializedUserSet
   return {
     theme: settings.theme,
     sortPreference: settings.sortPreference,
+    onboardingCompleted: Boolean(settings.onboardingCompleted),
+    timezone: settings.timezone || "UTC",
     version: settings.version,
     createdAt: settings.createdAt instanceof Date ? settings.createdAt.toISOString() : new Date(settings.createdAt).toISOString(),
     updatedAt: settings.updatedAt instanceof Date ? settings.updatedAt.toISOString() : new Date(settings.updatedAt).toISOString()

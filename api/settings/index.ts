@@ -63,14 +63,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw new ApiError(409, "STALE_VERSION", "Your settings were updated on another device.");
       }
 
+      const updatePayload: any = {
+        theme: input.theme !== undefined ? input.theme : current.theme,
+        sortPreference: input.sortPreference !== undefined ? input.sortPreference : current.sortPreference,
+        version: current.version + 1,
+        updatedAt: new Date()
+      };
+
+      if (input.onboardingCompleted !== undefined) {
+        updatePayload.onboardingCompleted = input.onboardingCompleted;
+      }
+      if (input.timezone !== undefined) {
+        updatePayload.timezone = input.timezone;
+      }
+
       const updated = await db
         .update(schema.userSettings)
-        .set({
-          theme: input.theme !== undefined ? input.theme : current.theme,
-          sortPreference: input.sortPreference !== undefined ? input.sortPreference : current.sortPreference,
-          version: current.version + 1,
-          updatedAt: new Date()
-        })
+        .set(updatePayload)
         .where(eq(schema.userSettings.userId, user.id))
         .returning();
 

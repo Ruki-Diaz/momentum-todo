@@ -4,8 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Momentum — Personal Productivity</title>
-  <meta name="description" content="A calm, editorial, and cinematic personal productivity workspace.">
+  <meta name="description" content="A calm, editorial, and cinematic personal productivity workspace. Plan your day with intention, focus on what matters, and build momentum that lasts.">
   <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#121110">
+  <link rel="canonical" href="https://momentumtodo.vercel.app/">
+
+  <!-- Favicon & PWA Icons -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://momentumtodo.vercel.app/">
+  <meta property="og:title" content="Momentum — Personal Productivity">
+  <meta property="og:description" content="A calm, editorial, and cinematic personal productivity workspace. Plan your day with intention.">
+  <meta property="og:image" content="https://momentumtodo.vercel.app/favicon.svg">
+  <meta property="og:site_name" content="Momentum">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:url" content="https://momentumtodo.vercel.app/">
+  <meta name="twitter:title" content="Momentum — Personal Productivity">
+  <meta name="twitter:description" content="A calm, editorial, and cinematic personal productivity workspace. Plan your day with intention.">
+  <meta name="twitter:image" content="https://momentumtodo.vercel.app/favicon.svg">
+
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="landing.css">
   <script>
@@ -310,11 +333,17 @@
 
     <!-- ── Footer ── -->
     <footer class="landing-footer" role="contentinfo">
-      <span class="landing-footer-brand">
-        <span class="landing-footer-name">Momentum</span>
-        <span class="landing-footer-dot">●</span>
-      </span>
-      <span class="landing-footer-text">A personal productivity workspace.</span>
+      <div class="landing-footer-left">
+        <span class="landing-footer-brand">
+          <span class="landing-footer-name">Momentum</span>
+          <span class="landing-footer-dot">●</span>
+        </span>
+        <span class="landing-footer-text">A personal productivity workspace.</span>
+      </div>
+      <div class="landing-footer-links">
+        <button id="landingPrivacyBtn" class="landing-footer-link-btn" type="button">Privacy & Data</button>
+        <button id="landingFeedbackBtn" class="landing-footer-link-btn" type="button">Feedback</button>
+      </div>
     </footer>
 
   </div><!-- /#landingPage -->
@@ -577,6 +606,18 @@
             <button class="account-menu-item" id="menuExportDataBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               <span>Export Backup (JSON)</span>
+            </button>
+            <button class="account-menu-item" id="menuAccountDataBtn" type="button" role="menuitem">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              <span>Account & Data</span>
+            </button>
+            <button class="account-menu-item" id="menuPrivacyBtn" type="button" role="menuitem">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span>Privacy & Data</span>
+            </button>
+            <button class="account-menu-item" id="menuFeedbackBtn" type="button" role="menuitem">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <span>Send Feedback</span>
             </button>
             <button class="account-menu-item" id="menuClearCompletedBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg>
@@ -1472,6 +1513,256 @@
             <div class="spinner-dot import-btn-spinner" style="display: none;"></div>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       STAGE 5 PRODUCTION MODALS
+       ========================================================= -->
+
+  <!-- 3-Step First-Time Onboarding Modal -->
+  <div id="onboardingModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div id="onboardingModal" class="modal-card onboarding-modal-card" role="dialog" aria-modal="true" aria-labelledby="onboardingStepTitle">
+      <div class="onboarding-progress-bar">
+        <div class="onboarding-progress-step active" id="onboardingStepIndicator1"></div>
+        <div class="onboarding-progress-step" id="onboardingStepIndicator2"></div>
+        <div class="onboarding-progress-step" id="onboardingStepIndicator3"></div>
+      </div>
+
+      <!-- Step 1: Welcome -->
+      <div id="onboardingStep1" class="onboarding-step">
+        <div class="modal-header">
+          <div class="brand">
+            <span class="brand-name">Momentum</span>
+            <span class="brand-dot" aria-hidden="true">●</span>
+          </div>
+        </div>
+        <div class="onboarding-body">
+          <h2 id="onboardingStepTitle" class="onboarding-title">Welcome to your<br>new workspace.</h2>
+          <p class="onboarding-sub">Momentum brings calm, editorial clarity to your day with offline-first reliability and seamless cloud persistence.</p>
+          <div class="onboarding-feature-list">
+            <div class="onboarding-feature-item">
+              <div class="onboarding-feature-dot"></div>
+              <span><strong>Today Board:</strong> Focus on what matters now without cognitive overload.</span>
+            </div>
+            <div class="onboarding-feature-item">
+              <div class="onboarding-feature-dot"></div>
+              <span><strong>Projects & Subtasks:</strong> Break down complex workflows into manageable steps.</span>
+            </div>
+            <div class="onboarding-feature-item">
+              <div class="onboarding-feature-dot"></div>
+              <span><strong>Keyboard Velocity:</strong> Navigate swiftly with ⌘K, N, T, and quick filters.</span>
+            </div>
+          </div>
+        </div>
+        <div class="onboarding-footer">
+          <button id="onboardingStep1SkipBtn" class="btn-secondary" type="button">Skip</button>
+          <button id="onboardingStep1NextBtn" class="primary-btn" type="button">Next: Set Up Projects →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Focus Areas / Starter Projects -->
+      <div id="onboardingStep2" class="onboarding-step" style="display: none;">
+        <div class="modal-header">
+          <h3 class="modal-title">Choose your focus areas</h3>
+        </div>
+        <div class="onboarding-body">
+          <p class="onboarding-sub">Select the areas you'd like starter projects created for (you can always edit or delete them later):</p>
+          <div class="onboarding-project-choices">
+            <label class="onboarding-choice-card">
+              <input type="checkbox" id="onboardProjWork" checked>
+              <div class="choice-card-content">
+                <span class="choice-dot" style="background:#f08352"></span>
+                <div>
+                  <div class="choice-title">Work & Professional</div>
+                  <div class="choice-desc">Deliverables, sprints, and strategic initiatives</div>
+                </div>
+              </div>
+            </label>
+            <label class="onboarding-choice-card">
+              <input type="checkbox" id="onboardProjPersonal" checked>
+              <div class="choice-card-content">
+                <span class="choice-dot" style="background:#4e9d75"></span>
+                <div>
+                  <div class="choice-title">Personal Life</div>
+                  <div class="choice-desc">Health, personal admin, reading, and wellness</div>
+                </div>
+              </div>
+            </label>
+            <label class="onboarding-choice-card">
+              <input type="checkbox" id="onboardProjSideProjects">
+              <div class="choice-card-content">
+                <span class="choice-dot" style="background:#7c6bf0"></span>
+                <div>
+                  <div class="choice-title">Creative & Ideas</div>
+                  <div class="choice-desc">Writing, design projects, and explorations</div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="onboarding-footer">
+          <button id="onboardingStep2BackBtn" class="btn-secondary" type="button">Back</button>
+          <button id="onboardingStep2NextBtn" class="primary-btn" type="button">Next: Add First Task →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: First Task -->
+      <div id="onboardingStep3" class="onboarding-step" style="display: none;">
+        <div class="modal-header">
+          <h3 class="modal-title">What is on your mind today?</h3>
+        </div>
+        <div class="onboarding-body">
+          <p class="onboarding-sub">Capture your primary focus or top priority task to get started immediately:</p>
+          <div class="onboarding-input-wrap">
+            <input type="text" id="onboardingFirstTaskInput" class="onboarding-input" placeholder="e.g., Review project roadmap..." maxlength="200" autocomplete="off">
+          </div>
+          <p class="onboarding-hint">Tip: Press <kbd>N</kbd> anywhere in the dashboard to create new tasks quickly.</p>
+        </div>
+        <div class="onboarding-footer">
+          <button id="onboardingStep3SkipBtn" class="btn-secondary" type="button">Skip</button>
+          <button id="onboardingStep3FinishBtn" class="primary-btn" type="button">
+            <span class="btn-text">Enter Momentum</span>
+            <div class="spinner-dot" id="onboardingSpinner" style="display:none"></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account & Data Management Modal -->
+  <div id="accountDataModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div id="accountDataModal" class="modal-card account-data-modal-card" role="dialog" aria-modal="true" aria-labelledby="accountDataModalTitle">
+      <div class="modal-header">
+        <h3 id="accountDataModalTitle" class="modal-title">Account & Data Management</h3>
+        <button id="closeAccountDataModalBtn" class="icon-btn" type="button" aria-label="Close account data modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="account-data-modal-body">
+        <div class="account-data-section">
+          <h4 class="account-data-heading">Workspace & Cloud Identity</h4>
+          <p class="account-data-desc" id="accountDataStatusText">Signed in with Cloud Account.</p>
+        </div>
+
+        <div class="account-data-section">
+          <h4 class="account-data-heading">Data Export & Backup</h4>
+          <p class="account-data-desc">Download a complete, machine-readable JSON archive of your workspace tasks, projects, and subtasks.</p>
+          <div class="account-data-btn-row">
+            <button id="exportCloudDataBtn" class="btn-secondary" type="button">Export Cloud Workspace</button>
+            <button id="exportLocalDataBtn" class="btn-secondary" type="button">Export Local Workspace</button>
+          </div>
+        </div>
+
+        <div class="account-data-section danger-zone" id="accountDataDangerZone">
+          <h4 class="account-data-heading danger-heading">Danger Zone</h4>
+          <p class="account-data-desc">Permanently delete your Momentum Cloud account and all associated cloud data from our database and authentication directory.</p>
+          <button id="openDeleteAccountModalBtn" class="btn-danger-outline" type="button">Delete Momentum Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Deletion Confirmation Modal -->
+  <div id="deleteAccountModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div id="deleteAccountModal" class="modal-card delete-account-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteAccountModalTitle">
+      <div class="modal-header">
+        <h3 id="deleteAccountModalTitle" class="modal-title modal-title-danger">Delete Momentum Account</h3>
+        <button id="closeDeleteAccountModalBtn" class="icon-btn" type="button" aria-label="Close delete account modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="delete-modal-body">
+        <div class="auth-error-alert" role="alert" style="display: flex;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <span><strong>Warning:</strong> This action cannot be undone. All your cloud projects, tasks, and settings will be permanently erased. Local workspace data on this device will remain untouched.</span>
+        </div>
+
+        <p class="delete-confirm-instruction">
+          To confirm permanent account deletion, please type <strong>DELETE</strong> below:
+        </p>
+
+        <div class="delete-input-wrap">
+          <input type="text" id="deleteConfirmInput" class="auth-input delete-input" placeholder="Type DELETE" autocomplete="off">
+        </div>
+
+        <div id="deleteAccountError" class="auth-error-banner" style="display:none;"></div>
+
+        <div class="delete-modal-footer">
+          <button id="cancelDeleteAccountBtn" class="btn-secondary" type="button">Cancel</button>
+          <button id="confirmDeleteAccountBtn" class="btn-danger" type="button" disabled>
+            <span class="btn-text">Permanently Delete Account</span>
+            <div class="spinner-dot delete-spinner" style="display:none;"></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy & Data Transparency Modal -->
+  <div id="privacyModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div id="privacyModal" class="modal-card privacy-modal-card" role="dialog" aria-modal="true" aria-labelledby="privacyModalTitle">
+      <div class="modal-header">
+        <h3 id="privacyModalTitle" class="modal-title">Privacy & Data Transparency</h3>
+        <button id="closePrivacyModalBtn" class="icon-btn" type="button" aria-label="Close privacy modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="privacy-modal-body">
+        <div class="privacy-block">
+          <h4>1. Local Workspace Storage</h4>
+          <p>When you use Momentum in Local Mode, your tasks, projects, tags, and preferences are stored in this browser on this device using <code>localStorage</code>. No local productivity data is sent to a server.</p>
+        </div>
+
+        <div class="privacy-block">
+          <h4>2. Momentum Cloud & Authentication</h4>
+          <p>When you sign in to Momentum Cloud:</p>
+          <ul>
+            <li><strong>Authentication:</strong> Authentication is handled by Clerk.</li>
+            <li><strong>Cloud Storage:</strong> Cloud workspace data is stored in a Neon PostgreSQL database.</li>
+            <li><strong>Workspace Import:</strong> Importing a Local Workspace copies selected local data into the Cloud Workspace and does not automatically delete the local copy.</li>
+          </ul>
+        </div>
+
+        <div class="privacy-block">
+          <h4>3. Workspace Export & Deletion</h4>
+          <p>You can export a JSON backup of your workspace at any time. If you delete your Momentum Cloud account, your user records and cloud workspace data are deleted from the database.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer-single">
+        <button id="closePrivacyModalBottomBtn" class="primary-btn" type="button">Understood</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div id="feedbackModal" class="modal-card feedback-modal-card" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+      <div class="modal-header">
+        <h3 id="feedbackModalTitle" class="modal-title">Feedback & Beta Notes</h3>
+        <button id="closeFeedbackModalBtn" class="icon-btn" type="button" aria-label="Close feedback modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="feedback-modal-body">
+        <div class="feedback-notice-card">
+          <p class="feedback-notice-text">
+            Direct in-app feedback transmission requires an external feedback webhook or email integration that is not yet configured for this build.
+          </p>
+          <p class="feedback-notice-sub">
+            Please report issues or submit feedback through the project repository or release channels.
+          </p>
+        </div>
+      </div>
+
+      <div class="feedback-modal-footer">
+        <button id="closeFeedbackNoticeBtn" class="primary-btn" type="button">Close</button>
       </div>
     </div>
   </div>

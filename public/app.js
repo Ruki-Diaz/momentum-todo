@@ -2177,6 +2177,33 @@ function setupUserProfileMenu() {
     });
   }
 
+  const menuAccountDataBtn = document.querySelector("#menuAccountDataBtn");
+  if (menuAccountDataBtn) {
+    menuAccountDataBtn.addEventListener("click", () => {
+      userProfileWrap.classList.remove("open");
+      userProfileBtn.setAttribute("aria-expanded", "false");
+      AccountDataManager.open();
+    });
+  }
+
+  const menuPrivacyBtn = document.querySelector("#menuPrivacyBtn");
+  if (menuPrivacyBtn) {
+    menuPrivacyBtn.addEventListener("click", () => {
+      userProfileWrap.classList.remove("open");
+      userProfileBtn.setAttribute("aria-expanded", "false");
+      PrivacyManager.open();
+    });
+  }
+
+  const menuFeedbackBtn = document.querySelector("#menuFeedbackBtn");
+  if (menuFeedbackBtn) {
+    menuFeedbackBtn.addEventListener("click", () => {
+      userProfileWrap.classList.remove("open");
+      userProfileBtn.setAttribute("aria-expanded", "false");
+      FeedbackManager.open();
+    });
+  }
+
   if (menuClearCompletedBtn) {
     menuClearCompletedBtn.addEventListener("click", () => {
       userProfileWrap.classList.remove("open");
@@ -2694,10 +2721,22 @@ const AuthManager = {
       this.setSignedInState(user);
       this.closeSignInModal();
 
-      // Check if user needs display name onboarding
+      // Check & persist client-detected IANA timezone dynamically
+      try {
+        const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        if (user.settings && user.settings.timezone !== clientTz) {
+          CloudDataStore.updateSettings({ timezone: clientTz }).catch((e) => console.warn("Timezone sync warning:", e));
+        }
+      } catch (tzErr) {
+        console.warn("Timezone detection failed:", tzErr);
+      }
+
+      // Check if user needs display name onboarding or 3-step first-time onboarding
       const hasDisplayName = Boolean(user.displayName && user.displayName.trim());
       if (!hasDisplayName) {
         this.openDisplayNameModal(user);
+      } else if (user.settings && !user.settings.onboardingCompleted) {
+        OnboardingManager.open();
       } else {
         showToast(`Welcome back, ${user.displayName || "Explorer"}!`, 3000);
       }
@@ -2802,7 +2841,12 @@ const AuthManager = {
       this.setSignedInState(updatedUser);
       this.closeDisplayNameModal();
       render();
-      showToast(`Welcome to Momentum, ${updatedUser.displayName}!`, 3000);
+
+      if (updatedUser.settings && !updatedUser.settings.onboardingCompleted) {
+        OnboardingManager.open();
+      } else {
+        showToast(`Welcome to Momentum, ${updatedUser.displayName}!`, 3000);
+      }
     } catch (err) {
       console.error("Display name update error:", err);
       if (error) {
@@ -3161,8 +3205,428 @@ const AuthManager = {
         if (profileEditorOverlay && profileEditorOverlay.classList.contains("active")) {
           this.closeProfileEditor();
         }
+        if (document.getElementById("onboardingModalOverlay")?.classList.contains("active")) {
+          OnboardingManager.close();
+        }
+        if (document.getElementById("accountDataModalOverlay")?.classList.contains("active")) {
+          AccountDataManager.close();
+        }
+        if (document.getElementById("deleteAccountModalOverlay")?.classList.contains("active")) {
+          AccountDataManager.closeDeleteModal();
+        }
+        if (document.getElementById("privacyModalOverlay")?.classList.contains("active")) {
+          PrivacyManager.close();
+        }
+        if (document.getElementById("feedbackModalOverlay")?.classList.contains("active")) {
+          FeedbackManager.close();
+        }
       }
     });
+  }
+};
+
+// ==========================================================================
+// 17C. STAGE 5: ONBOARDING MANAGER (3-STEP WORKFLOW)
+// ==========================================================================
+const OnboardingManager = {
+  currentStep: 1,
+
+  open() {
+    const overlay = document.getElementById("onboardingModalOverlay");
+    if (!overlay) return;
+    this.setStep(1);
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+  },
+
+  close() {
+    const overlay = document.getElementById("onboardingModalOverlay");
+    if (overlay) {
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+  },
+
+  setStep(stepNum) {
+    this.currentStep = stepNum;
+    for (let i = 1; i <= 3; i++) {
+      const stepEl = document.getElementById(`onboardingStep${i}`);
+      const indEl = document.getElementById(`onboardingStepIndicator${i}`);
+      if (stepEl) stepEl.style.display = i === stepNum ? "block" : "none";
+      if (indEl) {
+        if (i <= stepNum) {
+          indEl.classList.add("active");
+        } else {
+          indEl.classList.remove("active");
+        }
+      }
+    }
+    if (stepNum === 3) {
+      setTimeout(() => document.getElementById("onboardingFirstTaskInput")?.focus(), 50);
+    }
+  },
+
+  async skip() {
+    try {
+      if (WorkspaceRepository.isCloud()) {
+        await CloudDataStore.updateSettings({ onboardingCompleted: true });
+        if (AuthManager.currentUser && AuthManager.currentUser.settings) {
+          AuthManager.currentUser.settings.onboardingCompleted = true;
+        }
+      }
+    } catch (err) {
+      console.warn("Skip onboarding error:", err);
+    }
+    this.close();
+  },
+
+  async finish() {
+    const spinner = document.getElementById("onboardingSpinner");
+    const finishBtn = document.getElementById("onboardingStep3FinishBtn");
+    const btnText = finishBtn?.querySelector(".btn-text");
+    if (finishBtn) finishBtn.disabled = true;
+    if (btnText) btnText.style.display = "none";
+    if (spinner) spinner.style.display = "inline-block";
+
+    try {
+      // Create starter projects if selected
+      const workSelected = document.getElementById("onboardProjWork")?.checked;
+      const personalSelected = document.getElementById("onboardProjPersonal")?.checked;
+      const sideProjSelected = document.getElementById("onboardProjSideProjects")?.checked;
+
+      let createdWorkProj = null;
+
+      if (workSelected) {
+        createdWorkProj = await WorkspaceRepository.createProject({
+          name: "Work & Professional",
+          color: "#f08352"
+        });
+      }
+      if (personalSelected) {
+        await WorkspaceRepository.createProject({
+          name: "Personal Life",
+          color: "#4e9d75"
+        });
+      }
+      if (sideProjSelected) {
+        await WorkspaceRepository.createProject({
+          name: "Creative & Ideas",
+          color: "#7c6bf0"
+        });
+      }
+
+      // Create first task if typed
+      const firstTaskTitle = (document.getElementById("onboardingFirstTaskInput")?.value || "").trim();
+      if (firstTaskTitle) {
+        const todayStr = getLocalDateString();
+        await WorkspaceRepository.createTask({
+          title: firstTaskTitle,
+          description: "",
+          priority: "high",
+          dueDate: todayStr,
+          dueTime: null,
+          projectId: createdWorkProj ? createdWorkProj.id : null,
+          tags: ["focus"],
+          notes: "",
+          reminder: null,
+          recurrence: "none",
+          subtasks: []
+        });
+      }
+
+      // Persist onboardingCompleted
+      if (WorkspaceRepository.isCloud()) {
+        await CloudDataStore.updateSettings({ onboardingCompleted: true });
+        if (AuthManager.currentUser && AuthManager.currentUser.settings) {
+          AuthManager.currentUser.settings.onboardingCompleted = true;
+        }
+      }
+
+      this.close();
+      render();
+      showToast("Workspace initialized. Welcome to Momentum!", 3500);
+    } catch (err) {
+      console.error("Finish onboarding error:", err);
+      showToast("Setup encountered an issue, but your workspace is ready.", 3000);
+      this.close();
+    } finally {
+      if (finishBtn) finishBtn.disabled = false;
+      if (btnText) btnText.style.display = "inline";
+      if (spinner) spinner.style.display = "none";
+    }
+  },
+
+  setupListeners() {
+    document.getElementById("onboardingStep1NextBtn")?.addEventListener("click", () => this.setStep(2));
+    document.getElementById("onboardingStep1SkipBtn")?.addEventListener("click", () => this.skip());
+    document.getElementById("onboardingStep2BackBtn")?.addEventListener("click", () => this.setStep(1));
+    document.getElementById("onboardingStep2NextBtn")?.addEventListener("click", () => this.setStep(3));
+    document.getElementById("onboardingStep3SkipBtn")?.addEventListener("click", () => this.skip());
+    document.getElementById("onboardingStep3FinishBtn")?.addEventListener("click", () => this.finish());
+    document.getElementById("onboardingFirstTaskInput")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        this.finish();
+      }
+    });
+  }
+};
+
+// ==========================================================================
+// 17D. STAGE 5: ACCOUNT & DATA MANAGEMENT & FAILURE-SAFE DELETION
+// ==========================================================================
+const AccountDataManager = {
+  open() {
+    const overlay = document.getElementById("accountDataModalOverlay");
+    const statusText = document.getElementById("accountDataStatusText");
+    const dangerZone = document.getElementById("accountDataDangerZone");
+    if (!overlay) return;
+
+    if (userProfileWrap) userProfileWrap.classList.remove("open");
+    if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
+
+    const isCloud = WorkspaceRepository.isCloud() && AuthManager.currentUser;
+    if (statusText) {
+      statusText.textContent = isCloud
+        ? `Signed in as ${AuthManager.currentUser.displayName || "Momentum User"} (${AuthManager.currentUser.email || "Cloud Account"}). Cloud sync active.`
+        : "Using Local Workspace (on-device localStorage). No cloud account attached.";
+    }
+
+    if (dangerZone) {
+      dangerZone.style.display = isCloud ? "block" : "none";
+    }
+
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+  },
+
+  close() {
+    const overlay = document.getElementById("accountDataModalOverlay");
+    if (overlay) {
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+  },
+
+  exportCloud() {
+    if (!WorkspaceRepository.isCloud() || !AuthManager.currentUser) {
+      showToast("Please sign in to export cloud workspace.", 3000);
+      return;
+    }
+    const backup = {
+      app: "Momentum",
+      scope: "cloud",
+      user: AuthManager.currentUser.email || AuthManager.currentUser.id,
+      exportedAt: new Date().toISOString(),
+      todos: state.todos,
+      projects: state.projects
+    };
+    this.downloadJson(backup, `momentum-cloud-backup-${getLocalDateString()}.json`);
+    showToast("Cloud workspace exported successfully (JSON).", 2500);
+  },
+
+  exportLocal() {
+    const localTodos = LocalDataStore.getTodos();
+    const localProjects = LocalDataStore.getProjects();
+    const backup = {
+      app: "Momentum",
+      scope: "local",
+      exportedAt: new Date().toISOString(),
+      todos: localTodos,
+      projects: localProjects
+    };
+    this.downloadJson(backup, `momentum-local-backup-${getLocalDateString()}.json`);
+    showToast("Local workspace exported successfully (JSON).", 2500);
+  },
+
+  downloadJson(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  openDeleteModal() {
+    this.close();
+    const overlay = document.getElementById("deleteAccountModalOverlay");
+    const input = document.getElementById("deleteConfirmInput");
+    const btn = document.getElementById("confirmDeleteAccountBtn");
+    const err = document.getElementById("deleteAccountError");
+    if (input) input.value = "";
+    if (btn) btn.disabled = true;
+    if (err) {
+      err.textContent = "";
+      err.style.display = "none";
+    }
+    if (overlay) {
+      overlay.classList.add("active");
+      overlay.setAttribute("aria-hidden", "false");
+      setTimeout(() => input?.focus(), 50);
+    }
+  },
+
+  closeDeleteModal() {
+    const overlay = document.getElementById("deleteAccountModalOverlay");
+    if (overlay) {
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+  },
+
+  async handleDeleteAccount() {
+    const input = document.getElementById("deleteConfirmInput");
+    const btn = document.getElementById("confirmDeleteAccountBtn");
+    const btnText = btn?.querySelector(".btn-text");
+    const spinner = btn?.querySelector(".delete-spinner");
+    const errEl = document.getElementById("deleteAccountError");
+
+    if ((input?.value || "").trim() !== "DELETE") {
+      return;
+    }
+
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.style.display = "none";
+    if (spinner) spinner.style.display = "inline-block";
+    if (errEl) errEl.style.display = "none";
+
+    try {
+      const session = AuthManager.clerk?.session;
+      const token = session ? await session.getToken() : null;
+      if (!token) throw new Error("Authentication token unavailable.");
+
+      const res = await fetch("/api/auth/me", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Account deletion failed with status ${res.status}`);
+      }
+
+      const resJson = await res.json().catch(() => ({}));
+
+      if (resJson.status === "PARTIAL_DELETION") {
+        // Cloud data in Neon was deleted; Clerk identity deletion did not complete
+        this.closeDeleteModal();
+        await AuthManager.signOut();
+        showToast("Cloud workspace data was permanently deleted. Authentication identity cleanup requires manual action.", 6000);
+        return;
+      }
+
+      // Full deletion completed (both Neon database and Clerk identity wiped)
+      // Note: Local storage (Local Workspace) is strictly preserved!
+      this.closeDeleteModal();
+      await AuthManager.signOut();
+      showToast("Your Momentum Cloud account has been permanently deleted.", 4500);
+    } catch (err) {
+      console.error("Account deletion failed:", err);
+      if (errEl) {
+        errEl.textContent = err.message || "Failed to delete account. Please try again.";
+        errEl.style.display = "block";
+      }
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.style.display = "inline";
+      if (spinner) spinner.style.display = "none";
+    }
+  },
+
+  setupListeners() {
+    document.getElementById("closeAccountDataModalBtn")?.addEventListener("click", () => this.close());
+    document.getElementById("exportCloudDataBtn")?.addEventListener("click", () => this.exportCloud());
+    document.getElementById("exportLocalDataBtn")?.addEventListener("click", () => this.exportLocal());
+    document.getElementById("openDeleteAccountModalBtn")?.addEventListener("click", () => this.openDeleteModal());
+    document.getElementById("closeDeleteAccountModalBtn")?.addEventListener("click", () => this.closeDeleteModal());
+    document.getElementById("cancelDeleteAccountBtn")?.addEventListener("click", () => this.closeDeleteModal());
+    
+    const confirmInput = document.getElementById("deleteConfirmInput");
+    const confirmBtn = document.getElementById("confirmDeleteAccountBtn");
+    if (confirmInput && confirmBtn) {
+      confirmInput.addEventListener("input", (e) => {
+        confirmBtn.disabled = e.target.value.trim() !== "DELETE";
+      });
+    }
+
+    confirmBtn?.addEventListener("click", () => this.handleDeleteAccount());
+  }
+};
+
+// ==========================================================================
+// 17E. STAGE 5: PRIVACY & DATA TRANSPARENCY MODAL
+// ==========================================================================
+const PrivacyManager = {
+  open() {
+    const overlay = document.getElementById("privacyModalOverlay");
+    if (userProfileWrap) userProfileWrap.classList.remove("open");
+    if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
+    if (overlay) {
+      overlay.classList.add("active");
+      overlay.setAttribute("aria-hidden", "false");
+    }
+  },
+
+  close() {
+    const overlay = document.getElementById("privacyModalOverlay");
+    if (overlay) {
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+  },
+
+  setupListeners() {
+    document.getElementById("landingPrivacyBtn")?.addEventListener("click", () => this.open());
+    document.getElementById("menuPrivacyBtn")?.addEventListener("click", () => this.open());
+    document.getElementById("closePrivacyModalBtn")?.addEventListener("click", () => this.close());
+    document.getElementById("closePrivacyModalBottomBtn")?.addEventListener("click", () => this.close());
+    const overlay = document.getElementById("privacyModalOverlay");
+    if (overlay) {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) this.close();
+      });
+    }
+  }
+};
+
+// ==========================================================================
+// 17F. STAGE 5: FEEDBACK MODAL
+// ==========================================================================
+const FeedbackManager = {
+  open() {
+    const overlay = document.getElementById("feedbackModalOverlay");
+    if (userProfileWrap) userProfileWrap.classList.remove("open");
+    if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
+    if (overlay) {
+      overlay.classList.add("active");
+      overlay.setAttribute("aria-hidden", "false");
+    }
+  },
+
+  close() {
+    const overlay = document.getElementById("feedbackModalOverlay");
+    if (overlay) {
+      overlay.classList.remove("active");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+  },
+
+  setupListeners() {
+    document.getElementById("landingFeedbackBtn")?.addEventListener("click", () => this.open());
+    document.getElementById("menuFeedbackBtn")?.addEventListener("click", () => this.open());
+    document.getElementById("closeFeedbackModalBtn")?.addEventListener("click", () => this.close());
+    document.getElementById("closeFeedbackNoticeBtn")?.addEventListener("click", () => this.close());
+    const overlay = document.getElementById("feedbackModalOverlay");
+    if (overlay) {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) this.close();
+      });
+    }
   }
 };
 
@@ -5146,7 +5610,20 @@ function checkReminders() {
 
     if (now >= reminderTime) {
       state.triggeredReminders.add(todo.id);
-      showToast(`⏰ Reminder: "${todo.title}" is due ${formatDueDate(todo.dueDate, todo.dueTime)}`, 5000);
+      const reminderMsg = `⏰ Reminder: "${todo.title}" is due ${formatDueDate(todo.dueDate, todo.dueTime)}`;
+      showToast(reminderMsg, 5000);
+
+      // Active-tab browser notification if permission granted
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification("Momentum Reminder", {
+            body: reminderMsg,
+            icon: "/favicon.svg"
+          });
+        } catch (nErr) {
+          // ignore notification delivery error
+        }
+      }
     }
   });
 }
@@ -5545,7 +6022,28 @@ setupShortcutsModalListeners();
 setupGlobalShortcuts();
 setupTaskCreationListeners();
 ImportManager.setupListeners();
+OnboardingManager.setupListeners();
+AccountDataManager.setupListeners();
+PrivacyManager.setupListeners();
+FeedbackManager.setupListeners();
 AuthManager.init();
+
+// PWA Service Worker Registration
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((err) => {
+      console.warn("[SW] Registration error:", err);
+    });
+  });
+}
+
+// Online / Offline Network Listeners
+window.addEventListener("online", () => {
+  showToast("Network restored. Momentum Cloud connected.", 3000);
+});
+window.addEventListener("offline", () => {
+  showToast("You are offline. Changes will save locally.", 3500);
+});
 
 // Start In-App Reminder Polling every 30 seconds
 setInterval(checkReminders, 30000);

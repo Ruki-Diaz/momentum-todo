@@ -106,9 +106,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // ==========================================================================
+  // DELETE /api/auth/me — Delete Momentum account and cloud data
+  // Identity is derived strictly from verified Clerk session token.
+  // 1. Transactionally wipes all Neon user data (with ON DELETE CASCADE).
+  // 2. Attempts deletion of Clerk user identity with bounded retry.
+  // 3. Handles partial failure explicitly if Clerk identity deletion fails.
+  // ==========================================================================
+  if (req.method === "DELETE") {
+    try {
+      // 1. Verify identity from token — never trust client body for ownership
+      const user = await requireAuthUser(req);
+      const authProviderId = user.authProviderId;
+      const userId = user.id;
+
+      // 2. Transactionally delete Neon database record (cascades to all user tables)
+      const db = getDbPool();
+      await db.transaction(async (tx) => {
+        await tx.delete(schema.users).where(eq(schema.users.id, userId));
+      });
+
+      // 3. Attempt Clerk account deletion with bounded retries for transient failures
+      const { clerkClient } = await import("../../server/auth.js");
+      let clerkDeleted = false;
+      let clerkLastError: string | null = null;
+      const maxRetries = 2;
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          await clerkClient.users.deleteUser(authProviderId);
+          clerkDeleted = true;
+          break;
+        } catch (clerkErr: any) {
+          clerkLastError = clerkErr?.message || "Unknown error";
+          console.warn(`[AccountDeletion] Clerk deletion attempt ${attempt}/${maxRetries} failed:`, clerkLastError);
+          if (attempt < maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        }
+      }
+
+      // If Clerk deletion failed after bounded retries, report partial deletion explicitly
+      if (!clerkDeleted) {
+        console.error(`[AccountDeletion] Partial failure for user ${userId} (Clerk ID ${authProviderId}): Neon deleted, Clerk deletion failed.`);
+        return res.status(200).json({
+          success: false,
+          status: "PARTIAL_DELETION",
+          error: {
+            code: "CLERK_DELETION_FAILED",
+            message: "Momentum cloud workspace data was permanently deleted from the database, but removing the authentication identity from the authentication provider failed. Manual administrative cleanup is required.",
+            details: clerkLastError
+          }
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        status: "COMPLETED",
+        message: "Account and cloud workspace data permanently deleted."
+      });
+    } catch (error) {
+      const errorPayload = createErrorResponse(error);
+      return res.status(errorPayload.statusCode).json(errorPayload.body);
+    }
+  }
+
+  // ==========================================================================
   // Method not allowed
   // ==========================================================================
-  res.setHeader("Allow", "GET, PATCH");
+  res.setHeader("Allow", "GET, PATCH, DELETE");
   return res.status(405).json({
     error: {
       code: "METHOD_NOT_ALLOWED",

@@ -393,6 +393,8 @@ export function validateTaskInput(body: any, isUpdate = false): ValidatedTaskInp
 export interface ValidatedSettingsInput {
   theme?: "dark" | "light" | "system";
   sortPreference?: "smart" | "dueDate" | "priority" | "newest" | "oldest";
+  onboardingCompleted?: boolean;
+  timezone?: string;
   version?: number;
 }
 
@@ -423,6 +425,20 @@ export function validateSettingsInput(body: any, isUpdate = false): ValidatedSet
       );
     }
     result.sortPreference = body.sortPreference as any;
+  }
+
+  if (body.onboardingCompleted !== undefined) {
+    if (typeof body.onboardingCompleted !== "boolean") {
+      throw new ApiError(400, "VALIDATION_ERROR", "'onboardingCompleted' must be a boolean");
+    }
+    result.onboardingCompleted = body.onboardingCompleted;
+  }
+
+  if (body.timezone !== undefined) {
+    if (typeof body.timezone !== "string" || body.timezone.trim().length === 0 || body.timezone.length > 100) {
+      throw new ApiError(400, "VALIDATION_ERROR", "'timezone' must be a valid IANA timezone string (1–100 characters)");
+    }
+    result.timezone = body.timezone.trim();
   }
 
   if (isUpdate) {
