@@ -18,7 +18,7 @@ import workspaceImportHandler from "../api/workspace/import.js";
 dotenv.config({ override: true });
 
 const PORT = parseInt(process.env.PORT || "8088", 10);
-const PUBLIC_DIR = process.cwd();
+const PUBLIC_DIR = path.join(process.cwd(), "public");
 const MAX_BODY_BYTES = 4 * 1024 * 1024; // 4 MB — must stay below Vercel's 4.5 MB hard platform limit
 
 const MIME_TYPES: Record<string, string> = {

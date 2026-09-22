@@ -1,6 +1,7 @@
 {
   "version": 2,
   "buildCommand": "tsc --noEmit",
+  "outputDirectory": "public",
   "headers": [
     {
       "source": "/(.*)",
