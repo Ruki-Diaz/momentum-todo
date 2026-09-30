@@ -1,0 +1,517 @@
+/* ==========================================================================
+   MOTION LAYER
+   Loaded after every other stylesheet. Pairs with js/motion.js.
+   Only transform / opacity / clip-path / background-size are animated.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. SHARED KEYFRAMES (spin + fadeIn were referenced but never defined)
+   -------------------------------------------------------------------------- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes skeleton-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.35); opacity: 0.35; }
+}
+
+@keyframes check-draw {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes shine-sweep {
+  from { transform: translateX(-120%) skewX(-18deg); }
+  to { transform: translateX(220%) skewX(-18deg); }
+}
+
+@keyframes gradient-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* --------------------------------------------------------------------------
+   2. TASK ROWS — completion choreography
+   -------------------------------------------------------------------------- */
+.todo-item {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Strike-through that draws left→right instead of snapping on. */
+.todo-title-text {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 55%;
+  background-size: 0% 1.5px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-size var(--dur-slow) var(--ease-out), color var(--dur-base) ease;
+}
+
+.todo-item.completing .todo-title,
+.todo-item.done .todo-title {
+  text-decoration: none;
+}
+
+.todo-item.completing .todo-title-text,
+.todo-item.done .todo-title-text {
+  background-size: 100% 1.5px;
+}
+
+.todo-item.done .todo-title-text {
+  transition: none;
+}
+
+/* Real checkmark (replaces the white dot) drawn with a clip-path wipe. */
+.todo-toggle {
+  position: relative;
+}
+
+.todo-toggle:checked::after {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 0;
+  background: #fff;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / contain no-repeat;
+  animation: check-draw var(--dur-base) var(--ease-out) 60ms both;
+}
+
+.todo-item.done .todo-toggle:checked::after,
+.todo-item.done .todo-toggle:checked {
+  animation: none;
+}
+
+.todo-toggle:active {
+  transform: scale(0.88);
+}
+
+/* Subtask progress bar grows in from the left. */
+.todo-subtask-progress-fill {
+  transform-origin: left center;
+  animation: progress-grow var(--dur-slow) var(--ease-out) both;
+}
+
+@keyframes progress-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Particle burst spawned by Motion.celebrate() */
+.motion-burst {
+  position: fixed;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.motion-burst-particle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
+
+.motion-burst-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--success);
+  will-change: transform, opacity;
+}
+
+/* --------------------------------------------------------------------------
+   3. SKELETON LOADING ROWS
+   -------------------------------------------------------------------------- */
+.todo-item.todo-skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.todo-item.todo-skeleton:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border);
+}
+
+.skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.skeleton-block {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background: var(--panel-secondary);
+  border-radius: var(--radius-pill);
+}
+
+.skeleton-block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  animation: skeleton-shimmer 1.4s var(--ease-smooth) infinite;
+  animation-delay: var(--skeleton-delay, 0ms);
+}
+
+[data-theme="light"] .skeleton-block::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+}
+
+.skeleton-circle {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+}
+
+.skeleton-line {
+  height: 0.8rem;
+}
+
+.skeleton-line-sm {
+  height: 0.6rem;
+  width: 32%;
+}
+
+.skeleton-pill {
+  width: 3.6rem;
+  height: 1.4rem;
+}
+
+/* Boot state: shell is visible but inert until auth resolves. */
+.app-booting .stats-grid,
+.app-booting .composer-panel,
+.app-booting .controls-panel,
+.app-booting .workspace-secondary {
+  opacity: 0.55;
+  transition: opacity var(--dur-slow) ease;
+}
+
+/* --------------------------------------------------------------------------
+   4. SIDEBAR — gliding active indicator
+   -------------------------------------------------------------------------- */
+.nav-list.has-nav-indicator {
+  position: relative;
+}
+
+.nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-radius: var(--radius-md);
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.nav-indicator::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 22%;
+  bottom: 22%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.nav-indicator.is-visible {
+  opacity: 1;
+}
+
+.nav-indicator.is-ready {
+  transition: transform var(--dur-slow) var(--ease-spring), height var(--dur-base) var(--ease-out), opacity var(--dur-fast) ease;
+}
+
+.has-nav-indicator > li:not(.nav-indicator) {
+  position: relative;
+  z-index: 1;
+}
+
+.has-nav-indicator .nav-item.active {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.nav-item .nav-icon svg {
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+
+.nav-item:hover .nav-icon svg {
+  transform: scale(1.12) rotate(-4deg);
+}
+
+.nav-item:active {
+  transform: scale(0.98);
+}
+
+/* --------------------------------------------------------------------------
+   5. SURFACES — pointer spotlight, lift & press feedback
+   -------------------------------------------------------------------------- */
+.motion-spotlight {
+  --spot-x: 50%;
+  --spot-y: 50%;
+}
+
+.motion-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--spot-x) var(--spot-y), var(--accent-soft), transparent 45%);
+  opacity: 0;
+  transition: opacity var(--dur-base) ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.motion-spotlight:hover::after {
+  opacity: 1;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-card:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.stat-card-icon svg,
+.stat-card svg {
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+
+.stat-card:hover svg {
+  transform: rotate(-8deg) scale(1.12);
+}
+
+.primary-btn,
+.ghost-btn,
+.filter-chip,
+.icon-btn,
+.btn-ai-pill {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.primary-btn:active,
+.ghost-btn:active,
+.filter-chip:active,
+.icon-btn:active,
+.btn-ai-pill:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+/* Primary CTA: a light sweep across the surface on hover. */
+.primary-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.primary-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  transform: translateX(-120%) skewX(-18deg);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.primary-btn:hover::before {
+  animation: shine-sweep 750ms var(--ease-out);
+}
+
+/* AI pill: slow warm gradient drift so "intelligence" feels alive, not loud. */
+.btn-ai-pill {
+  background-size: 200% 200%;
+  animation: gradient-drift 8s ease-in-out infinite;
+}
+
+.btn-ai-pill svg {
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+
+.btn-ai-pill:hover svg {
+  transform: rotate(72deg) scale(1.15);
+}
+
+/* Name in the greeting gets a soft animated sheen. */
+.hero-name-highlight {
+  background: linear-gradient(100deg, var(--accent) 0%, var(--warning) 45%, var(--accent) 90%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-drift 6s ease-in-out infinite;
+}
+
+/* Empty state dot breathes gently. */
+.empty-state-dot {
+  animation: breathe 3.2s ease-in-out infinite;
+}
+
+/* --------------------------------------------------------------------------
+   6. OVERLAYS — modals & sheets originate with depth, exit faster
+   -------------------------------------------------------------------------- */
+.modal-card {
+  transform: translateY(14px) scale(0.96);
+  opacity: 0;
+  transition: transform 180ms var(--ease-in), opacity 140ms ease;
+}
+
+.modal-overlay.active .modal-card {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  transition: transform var(--dur-slow) var(--ease-spring), opacity var(--dur-base) ease;
+}
+
+.modal-overlay {
+  transition: opacity 160ms ease;
+}
+
+.modal-overlay.active {
+  transition: opacity var(--dur-base) ease;
+}
+
+.task-details-drawer {
+  transition: transform 220ms var(--ease-in);
+}
+
+.task-details-drawer.open {
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+/* Toasts: spring in, icon badge */
+.toast {
+  animation: toast-spring-in var(--dur-slow) var(--ease-spring);
+  transition: opacity 180ms ease, transform 180ms var(--ease-in);
+}
+
+@keyframes toast-spring-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.toast-icon-check,
+.toast-icon-party {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.toast-icon-flame {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.toast-icon svg {
+  animation: toast-icon-pop var(--dur-slow) var(--ease-spring) 80ms both;
+}
+
+@keyframes toast-icon-pop {
+  from { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* Drawer "Saved" indicator gets a check icon instead of a text glyph. */
+.drawer-save-status::before {
+  content: "";
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  margin-right: 0.35em;
+  vertical-align: -0.05em;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.planner-meta-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   7. REDUCED MOTION — honour the OS setting everywhere
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Loading indicators must keep moving or they read as "frozen". */
+  .auth-btn-spinner,
+  .cloud-loading-spinner,
+  .import-btn-spinner,
+  .ai-thinking-spinner,
+  .ai-thinking-spinner-sm,
+  .dn-spinner {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .skeleton-block::after,
+  .motion-spotlight::after {
+    display: none;
+  }
+
+  .todo-item:hover,
+  .stat-card:hover {
+    transform: none;
+  }
+}

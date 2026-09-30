@@ -1,6 +1,6 @@
 /**
  * Momentum — Production Service Worker
- * Strategy: Conservative Static Shell Caching
+ * Strategy: Network-first static shell with offline cache fallback
  *
  * CRITICAL SECURITY & DATA PRIVACY INVARIANTS:
  * 1. Requests to /api/* are NEVER cached.
@@ -8,14 +8,36 @@
  * 3. Non-GET requests (POST, PUT, PATCH, DELETE) bypass Cache Storage unconditionally.
  */
 
-const CACHE_NAME = "momentum-static-v2";
+const CACHE_NAME = "momentum-static-v3";
 
 const STATIC_SHELL_ASSETS = [
   "/",
   "/index.html",
-  "/styles.css",
+  "/css/tokens.css",
+  "/css/base.css",
+  "/css/layout.css",
+  "/css/tasks.css",
+  "/css/rail.css",
+  "/css/toasts-mobile.css",
+  "/css/responsive.css",
+  "/css/drawer-modals.css",
+  "/css/calendar.css",
+  "/css/palette.css",
+  "/css/auth-account.css",
+  "/css/motion.css",
+  "/css/a11y.css",
   "/landing.css",
-  "/app.js",
+  "/js/data.js",
+  "/js/icons.js",
+  "/js/motion.js",
+  "/js/core.js",
+  "/js/task-ui.js",
+  "/js/account.js",
+  "/js/views.js",
+  "/js/actions.js",
+  "/js/ambient.js",
+  "/js/ai.js",
+  "/js/main.js",
   "/landing.js",
   "/manifest.webmanifest",
   "/favicon.svg"
@@ -70,28 +92,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // RULE 4: For same-origin static assets, serve Stale-While-Revalidate
+  // RULE 4: Network-first for same-origin static assets; cache is the offline fallback.
+  // The app is split across several scripts/stylesheets, so serving a stale copy of one
+  // file next to a fresh copy of another could mix versions. Network-first keeps every
+  // online load consistent while the shell still works offline.
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          // If offline and request is for page navigation, return cached index.html
-          if (request.mode === "navigate") {
-            return caches.match("/index.html");
-          }
-          return cachedResponse;
-        });
-
-      return cachedResponse || fetchPromise;
-    })
+    fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
+        }
+        return networkResponse;
+      })
+      .catch(async () => {
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) return cachedResponse;
+        if (request.mode === "navigate") return caches.match("/index.html");
+        return Response.error();
+      })
   );
 });

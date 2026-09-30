@@ -1,0 +1,125 @@
+/* ==========================================================================
+   MOMENTUM V2 — DESIGN SYSTEM & RESPONSIVE LAYOUT
+   Editorial, Calm, Cinematic, Alive, Warm Dark & Light
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. DESIGN TOKENS
+   -------------------------------------------------------------------------- */
+:root,
+[data-theme="dark"] {
+  /* Warm Dark Palette */
+  --bg: #12100e;
+  --bg-secondary: #181512;
+  --sidebar-bg: rgba(24, 21, 18, 0.86);
+  --panel: rgba(33, 28, 24, 0.75);
+  --panel-strong: #211c18;
+  --panel-secondary: #29221d;
+  --panel-subtle: rgba(41, 34, 29, 0.55);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.05);
+  --border-focus: rgba(240, 131, 82, 0.45);
+
+  /* Typography */
+  --text: #f6f0e8;
+  --text-secondary: #b7aca2;
+  --muted: #938880; /* 4.5:1+ on every dark surface */
+  --subtle: #5f544b;
+
+  /* Accents & Signals */
+  --accent: #f08352;
+  --accent-hover: #ff9a6c;
+  --accent-deep: #a54724;
+  --accent-soft: rgba(240, 131, 82, 0.15);
+  --accent-glow: rgba(240, 131, 82, 0.22);
+  --success: #4e9d75;
+  --success-soft: rgba(78, 157, 117, 0.15);
+  --warning: #d7a34b;
+  --warning-soft: rgba(215, 163, 75, 0.15);
+  --danger: #d86a54;
+  --danger-soft: rgba(216, 106, 84, 0.15);
+
+  /* Glows & Shadows */
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 4px 18px rgba(0, 0, 0, 0.25);
+  --card-glow-today: rgba(240, 131, 82, 0.08);
+  --card-glow-overdue: rgba(216, 106, 84, 0.08);
+  --card-glow-completed: rgba(78, 157, 117, 0.08);
+  --card-glow-streak: rgba(215, 163, 75, 0.08);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.14);
+  --scrollbar-track: rgba(18, 16, 14, 0.5);
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  /* Warm Cream & Editorial Light Palette */
+  --bg: #f4efe7;
+  --bg-secondary: #eadfce;
+  --sidebar-bg: rgba(250, 243, 233, 0.9);
+  --panel: rgba(255, 250, 243, 0.88);
+  --panel-strong: #fff8ef;
+  --panel-secondary: #f0e6d9;
+  --panel-subtle: rgba(255, 255, 255, 0.72);
+  --border: rgba(74, 55, 37, 0.12);
+  --border-light: rgba(74, 55, 37, 0.07);
+  --border-focus: rgba(217, 108, 63, 0.35);
+
+  /* Typography */
+  --text: #22170d;
+  --text-secondary: #524335;
+  --muted: #685948;
+  --subtle: #8a7a68;
+
+  /* Accents & Signals */
+  --accent: #d96c3f;
+  --accent-hover: #a54724;
+  --accent-deep: #8f3818;
+  --accent-soft: rgba(217, 108, 63, 0.14);
+  --accent-glow: rgba(217, 108, 63, 0.18);
+  --success: #2f7d59;
+  --success-soft: rgba(47, 125, 89, 0.12);
+  --warning: #b77724;
+  --warning-soft: rgba(183, 119, 36, 0.12);
+  --danger: #c0392b;
+  --danger-soft: rgba(192, 57, 43, 0.12);
+
+  /* Glows & Shadows */
+  --shadow: 0 20px 50px rgba(63, 41, 25, 0.09);
+  --shadow-sm: 0 4px 16px rgba(63, 41, 25, 0.05);
+  --card-glow-today: rgba(217, 108, 63, 0.06);
+  --card-glow-overdue: rgba(192, 57, 43, 0.06);
+  --card-glow-completed: rgba(47, 125, 89, 0.06);
+  --card-glow-streak: rgba(183, 119, 36, 0.06);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(74, 55, 37, 0.2);
+  --scrollbar-track: rgba(244, 239, 231, 0.6);
+
+  color-scheme: light;
+}
+
+:root {
+  --sidebar-w: 255px;
+  --radius-xl: 24px;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-sans: "Avenir Next", "Trebuchet MS", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Motion tokens — one rhythm for the whole app */
+  --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 160ms;
+  --dur-base: 280ms;
+  --dur-slow: 420ms;
+
+  /* Minimum interactive target (WCAG 2.5.5 / HIG) */
+  --tap-min: 44px;
+}

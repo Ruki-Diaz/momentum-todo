@@ -1,0 +1,211 @@
+/* --------------------------------------------------------------------------
+   12. SECONDARY PRODUCTIVITY RAIL (LARGE DESKTOP)
+   -------------------------------------------------------------------------- */
+.rail-card {
+  padding: 1.2rem 1.35rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rail-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rail-card-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.rail-badge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.rail-date-hint {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.progress-bar-wrap {
+  height: 7px;
+  background: var(--panel-subtle);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 100%);
+  border-radius: var(--radius-pill);
+  transition: width 350ms var(--ease-smooth);
+}
+
+.rail-subtext {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Mini Calendar Grid */
+.mini-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.mini-cal-day-header {
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0.2rem 0;
+  font-size: 0.72rem;
+}
+
+.mini-cal-day {
+  padding: 0.35rem 0;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 140ms ease;
+  position: relative;
+}
+
+.mini-cal-day:hover {
+  background: var(--panel-subtle);
+  color: var(--text);
+}
+
+.rail-date-hint {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  transition: all 140ms ease;
+}
+
+.rail-date-hint:hover {
+  background: var(--panel-subtle);
+  color: var(--accent);
+}
+
+.mini-cal-day.today {
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.mini-cal-day.active-date:not(.today) {
+  background: var(--panel-strong);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.mini-cal-day.has-tasks::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.mini-cal-day.today.has-tasks::after {
+  background: white;
+}
+
+/* Up Next List */
+.rail-task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rail-task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  background: var(--panel-subtle);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.rail-task-item:hover {
+  background: var(--panel-strong);
+  transform: translateX(2px);
+}
+
+.rail-task-title {
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail-task-date {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Projects Snapshot */
+.projects-snapshot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.proj-snapshot-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.proj-snapshot-header {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.proj-snapshot-bar {
+  height: 5px;
+  background: var(--panel-subtle);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.proj-snapshot-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 300ms ease;
+}

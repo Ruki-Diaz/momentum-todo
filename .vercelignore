@@ -46,3 +46,7 @@ server/verify-neon.ts
 # ── Artifact / scratch directories ──────────────────────────────────────────
 # Local agent workspace — never part of the application.
 .agents/
+
+# Local tooling & tests (not needed at runtime)
+tests/
+.claude/

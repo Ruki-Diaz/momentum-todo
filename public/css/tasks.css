@@ -1,0 +1,569 @@
+/* --------------------------------------------------------------------------
+   7. SMART 2-STATE TASK COMPOSER (COLLAPSED / EXPANDED)
+   -------------------------------------------------------------------------- */
+.composer-panel {
+  border-color: rgba(240, 131, 82, 0.22);
+  background: var(--panel-strong);
+  margin-top: 1.35rem;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.composer-panel.is-expanded {
+  border-color: rgba(240, 131, 82, 0.45);
+  box-shadow: 0 8px 30px rgba(240, 131, 82, 0.1);
+}
+
+.todo-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.composer-main-input-wrap {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+#todoInput,
+#mobileTodoInput {
+  flex: 1;
+  font-size: 1.08rem;
+  font-weight: 500;
+  padding: 0.95rem 1.3rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--panel-subtle);
+  color: var(--text);
+  transition: all 180ms var(--ease-smooth);
+}
+
+#todoInput:focus,
+#mobileTodoInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.composer-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.95rem 1.5rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+/* Collapsible Secondary Options Row */
+.composer-options-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  background: var(--panel-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  
+  /* Collapsed by default */
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  margin-top: 0;
+  padding: 0 1rem;
+  transform: translateY(-4px);
+  transition: max-height 260ms var(--ease-smooth), opacity 200ms ease, padding 260ms var(--ease-smooth), margin 260ms var(--ease-smooth), transform 200ms ease;
+}
+
+.composer-panel.is-expanded .composer-options-row {
+  max-height: 180px;
+  opacity: 1;
+  overflow: visible;
+  pointer-events: auto;
+  margin-top: 0.85rem;
+  padding: 0.75rem 1rem;
+  transform: translateY(0);
+}
+
+.option-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.option-field-priority { width: 140px; flex-shrink: 0; }
+.option-field-date { width: 155px; flex-shrink: 0; }
+.option-field-time { width: 135px; flex-shrink: 0; }
+.option-field-project { width: 160px; flex-shrink: 0; }
+.option-field-tags { flex: 1; min-width: 170px; }
+
+.option-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+.select-input,
+.date-input,
+.time-input,
+.tags-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  color: var(--text);
+  font-size: 0.88rem;
+  transition: all 160ms var(--ease-smooth);
+}
+
+.select-input:focus,
+.date-input:focus,
+.time-input:focus,
+.tags-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+/* --------------------------------------------------------------------------
+   8. BUTTONS & CHIPS
+   -------------------------------------------------------------------------- */
+.primary-btn,
+.ghost-btn,
+.filter-chip {
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: transform 180ms var(--ease-smooth), background-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+  font-weight: 600;
+}
+
+.primary-btn:hover,
+.ghost-btn:hover,
+.filter-chip:hover {
+  transform: translateY(-1.5px);
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  color: white;
+  box-shadow: 0 5px 18px var(--accent-glow);
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%);
+  box-shadow: 0 7px 22px var(--accent-glow);
+}
+
+.primary-btn:active,
+.ghost-btn:active,
+.filter-chip:active {
+  transform: translateY(0);
+}
+
+.ghost-btn {
+  padding: 0.65rem 1.05rem;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  font-size: 0.86rem;
+}
+
+.ghost-btn:hover {
+  background: var(--panel-subtle);
+  color: var(--text);
+  border-color: var(--border-focus);
+}
+
+.icon-btn,
+.icon-btn-tiny {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  transition: all 160ms ease;
+}
+
+.icon-btn { padding: 0.5rem; }
+.icon-btn-tiny { padding: 0.25rem; }
+
+.icon-btn:hover,
+.icon-btn-tiny:hover {
+  background: var(--panel-subtle);
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   9. CONTROLS & FILTER BAR
+   -------------------------------------------------------------------------- */
+.controls-panel {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.25rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.filter-chip {
+  padding: 0.55rem 1rem;
+  background: var(--panel-subtle);
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  border: 1px solid var(--border);
+}
+
+.filter-chip.active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+
+.search-wrap {
+  flex: 1 1 220px;
+}
+
+.search-input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.95rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+#searchInput {
+  width: 100%;
+  padding: 0.6rem 0.95rem 0.6rem 2.4rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--panel-subtle);
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: all 180ms ease;
+}
+
+#searchInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+/* --------------------------------------------------------------------------
+   10. TASK LIST & ROWS (ANIMATED CIRCLE CHECKBOX & POLISHED HOVER)
+   -------------------------------------------------------------------------- */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.15rem;
+}
+
+.section-label {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 0;
+}
+
+.list-header h2 {
+  font-family: var(--font-serif);
+  font-size: 1.7rem;
+  margin: 0.15rem 0 0;
+  color: var(--text);
+  letter-spacing: -0.015em;
+}
+
+.summary-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.todo-item {
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.15rem 1.45rem;
+  border-radius: var(--radius-lg);
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  /* Entrance/reorder motion is driven by Motion.playList (js/motion.js). */
+  transition: transform 180ms var(--ease-smooth), box-shadow 180ms ease, border-color 180ms ease, opacity 280ms ease;
+}
+
+.todo-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="light"] .todo-item:hover {
+  border-color: rgba(74, 55, 37, 0.2);
+}
+
+.todo-item.completing,
+.todo-item.done {
+  opacity: 0.58;
+  background: var(--panel-subtle);
+}
+
+.todo-item.completing .todo-title,
+.todo-item.done .todo-title {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.todo-item.completing .todo-meta,
+.todo-item.done .todo-meta {
+  opacity: 0.7;
+}
+
+/* Animated Circular Checkbox */
+.todo-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 180ms var(--ease-smooth);
+  flex-shrink: 0;
+}
+
+.todo-toggle:hover {
+  border-color: var(--accent);
+  transform: scale(1.1);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.todo-toggle:checked {
+  background: var(--success);
+  border-color: var(--success);
+  animation: checkmarkPop 280ms var(--ease-smooth);
+}
+
+.todo-toggle:checked::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+@keyframes checkmarkPop {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+.todo-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.todo-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+  line-height: 1.35;
+  word-break: break-word;
+  transition: color 240ms ease, text-decoration 240ms ease;
+}
+
+.todo-description {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.38;
+  word-break: break-word;
+}
+
+/* Editorial Dot-Separated Secondary Metadata */
+.todo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.todo-meta-item {
+  color: var(--text-secondary);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.todo-meta-item.is-overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.todo-meta-sep {
+  color: var(--subtle);
+  user-select: none;
+}
+
+.todo-meta-tag {
+  color: var(--accent);
+  cursor: pointer;
+  transition: color 140ms ease, opacity 140ms ease;
+  font-weight: 500;
+}
+
+.todo-meta-tag:hover {
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+/* Badges & Pills */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: var(--radius-pill);
+  padding: 0.25rem 0.68rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--panel-subtle);
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+.badge.priority-high {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge.priority-medium {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.badge.priority-low {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge.badge-overdue {
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.badge.badge-project {
+  background: var(--panel-subtle);
+  color: var(--text);
+}
+
+.badge.badge-tag {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.badge.badge-subtasks {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.todo-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  opacity: 0.85;
+  transition: opacity 160ms ease;
+}
+
+.todo-item:hover .todo-actions {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   11. COMPACT ELEGANT EMPTY STATE
+   -------------------------------------------------------------------------- */
+.empty-state {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--panel-subtle);
+}
+
+.empty-state-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  margin-bottom: 0.2rem;
+}
+
+.empty-state-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.empty-state-text {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  max-width: 32ch;
+}
+
+.empty-state-cta {
+  margin-top: 0.5rem;
+}

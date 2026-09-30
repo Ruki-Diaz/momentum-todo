@@ -29,8 +29,21 @@
   <meta name="twitter:description" content="A calm, editorial, and cinematic personal productivity workspace. Plan your day with intention.">
   <meta name="twitter:image" content="https://momentumtodo.vercel.app/favicon.svg">
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/tasks.css">
+  <link rel="stylesheet" href="css/rail.css">
+  <link rel="stylesheet" href="css/toasts-mobile.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/drawer-modals.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <link rel="stylesheet" href="css/palette.css">
+  <link rel="stylesheet" href="css/auth-account.css">
   <link rel="stylesheet" href="landing.css">
+  <link rel="stylesheet" href="css/motion.css">
+  <link rel="stylesheet" href="css/a11y.css">
   <script>
     // Initialize theme instantly to avoid Flash of Unstyled Content
     (function() {
@@ -164,7 +177,7 @@
                   <span class="preview-stat-lbl">Done</span>
                 </div>
                 <div class="preview-stat">
-                  <span class="preview-stat-val">5🔥</span>
+                  <span class="preview-stat-val">5</span>
                   <span class="preview-stat-lbl">Streak</span>
                 </div>
               </div>
@@ -726,7 +739,7 @@
 
               <!-- Clickable Dynamic Stat Cards -->
               <div class="stats-grid" aria-label="Productivity stats">
-                <article class="stat-card stat-card-today" id="cardToday" role="button" tabindex="0" aria-label="View Today's tasks" data-stat="today">
+                <article class="motion-spotlight stat-card stat-card-today" id="cardToday" role="button" tabindex="0" aria-label="View Today's tasks" data-stat="today">
                   <div class="stat-card-header">
                     <span class="stat-label">Today</span>
                     <span class="stat-card-icon" aria-hidden="true">
@@ -749,7 +762,7 @@
                   </div>
                 </article>
 
-                <article class="stat-card stat-card-overdue" id="cardOverdue" role="button" tabindex="0" aria-label="View Overdue tasks" data-stat="overdue">
+                <article class="motion-spotlight stat-card stat-card-overdue" id="cardOverdue" role="button" tabindex="0" aria-label="View Overdue tasks" data-stat="overdue">
                   <div class="stat-card-header">
                     <span class="stat-label">Overdue</span>
                     <span class="stat-card-icon" aria-hidden="true">
@@ -766,7 +779,7 @@
                   </div>
                 </article>
 
-                <article class="stat-card stat-card-completed" id="cardCompleted" role="button" tabindex="0" aria-label="View Completed tasks" data-stat="completed">
+                <article class="motion-spotlight stat-card stat-card-completed" id="cardCompleted" role="button" tabindex="0" aria-label="View Completed tasks" data-stat="completed">
                   <div class="stat-card-header">
                     <span class="stat-label">Completed</span>
                     <span class="stat-card-icon" aria-hidden="true">
@@ -782,7 +795,7 @@
                   </div>
                 </article>
 
-                <article class="stat-card stat-card-streak" id="cardStreak" role="button" tabindex="0" aria-label="View streak details" data-stat="streak">
+                <article class="motion-spotlight stat-card stat-card-streak" id="cardStreak" role="button" tabindex="0" aria-label="View streak details" data-stat="streak">
                   <div class="stat-card-header">
                     <span class="stat-label">Streak</span>
                     <span class="stat-card-icon" aria-hidden="true">
@@ -1168,7 +1181,7 @@
         </button>
       </div>
       <div class="drawer-header-right">
-        <span id="drawerSaveStatus" class="drawer-save-status" aria-live="polite">Saved ✓</span>
+        <span id="drawerSaveStatus" class="drawer-save-status" aria-live="polite">Saved</span>
         <button id="drawerDuplicateBtn" class="icon-btn" type="button" title="Duplicate task" aria-label="Duplicate task">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -2267,6 +2280,16 @@
   </div>
 
   <script src="landing.js"></script>
-  <script src="app.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/motion.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/task-ui.js"></script>
+  <script src="js/account.js"></script>
+  <script src="js/views.js"></script>
+  <script src="js/actions.js"></script>
+  <script src="js/ambient.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
