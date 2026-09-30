@@ -777,6 +777,65 @@
   transform: translateY(0) scale(1);
 }
 
+/* Momentum section visual — live cube wave (js/cube-wave.js) with the streak card floating above */
+.vis-wave-visual {
+  min-height: 380px;
+  padding: 0;
+  justify-content: flex-end;
+  /* Fallback when WebGL2 is unavailable: a soft copper glow. */
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 58%, rgba(240, 131, 82, 0.16), transparent 70%),
+    var(--landing-surface);
+}
+
+.vis-wave-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 1.2s ease 0.2s;
+}
+
+.vis-wave-canvas.is-ready {
+  opacity: 1;
+}
+
+/* Vignette so the floating card stays legible over the brightest crests. */
+.vis-wave-visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgba(13, 11, 9, 0.72) 100%);
+  pointer-events: none;
+}
+
+.vis-streak-floating {
+  position: relative;
+  z-index: 1;
+  margin: 20px;
+  padding: 14px 18px;
+  gap: 8px;
+  align-self: flex-start;
+  border-radius: 16px;
+  background: rgba(20, 18, 16, 0.62);
+  border: 1px solid var(--landing-border-sub);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 768px) {
+  .vis-wave-visual {
+    min-height: 320px;
+  }
+
+  .vis-streak-floating {
+    margin: 16px;
+  }
+}
+
 /* Today section visual — task list illustration */
 .vis-tasks {
   display: flex;

@@ -8,7 +8,7 @@
  * 3. Non-GET requests (POST, PUT, PATCH, DELETE) bypass Cache Storage unconditionally.
  */
 
-const CACHE_NAME = "momentum-static-v3";
+const CACHE_NAME = "momentum-static-v4";
 
 const STATIC_SHELL_ASSETS = [
   "/",
@@ -27,6 +27,7 @@ const STATIC_SHELL_ASSETS = [
   "/css/motion.css",
   "/css/a11y.css",
   "/landing.css",
+  "/js/cube-wave.js",
   "/js/data.js",
   "/js/icons.js",
   "/js/motion.js",

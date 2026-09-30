@@ -281,8 +281,9 @@
             Your history shows everything you've achieved — not just what remains.
           </p>
         </div>
-        <div class="landing-section-visual" aria-hidden="true">
-          <div class="vis-streak">
+        <div class="landing-section-visual vis-wave-visual" aria-hidden="true">
+          <canvas class="vis-wave-canvas" data-cube-wave></canvas>
+          <div class="vis-streak vis-streak-floating">
             <div class="vis-streak-number">12</div>
             <div class="vis-streak-label">Day streak — keep going.</div>
             <div class="vis-streak-days">
@@ -2280,6 +2281,7 @@
   </div>
 
   <script src="landing.js"></script>
+  <script src="js/cube-wave.js"></script>
   <script src="js/data.js"></script>
   <script src="js/icons.js"></script>
   <script src="js/motion.js"></script>
