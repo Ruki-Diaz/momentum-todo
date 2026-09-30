@@ -176,7 +176,7 @@ Guidelines:
     input: `Plan my day for ${targetDate}. Total candidate tasks: ${contexts.length}.`,
     schema: planDaySchema,
     schemaName: "plan_day_schedule",
-    maxOutputTokens: 512
+    maxOutputTokens: 1200
   });
 
   const validatedPlan = validatePlanDayResponse(rawResponse);
@@ -241,7 +241,7 @@ Guidelines:
     input: JSON.stringify(context),
     schema: breakDownSchema,
     schemaName: "break_down_subtasks",
-    maxOutputTokens: 500
+    maxOutputTokens: 900
   });
 
   const subtasks = validateBreakDownResponse(rawResponse);
@@ -291,7 +291,7 @@ Guidelines:
     input: `Project goal: ${escapeUserContent(goal.trim())}${targetDate ? ` | Target: ${targetDate}` : ""}`,
     schema: projectPlanSchema,
     schemaName: "project_plan_proposal",
-    maxOutputTokens: 600
+    maxOutputTokens: 1600
   });
 
   const proposal = validateProjectPlanResponse(rawResponse);
@@ -335,7 +335,7 @@ Guidelines:
     input: `Date: ${today}. Verified workspace metrics: ${JSON.stringify(stats)}`,
     schema: briefingSchema,
     schemaName: "momentum_briefing",
-    maxOutputTokens: 300
+    maxOutputTokens: 500
   });
 
   const briefing = validateBriefingResponse(rawResponse);
@@ -386,7 +386,7 @@ Guidelines:
     input: `Week: ${weekStart} to ${weekEnd}. Verified productivity data: ${JSON.stringify(stats)}`,
     schema: weeklyReviewSchema,
     schemaName: "weekly_review",
-    maxOutputTokens: 500
+    maxOutputTokens: 900
   });
 
   const review = validateWeeklyReviewResponse(rawResponse);
@@ -467,7 +467,7 @@ Allowed Intents:
 Safety & Guidelines:
 - DESTRUCTIVE ACTIONS: Deleting tasks, projects, or workspace data is strictly forbidden via AI. If the user asks to delete, purge, or remove tasks, classify as UNKNOWN and set naturalResponse: "Task deletion cannot be performed via AI. Please delete tasks manually through the Momentum interface."
 - If UPDATE_TASK matches an existing task, set taskRef to that task's reference (e.g. "t1").
-- Always provide naturalResponse: a polite 1-sentence message describing what will happen.
+- Always provide naturalResponse: a polite 1-sentence message describing what WILL happen, in future tense (e.g. "I'll move \"Weekly report\" to Friday."). Never claim a change has already been made — mutations only apply after the user confirms.
 - Output ONLY valid JSON according to schema.`;
 
   // Enforce daily per-user safety quota

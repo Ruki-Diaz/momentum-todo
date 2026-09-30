@@ -56,20 +56,17 @@ export async function consumeAIRequest(
     // - Existing row today: incremented by 1 ONLY IF current request_count < limit
     // - If current request_count >= limit: WHERE condition is false, no row is updated,
     //   and RETURNING produces 0 rows.
-    const rawSql = `
-      INSERT INTO ${table} (user_id, usage_date, request_count, created_at, updated_at)
-      VALUES ($1::uuid, $2::date, 1, NOW(), NOW())
+    const tableRef = sql.identifier(table);
+    const result = await db.execute<{ request_count: number }>(sql`
+      INSERT INTO ${tableRef} (user_id, usage_date, request_count, created_at, updated_at)
+      VALUES (${userId}::uuid, ${usageDate}::date, 1, NOW(), NOW())
       ON CONFLICT (user_id, usage_date)
       DO UPDATE SET
-        request_count = ${table}.request_count + 1,
+        request_count = ${tableRef}.request_count + 1,
         updated_at = NOW()
-      WHERE ${table}.request_count < $3
+      WHERE ${tableRef}.request_count < ${limit}
       RETURNING request_count;
-    `;
-
-    const result = await db.execute<{ request_count: number }>(
-      sql.raw(rawSql.replace("$1", `'${userId}'`).replace("$2", `'${usageDate}'`).replace("$3", String(limit)))
-    );
+    `);
 
     const rowsArray = Array.isArray(result) ? result : (result as any)?.rows ?? [];
     const updatedRow = rowsArray[0];

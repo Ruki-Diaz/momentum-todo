@@ -41,12 +41,16 @@ class GoogleProvider implements AIProvider {
 
     let response: any;
     let attempts = 0;
-    const maxAttempts = 2;
+    const maxAttempts = 3;
+    // One overall budget for all attempts, so retries never push the serverless
+    // function past its maxDuration.
+    const deadline = Date.now() + cfg.timeoutMs;
 
     while (attempts < maxAttempts) {
       attempts++;
+      const remainingMs = deadline - Date.now();
+      let timer: ReturnType<typeof setTimeout> | undefined;
       try {
-        // Execute generateContent with timeout control
         const generatePromise = client.models.generateContent({
           model,
           contents: params.input,
@@ -59,11 +63,10 @@ class GoogleProvider implements AIProvider {
           }
         });
 
-        // Wrap with timeout
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => {
+          timer = setTimeout(() => {
             reject(new AIError(500, "AI_TIMEOUT", `Gemini request timed out after ${cfg.timeoutMs}ms.`));
-          }, cfg.timeoutMs);
+          }, remainingMs);
         });
 
         response = await Promise.race([generatePromise, timeoutPromise]);
@@ -75,17 +78,19 @@ class GoogleProvider implements AIProvider {
 
         const status = err?.status ?? err?.statusCode;
         const msg = String(err?.message || "");
+        const isCapacityError =
+          status === 503 ||
+          status === 500 ||
+          msg.includes("UNAVAILABLE") ||
+          msg.includes("high demand") ||
+          msg.includes("overloaded") ||
+          msg.includes("capacity");
 
-        // If it's a 503 / UNAVAILABLE / capacity error and we have retries remaining, wait 1s and retry
-        if (
-          attempts < maxAttempts &&
-          (status === 503 ||
-            msg.includes("UNAVAILABLE") ||
-            msg.includes("high demand") ||
-            msg.includes("capacity"))
-        ) {
-          console.warn(`[Gemini Adapter] Transient provider capacity error (attempt ${attempts}/${maxAttempts}), retrying in 1s...`);
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Transient capacity errors: retry with exponential backoff + jitter while budget remains.
+        const backoffMs = 700 * 2 ** (attempts - 1) + Math.floor(Math.random() * 300);
+        if (isCapacityError && attempts < maxAttempts && deadline - Date.now() > backoffMs + 3000) {
+          console.warn(`[Gemini Adapter] Transient provider capacity error (attempt ${attempts}/${maxAttempts}), retrying in ${backoffMs}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
           continue;
         }
 
@@ -103,13 +108,7 @@ class GoogleProvider implements AIProvider {
           );
         }
 
-        // Handle 503 / UNAVAILABLE / temporary provider capacity problems
-        if (
-          status === 503 ||
-          msg.includes("UNAVAILABLE") ||
-          msg.includes("high demand") ||
-          msg.includes("capacity")
-        ) {
+        if (isCapacityError) {
           throw new AIError(
             503,
             "AI_UNAVAILABLE",
@@ -122,7 +121,21 @@ class GoogleProvider implements AIProvider {
         }
 
         throw new AIError(500, "AI_PROVIDER_ERROR", `Gemini API error: ${msg}`);
+      } finally {
+        clearTimeout(timer);
       }
+    }
+
+    const finishReason = response?.candidates?.[0]?.finishReason;
+    if (finishReason === "MAX_TOKENS") {
+      throw new AIError(
+        500,
+        "AI_RESPONSE_INVALID",
+        `Gemini response was truncated at maxOutputTokens=${params.maxOutputTokens ?? cfg.maxOutputTokens} (schema: ${params.schemaName}).`
+      );
+    }
+    if (finishReason === "SAFETY" || finishReason === "PROHIBITED_CONTENT" || finishReason === "BLOCKLIST") {
+      throw new AIError(500, "AI_RESPONSE_INVALID", "Gemini declined to answer this request.");
     }
 
     // Extract structured text output
