@@ -228,10 +228,43 @@
   margin-bottom: 1.1rem;
 }
 
+/* Inside the list panel: no card-in-a-card, just a section above the tasks. */
 .gs-slot-list .gs-card {
-  background: var(--panel-subtle);
-  border: 1px solid var(--border);
+  padding: 0 0 1.1rem;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-light);
+  border-radius: 0;
   box-shadow: none;
+  backdrop-filter: none;
+}
+
+.gs-more {
+  display: none;
+}
+
+/* Phones: only the next step shows, so tasks stay near the top. */
+@media (max-width: 767px) {
+  .gs-slot-list .gs-card:not(.is-expanded) .gs-item.is-done,
+  .gs-slot-list .gs-card:not(.is-expanded) .gs-item:not(.is-done) ~ .gs-item:not(.is-done) {
+    display: none;
+  }
+
+  .gs-slot-list .gs-more {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 0.3rem 0.4rem;
+    min-height: var(--tap-min);
+    align-items: center;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.82rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
 }
 
 .gs-header-right {

@@ -297,3 +297,128 @@
     width: 100%;
   }
 }
+
+/* --------------------------------------------------------------------------
+   15C. PHONE: TASKS FIRST
+   Filters, search, sort and "Clear completed" live in one sheet behind the
+   search button in the list header. The controls panel itself becomes the sheet.
+   -------------------------------------------------------------------------- */
+.filter-sheet-header,
+.mobile-filter-btn,
+.filter-sheet-backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .list-header {
+    position: relative;
+    padding-right: 3.2rem;
+  }
+
+  .mobile-filter-btn {
+    display: inline-grid;
+    place-items: center;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--tap-min);
+    height: var(--tap-min);
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--panel-subtle);
+    color: var(--text);
+  }
+
+  .mobile-filter-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--panel-strong);
+    display: none;
+  }
+
+  .mobile-filter-btn.has-active .mobile-filter-dot {
+    display: block;
+  }
+
+  .filter-sheet-backdrop:not([hidden]) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    background: rgba(0, 0, 0, 0.45);
+    animation: fadeIn var(--dur-fast) ease;
+  }
+
+  .controls-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 120;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 1rem 1.1rem calc(1.4rem + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    background: var(--panel-strong);
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+    transform: translateY(105%);
+    visibility: hidden;
+    transition: transform var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-base);
+  }
+
+  .controls-panel.is-open {
+    transform: none;
+    visibility: visible;
+    transition: transform var(--dur-base) var(--ease-out), visibility 0s;
+  }
+
+  .filter-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .filter-sheet-title {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    color: var(--text);
+  }
+
+  .controls-panel .filters {
+    width: 100%;
+  }
+
+  .controls-panel .filter-chip {
+    flex: 1;
+  }
+
+  .controls-panel .search-wrap {
+    flex: none;
+    width: 100%;
+  }
+
+  .controls-panel #searchInput {
+    min-height: var(--tap-min);
+    font-size: 1rem; /* 16px stops iOS zooming on focus */
+  }
+
+  .controls-panel .controls-actions {
+    justify-content: space-between;
+  }
+
+  .controls-panel .sort-control-wrap {
+    flex: 1;
+  }
+
+  .controls-panel .sort-select {
+    width: 100%;
+  }
+}

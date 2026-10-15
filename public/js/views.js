@@ -473,6 +473,8 @@ function render() {
   Reminders.renderPrompt(document.querySelector("#listReminderPrompt"));
   Reminders.applyPending();
   GettingStarted.render();
+  FilterSheet.render();
+  SaveNudge.render();
 }
 
 function updateViewHeaders() {

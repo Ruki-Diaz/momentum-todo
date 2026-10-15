@@ -321,11 +321,13 @@ function openMobileBottomSheet() {
     mobileProjectInput.value = state.currentView.slice(8);
   }
   mobileComposerSheet.classList.add("open");
+  mobileComposerSheet.setAttribute("aria-hidden", "false");
   mobileTodoInput.focus();
 }
 
 function closeMobileBottomSheet() {
   mobileComposerSheet.classList.remove("open");
+  mobileComposerSheet.setAttribute("aria-hidden", "true");
   mobileTodoForm.reset();
   if (mobileSmart) mobileSmart.reset();
 }

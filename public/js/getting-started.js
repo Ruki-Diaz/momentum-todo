@@ -295,6 +295,21 @@ const GettingStarted = {
 
     card.append(header, bar, list);
 
+    // Phones show just the next step; this reveals the rest.
+    if (!allDone) {
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "gs-more";
+      more.textContent = this._expanded ? "Show less" : "See all steps";
+      more.setAttribute("aria-expanded", String(Boolean(this._expanded)));
+      card.classList.toggle("is-expanded", Boolean(this._expanded));
+      more.addEventListener("click", () => {
+        this._expanded = !this._expanded;
+        this.render();
+      });
+      card.append(more);
+    }
+
     if (allDone) {
       const doneNote = document.createElement("p");
       doneNote.className = "rail-subtext";

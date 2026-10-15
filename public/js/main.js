@@ -25,6 +25,9 @@ PrivacyManager.setupListeners();
 FeedbackManager.setupListeners();
 MomentumAI.setupListeners();
 Reminders.setupListeners();
+FilterSheet.setupListeners();
+InstallHelper.setupListeners();
+SaveNudge.setupListeners();
 AuthManager.init();
 
 // PWA Service Worker Registration

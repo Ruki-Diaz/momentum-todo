@@ -1951,3 +1951,144 @@
 .auth-reason[hidden] {
   display: none;
 }
+
+/* --------------------------------------------------------------------------
+   "Save your tasks" nudge (no-account mode)
+   -------------------------------------------------------------------------- */
+.save-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.4rem;
+  flex-wrap: wrap;
+  margin: 1.35rem 0 0;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--panel-strong);
+  border: 1px solid var(--border-focus);
+  animation: fadeIn 220ms ease;
+}
+
+.save-nudge[hidden] {
+  display: none;
+}
+
+.save-nudge-text {
+  flex: 1 1 260px;
+  margin: 0;
+  color: var(--text);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.save-nudge-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.save-nudge-actions .primary-btn {
+  padding: 0.65rem 1.2rem;
+}
+
+@media (max-width: 767px) {
+  .save-nudge {
+    margin: 0 0 1.2rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Install guide
+   -------------------------------------------------------------------------- */
+.install-guide-card {
+  width: min(100% - 2rem, 620px);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+
+.install-guide-intro {
+  margin: 0 0 1rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.install-guide-subtitle {
+  margin: 1rem 0 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.install-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.install-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.install-art {
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+}
+
+.art-frame { fill: var(--panel-secondary); stroke: var(--border); stroke-width: 1.5; }
+.art-screen { fill: var(--bg); }
+.art-sheet { fill: var(--panel-strong); stroke: var(--border); }
+.art-bar { fill: var(--panel-subtle); stroke: var(--border-light); }
+.art-line { fill: var(--border); }
+.art-tile { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.art-accent { fill: var(--accent); }
+.art-highlight { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.art-accent-stroke { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.art-label { fill: var(--accent); font: 700 10px var(--font-sans); }
+
+.install-steps-text {
+  margin: 0;
+  padding-left: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* Which parts show depends on the device (set by InstallHelper.openGuide) */
+#installGuideOverlay[data-mode="ios"] .install-only-android,
+#installGuideOverlay[data-mode="android"] .install-only-ios,
+#installGuideOverlay[data-mode="ios"] .install-only-desktop,
+#installGuideOverlay[data-mode="android"] .install-only-desktop,
+#installGuideOverlay[data-mode="desktop"] .install-only-mobile {
+  display: none;
+}
+
+@media (max-width: 420px) {
+  .install-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .install-step {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .install-art {
+    width: 84px;
+    flex-shrink: 0;
+  }
+}
