@@ -659,6 +659,165 @@
   50% { opacity: 0.7; }
 }
 
+/* Smart typing row in the product preview */
+.preview-composer {
+  margin-top: 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(240, 131, 82, 0.35);
+}
+
+.preview-composer-input {
+  font-size: 11px;
+  color: var(--landing-text-primary);
+}
+
+.preview-composer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.preview-chip {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--landing-text-primary);
+  background: rgba(240, 131, 82, 0.15);
+  border: 1px solid rgba(240, 131, 82, 0.35);
+}
+
+/* ==========================================================================
+   HOW IT WORKS — three plain steps
+   ========================================================================== */
+.landing-how {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 80px 40px;
+}
+
+.landing-how-heading {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: clamp(30px, 3.4vw, 44px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--landing-text-primary);
+  margin: 0 0 40px;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.landing-how-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  counter-reset: none;
+}
+
+.landing-how-step {
+  position: relative;
+  padding: 28px 26px 26px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.landing-how-step:nth-child(2) { transition-delay: 0.1s; }
+.landing-how-step:nth-child(3) { transition-delay: 0.2s; }
+
+/* A quiet arrow between steps on wide screens */
+.landing-how-step:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: -19px;
+  top: 34px;
+  color: var(--landing-orange);
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.landing-how-heading.revealed,
+.landing-how-step.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.landing-how-num {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-bottom: 18px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--landing-base);
+  background: var(--landing-orange);
+}
+
+.landing-how-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--landing-text-primary);
+}
+
+.landing-how-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--landing-text-secondary);
+}
+
+/* The quiet "Try without an account" link in the final call to action */
+.landing-cta-local {
+  font-size: 15px;
+  min-height: 44px;
+}
+
+@media (max-width: 1024px) {
+  .landing-how {
+    padding: 24px 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-how {
+    padding: 16px 24px 24px;
+  }
+
+  .landing-how-steps {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .landing-how-step {
+    padding: 22px 20px;
+  }
+
+  .landing-how-step:not(:last-child)::after {
+    content: none;
+  }
+
+  .landing-cta-actions {
+    flex-direction: column;
+  }
+}
+
 /* ==========================================================================
    SCROLL NARRATIVE SECTIONS
    ========================================================================== */
@@ -1646,6 +1805,8 @@
   .landing-hero-actions,
   .landing-local-mode-link,
   .landing-hero-preview,
+  .landing-how-heading,
+  .landing-how-step,
   .landing-section-tag,
   .landing-section-heading,
   .landing-section-body,
@@ -1658,4 +1819,18 @@
     opacity: 1 !important;
     transform: none !important;
   }
+}
+
+/* Quiet but readable (≈6:1 on the landing background) and easy to tap */
+.landing-local-mode-link {
+  min-height: 44px;
+  font-size: 14px;
+  color: rgba(240, 235, 228, 0.62);
+  text-decoration: underline;
+  text-decoration-color: rgba(240, 235, 228, 0.25);
+  text-underline-offset: 4px;
+}
+
+.landing-local-mode-link:hover {
+  color: var(--landing-text-primary);
 }

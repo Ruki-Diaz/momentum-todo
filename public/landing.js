@@ -308,6 +308,7 @@ const LandingPage = (function () {
     const revealEls = document.querySelectorAll(
       ".landing-hero-eyebrow, .landing-hero-headline, .landing-hero-sub, " +
       ".landing-hero-actions, .landing-local-mode-link, .landing-hero-preview, " +
+      ".landing-how-heading, .landing-how-step, " +
       ".landing-section-tag, .landing-section-heading, .landing-section-body, " +
       ".landing-section-visual, .landing-cta-headline, .landing-cta-sub, " +
       ".landing-cta-actions"
@@ -361,18 +362,6 @@ const LandingPage = (function () {
   }
 
   function _setupCTAButtons() {
-    // Smooth-scroll "Explore" links
-    const exploreBtn = document.getElementById("landingExploreBtn");
-    if (exploreBtn) {
-      exploreBtn.onclick = (e) => {
-        e.preventDefault();
-        const firstSection = document.querySelector(".landing-sections");
-        if (firstSection) {
-          firstSection.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      };
-    }
-
     // "Get Started" buttons — delegate to AuthManager via registered handler
     ["landingHeroGetStartedBtn", "landingNavGetStartedBtn", "landingCtaGetStartedBtn"].forEach((id) => {
       const btn = document.getElementById(id);
@@ -397,7 +386,7 @@ const LandingPage = (function () {
       };
     }
 
-    // "Continue in Local Mode" links — delegates to AuthManager
+    // "Try without an account" links — delegates to AuthManager
     ["landingLocalModeBtn", "landingCtaLocalBtn"].forEach((id) => {
       const btn = document.getElementById(id);
       if (btn) {

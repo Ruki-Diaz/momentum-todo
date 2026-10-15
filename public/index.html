@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Momentum — Personal Productivity</title>
-  <meta name="description" content="A calm, editorial, and cinematic personal productivity workspace. Plan your day with intention, focus on what matters, and build momentum that lasts.">
+  <title>Momentum — Your workday, organised for you</title>
+  <meta name="description" content="Type tasks the way you’d say them and Momentum sorts the date, time and priority. Reminders on your phone and computer, and an AI assistant that plans your day. Free.">
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#121110">
   <link rel="canonical" href="https://momentumtodo.vercel.app/">
@@ -17,16 +17,16 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://momentumtodo.vercel.app/">
-  <meta property="og:title" content="Momentum — Personal Productivity">
-  <meta property="og:description" content="A calm, editorial, and cinematic personal productivity workspace. Plan your day with intention.">
+  <meta property="og:title" content="Momentum — Your workday, organised for you">
+  <meta property="og:description" content="Type tasks the way you’d say them. Get reminded. Let an AI assistant plan your day. Free.">
   <meta property="og:image" content="https://momentumtodo.vercel.app/favicon.svg">
   <meta property="og:site_name" content="Momentum">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:url" content="https://momentumtodo.vercel.app/">
-  <meta name="twitter:title" content="Momentum — Personal Productivity">
-  <meta name="twitter:description" content="A calm, editorial, and cinematic personal productivity workspace. Plan your day with intention.">
+  <meta name="twitter:title" content="Momentum — Your workday, organised for you">
+  <meta name="twitter:description" content="Type tasks the way you’d say them. Get reminded. Let an AI assistant plan your day. Free.">
   <meta name="twitter:image" content="https://momentumtodo.vercel.app/favicon.svg">
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -65,7 +65,7 @@
 
   <!-- =========================================================
        LANDING PAGE LAYER — shown to unauthenticated visitors
-       that have NOT chosen Local Mode.
+       that have NOT chosen to try without an account.
        Controlled exclusively by AuthManager in app.js.
        ========================================================= -->
 
@@ -83,7 +83,7 @@
       </a>
       <div class="landing-nav-actions">
         <button id="landingNavSignInBtn" class="landing-nav-link" type="button">Sign in</button>
-        <button id="landingNavGetStartedBtn" class="landing-nav-cta" type="button">Get started</button>
+        <button id="landingNavGetStartedBtn" class="landing-nav-cta" type="button">Get started free</button>
       </div>
     </nav>
 
@@ -92,22 +92,22 @@
       <div class="landing-hero-content">
         <span class="landing-hero-eyebrow">
           <span class="landing-hero-eyebrow-line" aria-hidden="true"></span>
-          Personal Productivity
+          For busy professionals
         </span>
         <h1 id="heroHeadline" class="landing-hero-headline">
-          Your day,<br>
-          with <em>intention.</em>
+          Your workday,<br>
+          organised <em>for you.</em>
         </h1>
         <p class="landing-hero-sub">
-          A focused workspace for planning what matters,
-          organising your day, and building momentum that lasts.
+          Type tasks the way you’d say them, like “Call John tomorrow at 3pm”, and Momentum
+          sorts out the date, time and priority. Your AI assistant plans your day and
+          breaks big jobs into small steps.
         </p>
         <div class="landing-hero-actions">
-          <button id="landingHeroGetStartedBtn" class="landing-btn-primary" type="button">Get started — it's free</button>
-          <button id="landingExploreBtn" class="landing-btn-secondary" type="button">Explore Momentum</button>
+          <button id="landingHeroGetStartedBtn" class="landing-btn-primary" type="button">Get started free</button>
         </div>
-        <button id="landingLocalModeBtn" class="landing-local-mode-link" type="button" aria-label="Continue without an account in local mode">
-          Continue in Local Mode →
+        <button id="landingLocalModeBtn" class="landing-local-mode-link" type="button" aria-label="Try without an account (saved on this device only)">
+          Try without an account →
         </button>
       </div>
 
@@ -181,20 +181,28 @@
                   <span class="preview-stat-lbl">Streak</span>
                 </div>
               </div>
+              <div class="preview-composer">
+                <div class="preview-composer-input">Call John tomorrow 3pm, urgent</div>
+                <div class="preview-composer-chips">
+                  <span class="preview-chip">Tomorrow</span>
+                  <span class="preview-chip">3:00 PM</span>
+                  <span class="preview-chip">High priority</span>
+                </div>
+              </div>
               <div class="preview-task-list">
                 <div class="preview-task">
                   <div class="preview-task-check"></div>
-                  <div class="preview-task-title">Review product brief</div>
+                  <div class="preview-task-title">Send the board pack</div>
                   <div class="preview-task-priority high">High</div>
                 </div>
                 <div class="preview-task">
                   <div class="preview-task-check"></div>
-                  <div class="preview-task-title">Write weekly report</div>
+                  <div class="preview-task-title">Weekly status update</div>
                   <div class="preview-task-priority medium">Med</div>
                 </div>
                 <div class="preview-task completed">
                   <div class="preview-task-check checked"></div>
-                  <div class="preview-task-title">Morning planning session</div>
+                  <div class="preview-task-title">Approve supplier invoice</div>
                   <div class="preview-task-priority low">Low</div>
                 </div>
               </div>
@@ -202,6 +210,29 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ── How it works ── -->
+    <section class="landing-how" aria-labelledby="howHeading">
+      <div class="landing-section-tag">How it works</div>
+      <h2 id="howHeading" class="landing-how-heading">Three steps. Nothing to learn.</h2>
+      <ol class="landing-how-steps">
+        <li class="landing-how-step">
+          <span class="landing-how-num" aria-hidden="true">1</span>
+          <h3 class="landing-how-title">Type it like you’d say it</h3>
+          <p class="landing-how-text">“Lunch with Sara Friday 1pm” or “send invoice every month”. No forms to fill in.</p>
+        </li>
+        <li class="landing-how-step">
+          <span class="landing-how-num" aria-hidden="true">2</span>
+          <h3 class="landing-how-title">Momentum sorts the date, time and priority</h3>
+          <p class="landing-how-text">It shows you what it understood, so you can check it at a glance.</p>
+        </li>
+        <li class="landing-how-step">
+          <span class="landing-how-num" aria-hidden="true">3</span>
+          <h3 class="landing-how-title">Get reminded and plan your day with AI</h3>
+          <p class="landing-how-text">A heads-up on your phone or computer when it’s time, and an assistant that turns your list into a plan.</p>
+        </li>
+      </ol>
     </section>
 
     <!-- ── Scroll sections ── -->
@@ -213,8 +244,8 @@
           <div class="landing-section-tag">Today</div>
           <h2 id="sectionTodayHeading" class="landing-section-heading">Start every day<br>with <em>clarity.</em></h2>
           <p class="landing-section-body">
-            Your Today view surfaces the three things that actually matter right now.
-            Overdue tasks surface automatically — nothing slips through unnoticed.
+            Today shows what needs doing now, with anything overdue at the top,
+            so nothing slips through the cracks.
           </p>
         </div>
         <div class="landing-section-visual" aria-hidden="true">
@@ -240,11 +271,11 @@
       <!-- Section 2: Plan -->
       <section class="landing-section reverse" aria-labelledby="sectionPlanHeading">
         <div class="landing-section-content">
-          <div class="landing-section-tag">Plan</div>
-          <h2 id="sectionPlanHeading" class="landing-section-heading">A calm view<br>of what lies <em>ahead.</em></h2>
+          <div class="landing-section-tag">AI assistant</div>
+          <h2 id="sectionPlanHeading" class="landing-section-heading">A plan for your day,<br>in <em>one tap.</em></h2>
           <p class="landing-section-body">
-            The calendar and Upcoming views let you plan across days and weeks without anxiety.
-            Projects keep related tasks together, so nothing gets scattered.
+            Tap “Plan my day” and the AI assistant suggests a simple schedule from your tasks.
+            Give it a goal and it turns it into a list of steps. The calendar shows the week ahead.
           </p>
         </div>
         <div class="landing-section-visual" aria-hidden="true">
@@ -277,8 +308,8 @@
           <div class="landing-section-tag">Momentum</div>
           <h2 id="sectionMomentumHeading" class="landing-section-heading">Build a streak.<br>Keep the <em>momentum.</em></h2>
           <p class="landing-section-body">
-            A daily completion streak rewards consistency, not busyness.
-            Your history shows everything you've achieved — not just what remains.
+            A daily streak rewards steady progress, not busyness.
+            Your history shows everything you’ve finished, not just what’s left.
           </p>
         </div>
         <div class="landing-section-visual vis-wave-visual" aria-hidden="true">
@@ -303,10 +334,10 @@
       <section class="landing-section reverse" aria-labelledby="sectionDataHeading">
         <div class="landing-section-content">
           <div class="landing-section-tag">Your Data</div>
-          <h2 id="sectionDataHeading" class="landing-section-heading">Local or cloud.<br><em>Your choice.</em></h2>
+          <h2 id="sectionDataHeading" class="landing-section-heading">Try it first.<br><em>Keep it safe later.</em></h2>
           <p class="landing-section-body">
-            Start in Local Mode — no account required, your data stays on this device.
-            Sign in anytime to sync your workspace across devices with Momentum Cloud.
+            Try Momentum without an account. Your tasks are saved on this device only.
+            Create a free account any time to keep them safe and use them on your phone and computer.
           </p>
         </div>
         <div class="landing-section-visual" aria-hidden="true">
@@ -316,8 +347,8 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
               </div>
               <div class="vis-data-text">
-                <div class="vis-data-title">Local Mode</div>
-                <div class="vis-data-sub">Private · Offline-ready · This device</div>
+                <div class="vis-data-title">Without an account</div>
+                <div class="vis-data-sub">Private · Saved on this device only</div>
               </div>
             </div>
             <div class="vis-data-row cloud">
@@ -325,8 +356,8 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
               </div>
               <div class="vis-data-text">
-                <div class="vis-data-title">Cloud Workspace</div>
-                <div class="vis-data-sub">Synced · Backed up · Any device</div>
+                <div class="vis-data-title">With a free account</div>
+                <div class="vis-data-sub">Kept safe · On your phone and computer</div>
               </div>
             </div>
           </div>
@@ -338,10 +369,10 @@
     <!-- ── Final CTA ── -->
     <section class="landing-cta" aria-labelledby="ctaHeading">
       <h2 id="ctaHeading" class="landing-cta-headline">Start building<br><em>momentum.</em></h2>
-      <p class="landing-cta-sub">Free. No credit card. Works offline. Your data, your rules.</p>
+      <p class="landing-cta-sub">Free. No credit card. Works on your phone and computer.</p>
       <div class="landing-cta-actions">
-        <button id="landingCtaGetStartedBtn" class="landing-btn-primary" type="button">Create a free account</button>
-        <button class="landing-btn-secondary" type="button" id="landingCtaLocalBtn">Continue in Local Mode</button>
+        <button id="landingCtaGetStartedBtn" class="landing-btn-primary" type="button">Get started free</button>
+        <button class="landing-local-mode-link landing-cta-local" type="button" id="landingCtaLocalBtn" aria-label="Try without an account (saved on this device only)">Try without an account →</button>
       </div>
     </section>
 
@@ -352,7 +383,7 @@
           <span class="landing-footer-name">Momentum</span>
           <span class="landing-footer-dot">●</span>
         </span>
-        <span class="landing-footer-text">A personal productivity workspace.</span>
+        <span class="landing-footer-text">Your workday, organised for you.</span>
       </div>
       <div class="landing-footer-links">
         <button id="landingPrivacyBtn" class="landing-footer-link-btn" type="button">Privacy & Data</button>
