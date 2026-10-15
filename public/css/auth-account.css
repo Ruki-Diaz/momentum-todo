@@ -4,7 +4,7 @@
 .auth-modal-card {
   width: min(94vw, 420px);
   padding: 1.75rem 1.6rem 1.6rem;
-  background: var(--bg-card);
+  background: var(--panel-strong);
   border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: var(--shadow-floating);
@@ -96,7 +96,7 @@
 .auth-input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(240, 131, 82, 0.15);
-  background: var(--bg-card);
+  background: var(--panel-strong);
 }
 
 .auth-code-input {

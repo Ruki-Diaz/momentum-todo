@@ -1,16 +1,19 @@
 # Momentum
 
-A calm, editorial personal productivity workspace: tasks, projects, a calendar, and an optional AI assistant ("Momentum Intelligence"). Works offline in **Local Mode** (browser storage) or signed in with a **Cloud workspace** synced to Postgres.
+A calm, editorial task app for busy professionals: type tasks the way you'd say them, get reminded, and let an optional AI assistant plan your day. Try it without an account (tasks saved in this browser only) or sign in to keep tasks in your account (Postgres).
 
 Live: https://momentumtodo.vercel.app
 
 ## Features
 
+- Smart typing: "Call John tomorrow at 3pm, high priority #legal" fills in the date, time, priority, repeat and tags, with chips to undo any part (`public/js/smart-input.js`)
 - Tasks with priority, due date/time, tags, subtasks, notes, and recurrence (daily, weekdays, weekly, monthly)
+- Reminders as real system notifications (Mark done / Snooze 10 min) while the browser or installed app is running, plus an optional "Your day" morning email
+- Friendly first run (3 example tasks), a self-ticking Getting started checklist, an install guide for phones, and a "save your tasks" nudge for people without an account
 - Views: Today, Inbox, Upcoming, Calendar, Completed, Overdue, per-project and per-tag
-- Command palette (⌘K / Ctrl+K), keyboard shortcuts (`?`), undo, in-app reminders
+- Command palette (⌘K / Ctrl+K), keyboard shortcuts (`?`), undo
 - Passwordless email-code and Google sign-in (Clerk), with a one-click import of local data into the cloud
-- Momentum Intelligence: natural-language task capture, Plan My Day, task breakdown, project planning, briefings, and weekly reviews (Gemini or OpenAI)
+- AI assistant: natural-language task capture, Plan my day, task breakdown, project planning, briefings, and weekly reviews (Gemini or OpenAI)
 - Installable PWA with an offline app shell
 - Warm dark/light themes, motion that respects `prefers-reduced-motion`, keyboard focus rings, 44px touch targets
 
@@ -37,14 +40,18 @@ public/
   js/                  Classic scripts sharing one global scope, loaded in order:
     data.js              Constants, escapeHtml, normalization, local/cloud stores
     icons.js             Inline SVG icon set
+    smart-input.js       Smart typing parser (pure, unit-tested) + composer chips
     motion.js            Motion engine (FLIP list reordering, counters, bursts)
     core.js              Undo, DOM refs, app state, toasts, theme, date helpers
     task-ui.js           Composer, task drawer, project modal, context menu
     account.js           Auth, onboarding, account/privacy, import
     views.js             Render loop, calendar, side rail
-    actions.js           CRUD, command palette, shortcuts, reminders
+    actions.js           CRUD, command palette, shortcuts, reminder loop
+    reminders.js         System notifications, "Turn on reminders" card, settings panel
+    getting-started.js   First run (example tasks) + Getting started checklist
+    phone.js             Phone search/filter sheet, install helper, save nudge
     ambient.js           WebGL background
-    ai.js                Momentum Intelligence client
+    ai.js                AI assistant client
     main.js              Boot (must load last)
   landing.css / landing.js   Marketing landing page
   sw.js                Service worker (network-first, offline fallback)
@@ -67,7 +74,15 @@ npm run db:migrate
 npm run dev            # http://localhost:8088
 ```
 
-Without Clerk keys the app still runs: choose **Continue in Local Mode** on the landing page.
+Without Clerk keys the app still runs: choose **Try without an account** on the landing page.
+
+### "Your day" morning email (optional)
+
+Hidden unless all three env vars are set: `CRON_SECRET`, `BREVO_API_KEY`, `DIGEST_FROM_EMAIL` (see `.env.example`).
+Vercel Cron calls `/api/cron/daily-email` once a day (`vercel.json` → `crons`); unsubscribe links go to
+`/api/email/unsubscribe`. Both are `?action=` branches of `api/settings/index.ts`. Needs migration `0004_daily_email`.
+The free plan allows one cron run a day, so everyone gets the email from that run; per-person send hours are stored
+for when a more frequent scheduler is available.
 
 ## Scripts
 
