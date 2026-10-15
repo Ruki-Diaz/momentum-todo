@@ -24,9 +24,11 @@ const MomentumAI = {
 
   async ensureAvailable() {
     if (!WorkspaceRepository.isCloud()) {
-      showToast("Momentum Intelligence requires Cloud Workspace. Sign in to continue.", 4000);
+      const why = "Sign in to use the AI assistant. It can plan your day and break big tasks into steps.";
       if (typeof AuthManager !== "undefined" && typeof AuthManager.openSignIn === "function") {
-        AuthManager.openSignIn();
+        AuthManager.openSignIn({ reason: why });
+      } else {
+        showToast(why, 4000);
       }
       return false;
     }
@@ -74,7 +76,7 @@ const MomentumAI = {
       this._disclosureCallback(true);
       this._disclosureCallback = null;
     }
-    showToast("Momentum Intelligence enabled", 3000, null, "sparkles");
+    showToast("AI assistant turned on", 3000, null, "sparkles");
   },
 
   async apiCall(endpoint, payload = {}) {
@@ -91,7 +93,7 @@ const MomentumAI = {
     const available = await this.ensureAvailable();
     if (!available) return;
 
-    showToast("Analyzing task with Momentum Intelligence…", 2000);
+    showToast("Reading your task…", 2000);
     try {
       const data = await this.apiCall("parse-task", { input });
       if (data && data.proposal) {
@@ -186,7 +188,7 @@ const MomentumAI = {
     try {
       await WorkspaceRepository.createTask(taskData);
       this.closeTaskPreviewModal();
-      showToast("Task created with Momentum Intelligence", 3000, null, "sparkles");
+      showToast("Task added", 3000, null, "sparkles");
     } catch (err) {
       showToast("Failed to create task: " + err.message, 3500);
     }
@@ -619,7 +621,13 @@ const MomentumAI = {
   },
 
   // 7. Intelligence Hub launcher
-  openHub() {
+  async openHub() {
+    // Signed out: go straight to sign-in, with the reason, instead of a hub of locked buttons.
+    if (!WorkspaceRepository.isCloud()) {
+      await this.ensureAvailable();
+      return;
+    }
+    GettingStarted.markAiTried();
     const overlay = document.getElementById("intelligenceHubModalOverlay");
     const input = document.getElementById("aiHubNlInput");
     if (overlay) {
@@ -642,7 +650,7 @@ const MomentumAI = {
     const available = await this.ensureAvailable();
     if (!available) return;
 
-    showToast("Interpreting with Momentum Intelligence…", 2000);
+    showToast("Working on it…", 2000);
     try {
       const intentResult = await this.apiCall("command-intent", { query });
       if (!intentResult) throw new Error("No intent response.");

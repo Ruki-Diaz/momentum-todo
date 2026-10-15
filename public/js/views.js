@@ -440,10 +440,10 @@ function render() {
     todoList.innerHTML = "";
 
     if (state.booting || (state.workspaceMode === "cloud" && state.cloudStatus === "loading")) {
-      summaryText.textContent = "Syncing cloud workspace…";
+      summaryText.textContent = "Loading your tasks…";
       todoList.append(...buildSkeletonRows());
     } else if (state.workspaceMode === "cloud" && state.cloudStatus === "error") {
-      summaryText.textContent = "Cloud workspace unavailable";
+      summaryText.textContent = "Couldn't load your tasks";
       todoList.append(buildCloudErrorElement(state.cloudError, () => WorkspaceRepository.switchToCloud(AuthManager.currentUser)));
     } else if (sortedTodos.length === 0) {
       todoList.append(buildEmptyStateElement());
@@ -472,32 +472,33 @@ function render() {
   // Offer reminders when tasks have them; open a task a notification asked for
   Reminders.renderPrompt(document.querySelector("#listReminderPrompt"));
   Reminders.applyPending();
+  GettingStarted.render();
 }
 
 function updateViewHeaders() {
   if (state.currentView === "today") {
-    sectionSubheader.textContent = "Active board";
-    sectionHeader.textContent = "Today’s Board";
+    sectionSubheader.textContent = "Your tasks";
+    sectionHeader.textContent = "Today";
   } else if (state.currentView === "inbox") {
-    sectionSubheader.textContent = "Unassigned";
+    sectionSubheader.textContent = "Not in a project yet";
     sectionHeader.textContent = "Inbox";
   } else if (state.currentView === "upcoming") {
     sectionSubheader.textContent = "Scheduled";
     sectionHeader.textContent = "Upcoming";
   } else if (state.currentView === "completed") {
-    sectionSubheader.textContent = "Archive";
+    sectionSubheader.textContent = "Done";
     sectionHeader.textContent = "Completed";
   } else if (state.currentView === "overdue") {
-    sectionSubheader.textContent = "Attention";
-    sectionHeader.textContent = "Overdue Tasks";
+    sectionSubheader.textContent = "Needs attention";
+    sectionHeader.textContent = "Overdue";
   } else if (state.currentView.startsWith("project:")) {
     const projId = state.currentView.slice(8);
     const proj = state.projects.find((p) => p.id === projId);
-    sectionSubheader.textContent = "Project Board";
+    sectionSubheader.textContent = "Project";
     sectionHeader.textContent = proj ? proj.name : "Project";
   } else if (state.currentView.startsWith("tag:")) {
     const tag = state.currentView.slice(4);
-    sectionSubheader.textContent = "Tag Filter";
+    sectionSubheader.textContent = "Tag";
     sectionHeader.textContent = `#${tag}`;
   } else if (state.currentView.startsWith("calendar:")) {
     const calDate = state.currentView.slice(9);
@@ -635,7 +636,7 @@ function renderTagsNav() {
 
 function buildSummary(visibleCount, openTodos) {
   if (state.todos.length === 0) {
-    return "No tasks yet. Add one above to get started.";
+    return "No tasks yet.";
   }
   if (visibleCount === 0) {
     return "No tasks match this filter.";
@@ -673,8 +674,8 @@ function buildCloudErrorElement(errorMessage, onRetry) {
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
     </div>
-    <h3 class="cloud-error-title">Unable to load cloud workspace</h3>
-    <p class="cloud-error-desc">${escapeHtml(errorMessage || "A temporary connection issue occurred while syncing with the server.")}</p>
+    <h3 class="cloud-error-title">We couldn’t load your tasks</h3>
+    <p class="cloud-error-desc">${escapeHtml(errorMessage || "Check your internet connection and try again.")}</p>
   `;
   const retryBtn = document.createElement("button");
   retryBtn.type = "button";
@@ -685,7 +686,7 @@ function buildCloudErrorElement(errorMessage, onRetry) {
       <polyline points="1 20 1 14 7 14"></polyline>
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
     </svg>
-    <span>Retry</span>
+    <span>Try again</span>
   `;
   retryBtn.addEventListener("click", onRetry);
   container.appendChild(retryBtn);
@@ -693,6 +694,8 @@ function buildCloudErrorElement(errorMessage, onRetry) {
 }
 
 function buildEmptyStateElement() {
+  if (FirstRun.shouldOffer()) return FirstRun.buildCard();
+
   const li = document.createElement("li");
   li.className = "empty-state";
 
@@ -717,8 +720,8 @@ function buildEmptyStateElement() {
     text.textContent = "Nothing demanding your attention right now.";
     ctaBtn.textContent = "+ Create a task";
   } else if (state.currentView === "inbox") {
-    title.textContent = "Inbox zero.";
-    text.textContent = "Everything has a place. Capture incoming ideas anytime.";
+    title.textContent = "Your inbox is empty.";
+    text.textContent = "Tasks without a project land here.";
     ctaBtn.textContent = "+ Create a task";
   } else if (state.currentView === "upcoming") {
     title.textContent = "Nothing on the horizon.";
@@ -736,12 +739,12 @@ function buildEmptyStateElement() {
     const projId = state.currentView.slice(8);
     const proj = state.projects.find((p) => p.id === projId);
     title.textContent = "This project is quiet.";
-    text.textContent = `Add tasks to organize your ${proj ? proj.name : "project"} workflow.`;
+    text.textContent = `Add the first task for ${proj ? proj.name : "this project"}.`;
     ctaBtn.textContent = "+ Add project task";
   } else if (state.currentView.startsWith("tag:")) {
     const tag = state.currentView.slice(4);
     title.textContent = `No tasks tagged #${tag}.`;
-    text.textContent = "Assign tags to tasks in the composer to organize them here.";
+    text.textContent = "Type #tag in a task to add it here.";
     ctaBtn.textContent = "+ Create tagged task";
   } else if (state.currentView.startsWith("calendar:")) {
     const calDate = state.currentView.slice(9);
@@ -835,7 +838,7 @@ function buildTodoElement(todo) {
   if (todo.recurrence && todo.recurrence !== "none") {
     const recSpan = document.createElement("span");
     recSpan.className = "todo-meta-item";
-    recSpan.textContent = `↻ ${capitalize(todo.recurrence)}`;
+    recSpan.textContent = `Repeats ${RECURRENCE_WORDS[todo.recurrence] || todo.recurrence}`;
     metaSegments.push(recSpan);
   }
 
@@ -845,7 +848,7 @@ function buildTodoElement(todo) {
     const doneSubtasks = subtasks.filter((s) => s.completed).length;
     const subtaskSpan = document.createElement("span");
     subtaskSpan.className = "todo-meta-item";
-    subtaskSpan.textContent = `${doneSubtasks}/${subtasks.length} subtasks`;
+    subtaskSpan.textContent = `${doneSubtasks}/${subtasks.length} steps`;
     metaSegments.push(subtaskSpan);
   }
 

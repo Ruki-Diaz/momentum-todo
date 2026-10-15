@@ -611,7 +611,8 @@ const SmartInput = (() => {
           dueDate: merged.dueDate || "",
           dueTime: merged.dueTime || "",
           tags: merged.tags,
-          recurrence: (ctl.parsed && ctl.parsed.recurrence) || "none"
+          recurrence: (ctl.parsed && ctl.parsed.recurrence) || "none",
+          understood: ctl.parsed ? ctl.parsed.matches.length : 0
         };
       }
     };

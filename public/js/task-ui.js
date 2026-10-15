@@ -194,7 +194,7 @@ function closeTaskDetails() {
 function updateDrawerStatusButton(todo) {
   if (!drawerToggleStatusBtn) return;
   drawerToggleStatusBtn.classList.toggle("is-completed", todo.completed);
-  drawerStatusText.textContent = todo.completed ? "Completed" : "Incomplete";
+  drawerStatusText.textContent = todo.completed ? "Done" : "Not done";
 }
 
 function renderDrawerTags(todo) {
@@ -485,7 +485,7 @@ function openContextMenu(e, todoId) {
 
   const inboxBtn = document.createElement("button");
   inboxBtn.className = "context-menu-item";
-  inboxBtn.innerHTML = `<span>Inbox (Unassigned)</span>`;
+  inboxBtn.innerHTML = `<span>Inbox</span>`;
   inboxBtn.addEventListener("click", async () => {
     await moveTodoToProject(todoId, null);
     closeContextMenu();

@@ -209,3 +209,155 @@
   border-radius: var(--radius-pill);
   transition: width 300ms ease;
 }
+
+/* --------------------------------------------------------------------------
+   Getting started checklist (rail on wide screens, top of the list elsewhere)
+   -------------------------------------------------------------------------- */
+.gs-slot[hidden] {
+  display: none;
+}
+
+/* The rail version takes over from 1350px, where the rail is shown. */
+@media (min-width: 1350px) {
+  .gs-slot-list {
+    display: none;
+  }
+}
+
+.gs-slot-list {
+  margin-bottom: 1.1rem;
+}
+
+.gs-slot-list .gs-card {
+  background: var(--panel-subtle);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.gs-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.gs-close {
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-right: -0.4rem;
+}
+
+.gs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.gs-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.gs-item.is-done {
+  padding: 0.5rem 0.4rem;
+  color: var(--muted);
+}
+
+.gs-item.is-done .gs-label {
+  text-decoration: line-through;
+  text-decoration-color: var(--subtle);
+}
+
+.gs-action {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.4rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) ease;
+}
+
+.gs-action:hover {
+  background: var(--accent-soft);
+}
+
+.gs-action .gs-label {
+  text-decoration: underline;
+  text-decoration-color: var(--border-focus);
+  text-underline-offset: 3px;
+}
+
+.gs-check {
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--subtle);
+}
+
+.gs-item.is-done .gs-check {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+
+@media (pointer: coarse) {
+  .gs-action {
+    min-height: var(--tap-min);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   First run: example tasks or a clean list
+   -------------------------------------------------------------------------- */
+.first-run-card {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 1.6rem 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--border-focus);
+  background: var(--accent-soft);
+}
+
+.first-run-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  color: var(--text);
+}
+
+.first-run-text {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.first-run-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.first-run-primary {
+  padding: 0.75rem 1.3rem;
+}

@@ -370,10 +370,10 @@
         <span class="dn-modal-brand-dot" aria-hidden="true">●</span>
       </div>
       <h2 id="dnModalHeadline" class="dn-modal-headline">What should we<br>call you?</h2>
-      <p class="dn-modal-sub">This is how Momentum will greet you and display your name across your workspace.</p>
+      <p class="dn-modal-sub">We’ll use it to greet you.</p>
       <div id="dnModalError" class="dn-modal-error" role="alert"></div>
       <div class="dn-modal-field">
-        <label for="dnModalInput" class="dn-modal-label">Display Name</label>
+        <label for="dnModalInput" class="dn-modal-label">Your name</label>
         <input
           id="dnModalInput"
           class="dn-modal-input"
@@ -383,11 +383,11 @@
           autocomplete="given-name"
           spellcheck="false"
         />
-        <p class="dn-modal-hint">Your first name works great. Up to 50 characters, any language.</p>
+        <p class="dn-modal-hint">Your first name is perfect.</p>
       </div>
       <div class="dn-modal-actions">
         <button id="dnModalSubmitBtn" class="dn-modal-submit" type="button">
-          <span class="dn-modal-btn-text">Continue to Workspace</span>
+          <span class="dn-modal-btn-text">Continue</span>
           <div class="dn-spinner" id="dnModalSpinner" style="display:none"></div>
         </button>
       </div>
@@ -398,14 +398,14 @@
   <div id="profileEditorOverlay" class="profile-editor-overlay" role="dialog" aria-modal="true" aria-labelledby="profileEditorTitle" aria-hidden="true">
     <div class="profile-editor-card">
       <div class="profile-editor-header">
-        <h3 id="profileEditorTitle" class="profile-editor-title">Edit Profile</h3>
-        <button id="profileEditorCloseBtn" class="profile-editor-close" type="button" aria-label="Close profile editor">
+        <h3 id="profileEditorTitle" class="profile-editor-title">Edit your name</h3>
+        <button id="profileEditorCloseBtn" class="profile-editor-close" type="button" aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div id="profileEditorError" class="profile-editor-error" role="alert"></div>
       <div class="profile-editor-field">
-        <label for="profileEditorNameInput" class="profile-editor-label">Display Name</label>
+        <label for="profileEditorNameInput" class="profile-editor-label">Your name</label>
         <input
           id="profileEditorNameInput"
           class="profile-editor-input"
@@ -414,7 +414,7 @@
           maxlength="60"
           spellcheck="false"
         />
-        <p class="profile-editor-hint">Shown in greetings and your workspace profile. Up to 50 characters.</p>
+        <p class="profile-editor-hint">Used when Momentum greets you.</p>
       </div>
       <div class="profile-editor-field">
         <label for="profileEditorEmailDisplay" class="profile-editor-label">Email</label>
@@ -424,9 +424,9 @@
           type="email"
           readonly
           aria-readonly="true"
-          aria-label="Email address (managed by authentication provider, read only)"
+          aria-label="Email address (read only)"
         />
-        <p class="profile-editor-hint">Managed by your authentication provider.</p>
+        <p class="profile-editor-hint">To change your email, use Manage account.</p>
       </div>
       <div class="profile-editor-footer">
         <button id="profileEditorCancelBtn" class="profile-editor-cancel" type="button">Cancel</button>
@@ -547,13 +547,13 @@
               </button>
             </li>
             <li>
-              <button id="navItemIntelligence" class="nav-item nav-item-intelligence" type="button" aria-label="Momentum Intelligence">
+              <button id="navItemIntelligence" class="nav-item nav-item-intelligence" type="button" aria-label="AI assistant">
                 <span class="nav-icon" aria-hidden="true">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
                   </svg>
                 </span>
-                <span class="nav-label">Intelligence</span>
+                <span class="nav-label">AI assistant</span>
                 <span class="badge-ai-pill">AI</span>
               </button>
             </li>
@@ -588,13 +588,13 @@
       <!-- Sidebar Footer with User Profile & Theme Switcher -->
       <div class="sidebar-footer">
         <div class="user-profile-wrap">
-          <button id="userProfileBtn" class="user-profile-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Open workspace options">
+          <button id="userProfileBtn" class="user-profile-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Open account menu">
             <div class="user-avatar" aria-hidden="true">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg>
             </div>
             <div class="user-info">
-              <span class="user-name">Local Workspace</span>
-              <span class="user-status">Local Mode</span>
+              <span class="user-name">Not signed in</span>
+              <span class="user-status">On this device only</span>
             </div>
             <svg class="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="6 9 12 15 18 9"></polyline>
@@ -604,25 +604,25 @@
           <!-- Floating Account & Workspace Menu -->
           <div id="userAccountMenu" class="user-account-menu" role="menu" aria-hidden="true">
             <div class="account-menu-header">
-              <strong id="accountMenuHeaderTitle">Local Workspace</strong>
-              <span id="accountMenuHeaderSub">Offline-Ready</span>
+              <strong id="accountMenuHeaderTitle">Not signed in</strong>
+              <span id="accountMenuHeaderSub">Your tasks are saved on this device only</span>
             </div>
             <div class="account-menu-divider"></div>
             <button class="account-menu-item" id="menuSignInBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-              <span>Sign In / Create Account</span>
+              <span>Sign in or create a free account</span>
             </button>
             <button class="account-menu-item" id="menuEditProfileBtn" type="button" role="menuitem" style="display: none;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              <span>Edit Profile</span>
+              <span>Edit your name</span>
             </button>
             <button class="account-menu-item" id="menuManageAccountBtn" type="button" role="menuitem" style="display: none;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-              <span>Manage Account</span>
+              <span>Manage account</span>
             </button>
             <button class="account-menu-item" id="menuImportWorkspaceBtn" type="button" role="menuitem" style="display: none;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              <span>Import Local Workspace</span>
+              <span>Copy tasks from this device</span>
             </button>
             <button class="account-menu-item" id="menuRemindersBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
@@ -630,11 +630,11 @@
             </button>
             <button class="account-menu-item" id="menuToggleThemeBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg>
-              <span>Toggle Theme (Dark / Light)</span>
+              <span>Switch light / dark</span>
             </button>
             <button class="account-menu-item" id="menuExportDataBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              <span>Export Backup (JSON)</span>
+              <span>Download a backup</span>
             </button>
             <button class="account-menu-item" id="menuAccountDataBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
@@ -646,23 +646,23 @@
             </button>
             <button class="account-menu-item" id="menuFeedbackBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-              <span>Send Feedback</span>
+              <span>Send feedback</span>
             </button>
             <button class="account-menu-item" id="menuClearCompletedBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg>
-              <span>Clear Completed Tasks</span>
+              <span>Clear completed tasks</span>
             </button>
             <button class="account-menu-item item-danger" id="menuSignOutBtn" type="button" role="menuitem" style="display: none;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-              <span>Sign Out</span>
+              <span>Sign out</span>
             </button>
             <div class="account-menu-divider"></div>
-            <div id="accountMenuBadge" class="account-menu-badge">Local Mode</div>
+            <div id="accountMenuBadge" class="account-menu-badge">No account</div>
           </div>
         </div>
 
         <div class="sidebar-footer-actions">
-          <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Switch theme (Dark / Light / System)">
+          <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Switch between light and dark">
             <svg class="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
@@ -725,13 +725,13 @@
                 </h1>
                 <p id="heroSubtitle" class="hero-copy">You have 0 tasks planned for today.</p>
                 <div class="hero-ai-actions-bar">
-                  <button id="heroPlanDayBtn" class="btn-ai-pill" type="button" aria-label="Plan My Day with Momentum Intelligence">
+                  <button id="heroPlanDayBtn" class="btn-ai-pill" type="button" aria-label="Plan my day with the AI assistant">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
                     </svg>
-                    <span>Plan My Day</span>
+                    <span>Plan my day</span>
                   </button>
-                  <button id="heroBriefingBtn" class="btn-ai-ghost-sm" type="button" aria-label="View Momentum Briefing">
+                  <button id="heroBriefingBtn" class="btn-ai-ghost-sm" type="button" aria-label="A quick summary of your day">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="12" cy="12" r="10"></circle>
                       <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -818,7 +818,7 @@
             </section>
 
             <!-- Contextual Import Banner (Shown when signed into cloud & local data is present) -->
-            <section id="importWorkspaceBanner" class="import-banner" style="display: none;" aria-label="Import local workspace">
+            <section id="importWorkspaceBanner" class="import-banner" style="display: none;" aria-label="Copy tasks from this device">
               <div class="import-banner-content">
                 <div class="import-banner-icon" aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -828,15 +828,15 @@
                   </svg>
                 </div>
                 <div class="import-banner-text">
-                  <h3 class="import-banner-title">Bring your local workspace with you</h3>
+                  <h3 class="import-banner-title">Bring over the tasks on this device?</h3>
                   <p class="import-banner-desc" id="importBannerSummary">
-                    You have <span id="importBannerTaskCount">0</span> local tasks and <span id="importBannerProjectCount">0</span> projects on this device.
+                    This device has <span id="importBannerTaskCount">0</span> tasks and <span id="importBannerProjectCount">0</span> projects that aren't in your account yet.
                   </p>
                 </div>
               </div>
               <div class="import-banner-actions">
-                <button id="importBannerDismissBtn" class="btn-secondary btn-sm" type="button">Keep Separate</button>
-                <button id="importBannerActionBtn" class="primary-btn btn-sm" type="button">Import to Cloud</button>
+                <button id="importBannerDismissBtn" class="btn-secondary btn-sm" type="button">Not now</button>
+                <button id="importBannerActionBtn" class="primary-btn btn-sm" type="button">Copy them in</button>
               </div>
             </section>
 
@@ -955,10 +955,11 @@
 
             <!-- Task List Panel -->
             <section class="panel list-panel" aria-label="Task list">
+              <div id="listGettingStarted" class="gs-slot gs-slot-list" hidden></div>
               <div class="list-header">
                 <div>
-                  <p id="sectionSubheader" class="section-label">Active board</p>
-                  <h2 id="sectionHeader">Today’s Board</h2>
+                  <p id="sectionSubheader" class="section-label">Your tasks</p>
+                  <h2 id="sectionHeader">Today</h2>
                 </div>
                 <p id="summaryText" class="summary-text">No tasks yet. Add one to get started.</p>
               </div>
@@ -1022,7 +1023,9 @@
           </div>
 
           <!-- Contextual Secondary Productivity Rail (Large Desktop Screens >= 1350px) -->
-          <aside class="workspace-secondary desktop-rail-only" id="workspaceRail" aria-label="Productivity overview">
+          <aside class="workspace-secondary desktop-rail-only" id="workspaceRail" aria-label="Your week at a glance">
+            <div id="railGettingStarted" class="gs-slot" hidden></div>
+
             <!-- Weekly Focus Card -->
             <div class="panel rail-card weekly-card" id="railWeeklyCard">
               <div class="rail-card-header">
@@ -1129,8 +1132,8 @@
     <div class="bottom-sheet-surface">
       <div class="bottom-sheet-handle" aria-hidden="true"></div>
       <div class="bottom-sheet-header">
-        <h3 class="bottom-sheet-title">Create Task</h3>
-        <button id="closeBottomSheetBtn" class="icon-btn" type="button" aria-label="Close task creator">
+        <h3 class="bottom-sheet-title">New task</h3>
+        <button id="closeBottomSheetBtn" class="icon-btn" type="button" aria-label="Close new task">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1188,9 +1191,9 @@
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
-        <button id="drawerToggleStatusBtn" class="drawer-status-btn" type="button" aria-label="Toggle task completion">
+        <button id="drawerToggleStatusBtn" class="drawer-status-btn" type="button" aria-label="Mark as done or not done">
           <span class="status-indicator-dot" aria-hidden="true"></span>
-          <span id="drawerStatusText">Incomplete</span>
+          <span id="drawerStatusText">Not done</span>
         </button>
       </div>
       <div class="drawer-header-right">
@@ -1253,13 +1256,13 @@
         </div>
 
         <div class="drawer-prop-field">
-          <label for="drawerRecurrenceInput" class="drawer-field-label">Recurrence</label>
+          <label for="drawerRecurrenceInput" class="drawer-field-label">Repeat</label>
           <select id="drawerRecurrenceInput" class="select-input">
             <option value="none">Does not repeat</option>
-            <option value="daily">Daily</option>
-            <option value="weekdays">Weekdays (Mon–Fri)</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
+            <option value="daily">Every day</option>
+            <option value="weekdays">Every weekday (Mon–Fri)</option>
+            <option value="weekly">Every week</option>
+            <option value="monthly">Every month</option>
           </select>
         </div>
 
@@ -1289,14 +1292,14 @@
       <div class="drawer-section drawer-subtasks-section">
         <div class="drawer-subtasks-header">
           <div class="drawer-subtasks-header-left">
-            <span class="drawer-field-label">Subtasks</span>
+            <span class="drawer-field-label">Steps</span>
             <span id="drawerSubtasksProgressText" class="drawer-subtasks-count">0 / 0</span>
           </div>
-          <button id="drawerBreakDownAiBtn" class="btn-ai-ghost-sm" type="button" aria-label="Break down task with AI">
+          <button id="drawerBreakDownAiBtn" class="btn-ai-ghost-sm" type="button" aria-label="Break this task into steps with the AI assistant">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
             </svg>
-            <span>Break Down with AI</span>
+            <span>Break into steps with AI</span>
           </button>
         </div>
         <div class="progress-bar-wrap subtask-progress-wrap">
@@ -1305,7 +1308,7 @@
         <div id="drawerBreakDownAiContainer" class="ai-breakdown-container" style="display: none;"></div>
         <ul id="drawerSubtaskList" class="drawer-subtask-list"></ul>
         <form id="drawerAddSubtaskForm" class="drawer-add-subtask-form" autocomplete="off">
-          <input id="newSubtaskInput" type="text" placeholder="+ Add subtask (press Enter)" class="subtask-add-input">
+          <input id="newSubtaskInput" type="text" placeholder="+ Add a step (press Enter)" class="subtask-add-input">
           <button type="submit" class="ghost-btn subtask-add-btn" id="addSubtaskBtn">Add</button>
         </form>
       </div>
@@ -1328,7 +1331,7 @@
   <div id="projectModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="projectModal" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="projectModalTitle">
       <div class="modal-header">
-        <h3 id="projectModalTitle" class="modal-title">New Project</h3>
+        <h3 id="projectModalTitle" class="modal-title">New project</h3>
         <button id="closeProjectModalBtn" class="icon-btn" type="button" aria-label="Close project modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1339,20 +1342,20 @@
       <form id="projectModalForm" autocomplete="off">
         <input type="hidden" id="projectModalEditId" value="">
         <div class="modal-field">
-          <label for="projectNameInput" class="modal-label">Project Name</label>
-          <input id="projectNameInput" type="text" class="modal-input" placeholder="e.g. University, Mobile App" required maxlength="40">
+          <label for="projectNameInput" class="modal-label">Project name</label>
+          <input id="projectNameInput" type="text" class="modal-input" placeholder="e.g. Q4 budget, Office move" required maxlength="40">
         </div>
         <div class="modal-field">
-          <label class="modal-label">Color Theme</label>
+          <label class="modal-label">Colour</label>
           <div id="projectColorPalette" class="color-swatches-grid" role="radiogroup" aria-label="Project color">
             <!-- Dynamically populated / selectable color buttons -->
           </div>
         </div>
         <div class="modal-actions">
-          <button id="deleteProjectBtn" type="button" class="danger-btn modal-delete-btn" style="display: none;">Delete Project</button>
+          <button id="deleteProjectBtn" type="button" class="danger-btn modal-delete-btn" style="display: none;">Delete project</button>
           <div class="modal-actions-right">
             <button id="cancelProjectModalBtn" type="button" class="ghost-btn">Cancel</button>
-            <button id="saveProjectModalBtn" type="submit" class="primary-btn">Save Project</button>
+            <button id="saveProjectModalBtn" type="submit" class="primary-btn">Save project</button>
           </div>
         </div>
       </form>
@@ -1363,28 +1366,28 @@
   <div id="taskContextMenu" class="context-menu" role="menu" aria-hidden="true">
     <button class="context-menu-item" id="ctxOpenDetails" type="button" role="menuitem">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-      <span>Open Details</span>
+      <span>Open</span>
     </button>
     <button class="context-menu-item" id="ctxDuplicate" type="button" role="menuitem">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-      <span>Duplicate Task</span>
+      <span>Duplicate</span>
     </button>
     <div class="context-menu-divider"></div>
-    <div class="context-menu-submenu-title">Move to Project</div>
+    <div class="context-menu-submenu-title">Move to project</div>
     <div id="ctxProjectSubmenu" class="context-menu-project-list"></div>
     <div class="context-menu-divider"></div>
     <button class="context-menu-item item-danger" id="ctxDelete" type="button" role="menuitem">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-      <span>Delete Task</span>
+      <span>Delete</span>
     </button>
   </div>
 
   <!-- Command Palette Modal (Cmd+K / Ctrl+K) -->
   <div id="commandPaletteOverlay" class="cmd-palette-overlay" aria-hidden="true">
-    <div id="commandPaletteModal" class="cmd-palette-modal" role="dialog" aria-modal="true" aria-label="Command Palette">
+    <div id="commandPaletteModal" class="cmd-palette-modal" role="dialog" aria-modal="true" aria-label="Quick actions">
       <div class="cmd-palette-search-wrap">
         <svg class="cmd-palette-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input id="cmdPaletteInput" type="search" placeholder="Search or run a command…" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="cmdPaletteResults">
+        <input id="cmdPaletteInput" type="search" placeholder="Search tasks or type what you want to do…" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="cmdPaletteResults">
         <kbd class="cmd-palette-kbd">ESC</kbd>
       </div>
       <div id="cmdPaletteResults" class="cmd-palette-results" role="listbox">
@@ -1402,21 +1405,21 @@
   <div id="shortcutsModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="shortcutsModal" class="modal-card shortcuts-modal-card" role="dialog" aria-modal="true" aria-labelledby="shortcutsModalTitle">
       <div class="modal-header">
-        <h3 id="shortcutsModalTitle" class="modal-title">Keyboard Shortcuts</h3>
+        <h3 id="shortcutsModalTitle" class="modal-title">Keyboard shortcuts</h3>
         <button id="closeShortcutsModalBtn" class="icon-btn" type="button" aria-label="Close shortcuts modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
       <div class="shortcuts-grid">
-        <div class="shortcut-row"><span class="shortcut-desc">New Task</span><span class="shortcut-keys"><kbd>N</kbd></span></div>
-        <div class="shortcut-row"><span class="shortcut-desc">Focus Search</span><span class="shortcut-keys"><kbd>/</kbd></span></div>
-        <div class="shortcut-row"><span class="shortcut-desc">Command Palette</span><span class="shortcut-keys"><kbd>⌘</kbd><kbd>K</kbd></span></div>
-        <div class="shortcut-row"><span class="shortcut-desc">Today’s Board</span><span class="shortcut-keys"><kbd>T</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">New task</span><span class="shortcut-keys"><kbd>N</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Search</span><span class="shortcut-keys"><kbd>/</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Quick actions</span><span class="shortcut-keys"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Today</span><span class="shortcut-keys"><kbd>T</kbd></span></div>
         <div class="shortcut-row"><span class="shortcut-desc">Inbox</span><span class="shortcut-keys"><kbd>I</kbd></span></div>
         <div class="shortcut-row"><span class="shortcut-desc">Upcoming</span><span class="shortcut-keys"><kbd>U</kbd></span></div>
         <div class="shortcut-row"><span class="shortcut-desc">Calendar</span><span class="shortcut-keys"><kbd>C</kbd></span></div>
-        <div class="shortcut-row"><span class="shortcut-desc">Show Shortcuts</span><span class="shortcut-keys"><kbd>?</kbd></span></div>
-        <div class="shortcut-row"><span class="shortcut-desc">Close Overlay / Drawer</span><span class="shortcut-keys"><kbd>ESC</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Show shortcuts</span><span class="shortcut-keys"><kbd>?</kbd></span></div>
+        <div class="shortcut-row"><span class="shortcut-desc">Close</span><span class="shortcut-keys"><kbd>ESC</kbd></span></div>
       </div>
     </div>
   </div>
@@ -1431,7 +1434,7 @@
           <span class="brand-name">Momentum</span>
           <span class="brand-dot" aria-hidden="true">●</span>
         </div>
-        <button id="closeAuthModalBtn" class="icon-btn" type="button" aria-label="Close authentication modal">
+        <button id="closeAuthModalBtn" class="icon-btn" type="button" aria-label="Close sign in">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
@@ -1447,7 +1450,8 @@
         <div id="authStep1" class="auth-step-container">
           <div class="auth-header-text">
             <h2 id="authStepTitle" class="auth-title">Welcome to Momentum</h2>
-            <p class="auth-subtitle">Sign in or create your account</p>
+            <p class="auth-subtitle">Sign in, or create a free account</p>
+            <p id="authReason" class="auth-reason" hidden></p>
           </div>
 
           <form id="authEmailForm" class="auth-form" novalidate>
@@ -1489,7 +1493,7 @@
             </button>
 
             <button type="button" id="authContinueLocalBtn" class="auth-btn auth-btn-tertiary">
-              <span>Continue without an account</span>
+              <span>Try without an account (saved on this device only)</span>
             </button>
           </div>
         </div>
@@ -1498,13 +1502,13 @@
         <div id="authStep2" class="auth-step-container" style="display: none;">
           <div class="auth-header-text">
             <h2 class="auth-title">Check your email</h2>
-            <p class="auth-subtitle">We sent a verification code to:</p>
+            <p class="auth-subtitle">We sent a 6-digit code to:</p>
             <p id="authTargetEmailLabel" class="auth-target-email">—</p>
           </div>
 
           <form id="authCodeForm" class="auth-form" novalidate>
             <div class="auth-field-group">
-              <label for="authCodeInput" class="auth-label">Verification code</label>
+              <label for="authCodeInput" class="auth-label">6-digit code</label>
               <div class="auth-input-wrap">
                 <input
                   type="text"
@@ -1521,7 +1525,7 @@
             </div>
 
             <button type="submit" id="authVerifyCodeBtn" class="auth-btn auth-btn-primary">
-              <span class="btn-text">Verify & Continue</span>
+              <span class="btn-text">Continue</span>
               <div class="spinner-dot auth-btn-spinner" style="display: none;"></div>
             </button>
           </form>
@@ -1540,7 +1544,7 @@
   <div id="importModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="importModal" class="modal-card import-modal-card" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
       <div class="modal-header">
-        <h3 id="importModalTitle" class="modal-title">Import Local Workspace</h3>
+        <h3 id="importModalTitle" class="modal-title">Copy tasks from this device</h3>
         <button id="closeImportModalBtn" class="icon-btn" type="button" aria-label="Close import modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -1548,7 +1552,7 @@
 
       <div class="import-modal-body">
         <p class="import-modal-description">
-          Add your local tasks and projects to your Momentum Cloud account. Your local device data will remain untouched as a backup.
+          Copy the tasks and projects saved on this device into your account. The copy on this device stays as it is.
         </p>
 
         <!-- Stats summary box -->
@@ -1563,16 +1567,16 @@
           </div>
           <div class="import-stat-box">
             <span class="import-stat-val" id="importModalSubtaskCount">0</span>
-            <span class="import-stat-lbl">Subtasks</span>
+            <span class="import-stat-lbl">Steps</span>
           </div>
         </div>
 
         <div id="importModalError" class="auth-error-banner" style="display: none;"></div>
 
         <div class="import-modal-footer">
-          <button type="button" id="importModalCancelBtn" class="btn-secondary">Keep Separate</button>
+          <button type="button" id="importModalCancelBtn" class="btn-secondary">Not now</button>
           <button type="button" id="importModalConfirmBtn" class="primary-btn">
-            <span class="btn-text">Import Workspace</span>
+            <span class="btn-text">Copy into my account</span>
             <div class="spinner-dot import-btn-spinner" style="display: none;"></div>
           </button>
         </div>
@@ -1602,36 +1606,36 @@
           </div>
         </div>
         <div class="onboarding-body">
-          <h2 id="onboardingStepTitle" class="onboarding-title">Welcome to your<br>new workspace.</h2>
-          <p class="onboarding-sub">Momentum brings calm, editorial clarity to your day with offline-first reliability and seamless cloud persistence.</p>
+          <h2 id="onboardingStepTitle" class="onboarding-title">Welcome to<br>Momentum.</h2>
+          <p class="onboarding-sub">A calm place to plan your day. Here’s what it does for you:</p>
           <div class="onboarding-feature-list">
             <div class="onboarding-feature-item">
               <div class="onboarding-feature-dot"></div>
-              <span><strong>Today Board:</strong> Focus on what matters now without cognitive overload.</span>
+              <span><strong>Today:</strong> see what matters now, without the noise.</span>
             </div>
             <div class="onboarding-feature-item">
               <div class="onboarding-feature-dot"></div>
-              <span><strong>Projects & Subtasks:</strong> Break down complex workflows into manageable steps.</span>
+              <span><strong>Type it like you’d say it:</strong> “Call Sam Friday 3pm” sets the date and time for you.</span>
             </div>
             <div class="onboarding-feature-item">
               <div class="onboarding-feature-dot"></div>
-              <span><strong>Keyboard Velocity:</strong> Navigate swiftly with ⌘K, N, T, and quick filters.</span>
+              <span><strong>AI assistant:</strong> plans your day and breaks big tasks into small steps.</span>
             </div>
           </div>
         </div>
         <div class="onboarding-footer">
           <button id="onboardingStep1SkipBtn" class="btn-secondary" type="button">Skip</button>
-          <button id="onboardingStep1NextBtn" class="primary-btn" type="button">Next: Set Up Projects →</button>
+          <button id="onboardingStep1NextBtn" class="primary-btn" type="button">Next</button>
         </div>
       </div>
 
       <!-- Step 2: Focus Areas / Starter Projects -->
       <div id="onboardingStep2" class="onboarding-step" style="display: none;">
         <div class="modal-header">
-          <h3 class="modal-title">Choose your focus areas</h3>
+          <h3 class="modal-title">What would you like to organise?</h3>
         </div>
         <div class="onboarding-body">
-          <p class="onboarding-sub">Select the areas you'd like starter projects created for (you can always edit or delete them later):</p>
+          <p class="onboarding-sub">Pick the areas you want a project for. You can rename or delete them later.</p>
           <div class="onboarding-project-choices">
             <label class="onboarding-choice-card">
               <input type="checkbox" id="onboardProjWork" checked>
@@ -1639,7 +1643,7 @@
                 <span class="choice-dot" style="background:#f08352"></span>
                 <div>
                   <div class="choice-title">Work & Professional</div>
-                  <div class="choice-desc">Deliverables, sprints, and strategic initiatives</div>
+                  <div class="choice-desc">Deadlines, meetings and follow-ups</div>
                 </div>
               </div>
             </label>
@@ -1649,7 +1653,7 @@
                 <span class="choice-dot" style="background:#4e9d75"></span>
                 <div>
                   <div class="choice-title">Personal Life</div>
-                  <div class="choice-desc">Health, personal admin, reading, and wellness</div>
+                  <div class="choice-desc">Errands, bills, health and home</div>
                 </div>
               </div>
             </label>
@@ -1659,7 +1663,7 @@
                 <span class="choice-dot" style="background:#7c6bf0"></span>
                 <div>
                   <div class="choice-title">Creative & Ideas</div>
-                  <div class="choice-desc">Writing, design projects, and explorations</div>
+                  <div class="choice-desc">Ideas, side projects and things to try</div>
                 </div>
               </div>
             </label>
@@ -1667,26 +1671,26 @@
         </div>
         <div class="onboarding-footer">
           <button id="onboardingStep2BackBtn" class="btn-secondary" type="button">Back</button>
-          <button id="onboardingStep2NextBtn" class="primary-btn" type="button">Next: Add First Task →</button>
+          <button id="onboardingStep2NextBtn" class="primary-btn" type="button">Next</button>
         </div>
       </div>
 
       <!-- Step 3: First Task -->
       <div id="onboardingStep3" class="onboarding-step" style="display: none;">
         <div class="modal-header">
-          <h3 class="modal-title">What is on your mind today?</h3>
+          <h3 class="modal-title">What’s on your plate today?</h3>
         </div>
         <div class="onboarding-body">
-          <p class="onboarding-sub">Capture your primary focus or top priority task to get started immediately:</p>
+          <p class="onboarding-sub">Add the most important thing you need to do. You can type naturally.</p>
           <div class="onboarding-input-wrap">
-            <input type="text" id="onboardingFirstTaskInput" class="onboarding-input" placeholder="e.g., Review project roadmap..." maxlength="200" autocomplete="off">
+            <input type="text" id="onboardingFirstTaskInput" class="onboarding-input" placeholder="e.g. Send proposal Friday 10am" maxlength="200" autocomplete="off">
           </div>
-          <p class="onboarding-hint">Tip: Press <kbd>N</kbd> anywhere in the dashboard to create new tasks quickly.</p>
+          <p class="onboarding-hint">Tip: on a computer, press <kbd>N</kbd> any time to add a task.</p>
         </div>
         <div class="onboarding-footer">
           <button id="onboardingStep3SkipBtn" class="btn-secondary" type="button">Skip</button>
           <button id="onboardingStep3FinishBtn" class="primary-btn" type="button">
-            <span class="btn-text">Enter Momentum</span>
+            <span class="btn-text">Done</span>
             <div class="spinner-dot" id="onboardingSpinner" style="display:none"></div>
           </button>
         </div>
@@ -1698,7 +1702,7 @@
   <div id="accountDataModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="accountDataModal" class="modal-card account-data-modal-card" role="dialog" aria-modal="true" aria-labelledby="accountDataModalTitle">
       <div class="modal-header">
-        <h3 id="accountDataModalTitle" class="modal-title">Account & Data Management</h3>
+        <h3 id="accountDataModalTitle" class="modal-title">Account &amp; data</h3>
         <button id="closeAccountDataModalBtn" class="icon-btn" type="button" aria-label="Close account data modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -1706,23 +1710,23 @@
 
       <div class="account-data-modal-body">
         <div class="account-data-section">
-          <h4 class="account-data-heading">Workspace & Cloud Identity</h4>
-          <p class="account-data-desc" id="accountDataStatusText">Signed in with Cloud Account.</p>
+          <h4 class="account-data-heading">Your account</h4>
+          <p class="account-data-desc" id="accountDataStatusText">You’re signed in.</p>
         </div>
 
         <div class="account-data-section">
-          <h4 class="account-data-heading">Data Export & Backup</h4>
-          <p class="account-data-desc">Download a complete, machine-readable JSON archive of your workspace tasks, projects, and subtasks.</p>
+          <h4 class="account-data-heading">Download a backup</h4>
+          <p class="account-data-desc">Save a copy of all your tasks, projects and steps as a file you can keep.</p>
           <div class="account-data-btn-row">
-            <button id="exportCloudDataBtn" class="btn-secondary" type="button">Export Cloud Workspace</button>
-            <button id="exportLocalDataBtn" class="btn-secondary" type="button">Export Local Workspace</button>
+            <button id="exportCloudDataBtn" class="btn-secondary" type="button">Download my account’s tasks</button>
+            <button id="exportLocalDataBtn" class="btn-secondary" type="button">Download this device’s tasks</button>
           </div>
         </div>
 
         <div class="account-data-section danger-zone" id="accountDataDangerZone">
-          <h4 class="account-data-heading danger-heading">Danger Zone</h4>
-          <p class="account-data-desc">Permanently delete your Momentum Cloud account and all associated cloud data from our database and authentication directory.</p>
-          <button id="openDeleteAccountModalBtn" class="btn-danger-outline" type="button">Delete Momentum Account</button>
+          <h4 class="account-data-heading danger-heading">Delete your account</h4>
+          <p class="account-data-desc">Permanently delete your account and every task and project saved in it. This can’t be undone.</p>
+          <button id="openDeleteAccountModalBtn" class="btn-danger-outline" type="button">Delete my account</button>
         </div>
       </div>
     </div>
@@ -1732,7 +1736,7 @@
   <div id="deleteAccountModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="deleteAccountModal" class="modal-card delete-account-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteAccountModalTitle">
       <div class="modal-header">
-        <h3 id="deleteAccountModalTitle" class="modal-title modal-title-danger">Delete Momentum Account</h3>
+        <h3 id="deleteAccountModalTitle" class="modal-title modal-title-danger">Delete your account</h3>
         <button id="closeDeleteAccountModalBtn" class="icon-btn" type="button" aria-label="Close delete account modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -1741,11 +1745,11 @@
       <div class="delete-modal-body">
         <div class="auth-error-alert" role="alert" style="display: flex;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-          <span><strong>Warning:</strong> This action cannot be undone. All your cloud projects, tasks, and settings will be permanently erased. Local workspace data on this device will remain untouched.</span>
+          <span><strong>This can’t be undone.</strong> Every task, project and setting in your account will be erased. Tasks saved only on this device aren’t affected.</span>
         </div>
 
         <p class="delete-confirm-instruction">
-          To confirm permanent account deletion, please type <strong>DELETE</strong> below:
+          To confirm, type <strong>DELETE</strong> below:
         </p>
 
         <div class="delete-input-wrap">
@@ -1757,7 +1761,7 @@
         <div class="delete-modal-footer">
           <button id="cancelDeleteAccountBtn" class="btn-secondary" type="button">Cancel</button>
           <button id="confirmDeleteAccountBtn" class="btn-danger" type="button" disabled>
-            <span class="btn-text">Permanently Delete Account</span>
+            <span class="btn-text">Permanently delete my account</span>
             <div class="spinner-dot delete-spinner" style="display:none;"></div>
           </button>
         </div>
@@ -1769,7 +1773,7 @@
   <div id="privacyModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="privacyModal" class="modal-card privacy-modal-card" role="dialog" aria-modal="true" aria-labelledby="privacyModalTitle">
       <div class="modal-header">
-        <h3 id="privacyModalTitle" class="modal-title">Privacy & Data Transparency</h3>
+        <h3 id="privacyModalTitle" class="modal-title">Privacy &amp; your data</h3>
         <button id="closePrivacyModalBtn" class="icon-btn" type="button" aria-label="Close privacy modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -1777,28 +1781,29 @@
 
       <div class="privacy-modal-body">
         <div class="privacy-block">
-          <h4>1. Local Workspace Storage</h4>
-          <p>When you use Momentum in Local Mode, your tasks, projects, tags, and preferences are stored in this browser on this device using <code>localStorage</code>. No local productivity data is sent to a server.</p>
+          <h4>1. Trying Momentum without an account</h4>
+          <p>Your tasks, projects, tags and settings are saved in this browser on this device only. They aren’t sent to our servers, and they’re lost if you clear your browser data.</p>
         </div>
 
         <div class="privacy-block">
-          <h4>2. Momentum Cloud & Authentication</h4>
-          <p>When you sign in to Momentum Cloud:</p>
+          <h4>2. With a free account</h4>
           <ul>
-            <li><strong>Authentication:</strong> Authentication is handled by Clerk.</li>
-            <li><strong>Cloud Storage:</strong> Cloud workspace data is stored in a Neon PostgreSQL database.</li>
-            <li><strong>Workspace Import:</strong> Importing a Local Workspace copies selected local data into the Cloud Workspace and does not automatically delete the local copy.</li>
+            <li><strong>Signing in</strong> is handled by Clerk, a secure sign-in service.</li>
+            <li><strong>Your tasks</strong> are stored in our database (hosted by Neon), so you can use them on any device.</li>
+            <li><strong>Copying tasks from this device</strong> into your account doesn’t delete the copy on this device.</li>
+            <li><strong>The AI assistant</strong>, when you use it, receives only the task details it needs to answer you.</li>
+            <li><strong>The morning email</strong>, if you turn it on, is sent through Brevo, an email delivery service.</li>
           </ul>
         </div>
 
         <div class="privacy-block">
-          <h4>3. Workspace Export & Deletion</h4>
-          <p>You can export a JSON backup of your workspace at any time. If you delete your Momentum Cloud account, your user records and cloud workspace data are deleted from the database.</p>
+          <h4>3. Backups and deleting your account</h4>
+          <p>You can download a backup of your tasks at any time. If you delete your account, your account and everything saved in it are deleted from our database.</p>
         </div>
       </div>
 
       <div class="modal-footer-single">
-        <button id="closePrivacyModalBottomBtn" class="primary-btn" type="button">Understood</button>
+        <button id="closePrivacyModalBottomBtn" class="primary-btn" type="button">Got it</button>
       </div>
     </div>
   </div>
@@ -1840,7 +1845,7 @@
   <div id="feedbackModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="feedbackModal" class="modal-card feedback-modal-card" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
       <div class="modal-header">
-        <h3 id="feedbackModalTitle" class="modal-title">Feedback & Beta Notes</h3>
+        <h3 id="feedbackModalTitle" class="modal-title">Send feedback</h3>
         <button id="closeFeedbackModalBtn" class="icon-btn" type="button" aria-label="Close feedback modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -1849,10 +1854,10 @@
       <div class="feedback-modal-body">
         <div class="feedback-notice-card">
           <p class="feedback-notice-text">
-            Direct in-app feedback transmission requires an external feedback webhook or email integration that is not yet configured for this build.
+            We’d love to hear from you. Sending feedback from inside the app isn’t available yet.
           </p>
           <p class="feedback-notice-sub">
-            Please report issues or submit feedback through the project repository or release channels.
+            Please share ideas or problems through the Momentum project page.
           </p>
         </div>
       </div>
@@ -1875,7 +1880,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
           </svg>
-          <span class="ai-badge-text">Momentum Intelligence</span>
+          <span class="ai-badge-text">AI assistant</span>
         </div>
         <button id="closeAiDisclosureBtn" class="icon-btn" type="button" aria-label="Close AI disclosure modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -1883,40 +1888,40 @@
       </div>
 
       <div class="modal-body ai-disclosure-body">
-        <h3 id="aiDisclosureTitle" class="ai-disclosure-headline">Productivity intelligence powered by OpenAI</h3>
+        <h3 id="aiDisclosureTitle" class="ai-disclosure-headline">Meet your AI assistant</h3>
         <p class="ai-disclosure-intro">
-          Momentum Intelligence assists with natural-language planning, daily scheduling, and task decomposition. Your privacy and data boundaries are strictly protected.
+          It can plan your day, turn a goal into a list of tasks, and break big tasks into small steps. Here’s what it can and can’t see.
         </p>
 
         <div class="ai-disclosure-grid">
           <div class="ai-disclosure-box ai-box-included">
-            <h4 class="ai-box-title">What is shared with OpenAI</h4>
+            <h4 class="ai-box-title">What it sees</h4>
             <ul class="ai-box-list">
-              <li>Relevant task titles and priority levels</li>
-              <li>Due dates and associated project names</li>
-              <li>Calculated completion metrics (aggregated counts)</li>
+              <li>The titles and priorities of the tasks involved</li>
+              <li>Their due dates and project names</li>
+              <li>Simple totals, like how many tasks you finished</li>
             </ul>
           </div>
           <div class="ai-disclosure-box ai-box-excluded">
-            <h4 class="ai-box-title">What is NEVER shared</h4>
+            <h4 class="ai-box-title">What it never sees</h4>
             <ul class="ai-box-list">
-              <li>Your account credentials, emails, or user IDs</li>
-              <li>Database identifiers or authentication tokens</li>
-              <li>Your full workspace dump or unrelated projects</li>
+              <li>Your email address or password</li>
+              <li>Your sign-in details</li>
+              <li>Tasks that aren’t needed for your request</li>
             </ul>
           </div>
         </div>
 
         <div class="ai-disclosure-note">
           <p>
-            Requests are processed under OpenAI Zero Data Retention policies. Your workspace data is never used for model training. You can revoke this anytime in Settings.
+            Requests are processed under OpenAI Zero Data Retention policies. Your tasks are never used to train AI models.
           </p>
         </div>
       </div>
 
       <div class="modal-footer ai-disclosure-footer">
-        <button id="cancelAiDisclosureBtn" class="btn-secondary" type="button">Not Now</button>
-        <button id="acceptAiDisclosureBtn" class="primary-btn" type="button">Enable Momentum Intelligence</button>
+        <button id="cancelAiDisclosureBtn" class="btn-secondary" type="button">Not now</button>
+        <button id="acceptAiDisclosureBtn" class="primary-btn" type="button">Turn on the AI assistant</button>
       </div>
     </div>
   </div>
@@ -1929,7 +1934,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
           </svg>
-          <span class="ai-badge-text">Task Proposal</span>
+          <span class="ai-badge-text">Suggested task</span>
         </div>
         <button id="closeAiTaskPreviewBtn" class="icon-btn" type="button" aria-label="Close task preview modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -1972,13 +1977,13 @@
 
         <div class="ai-preview-row">
           <div class="ai-preview-col">
-            <label for="aiPreviewRecurrenceSelect" class="ai-field-label">Recurrence</label>
+            <label for="aiPreviewRecurrenceSelect" class="ai-field-label">Repeat</label>
             <select id="aiPreviewRecurrenceSelect" class="select-input">
-              <option value="none">None</option>
-              <option value="daily">Daily</option>
-              <option value="weekdays">Weekdays</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
+              <option value="none">Does not repeat</option>
+              <option value="daily">Every day</option>
+              <option value="weekdays">Every weekday</option>
+              <option value="weekly">Every week</option>
+              <option value="monthly">Every month</option>
             </select>
           </div>
           <div class="ai-preview-col">
@@ -1990,7 +1995,7 @@
 
       <div class="modal-footer ai-preview-footer">
         <button id="cancelAiTaskPreviewBtn" class="btn-secondary" type="button">Discard</button>
-        <button id="confirmAiTaskPreviewBtn" class="primary-btn" type="button">Create Task</button>
+        <button id="confirmAiTaskPreviewBtn" class="primary-btn" type="button">Add task</button>
       </div>
     </div>
   </div>
@@ -2003,7 +2008,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
           </svg>
-          <span class="ai-badge-text">Plan My Day</span>
+          <span class="ai-badge-text">Plan my day</span>
         </div>
         <button id="closePlanMyDayBtn" class="icon-btn" type="button" aria-label="Close plan my day modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -2013,17 +2018,17 @@
       <div class="modal-body plan-day-body">
         <div id="planDayLoadingState" class="ai-thinking-state" style="display: none;">
           <div class="ai-thinking-spinner"></div>
-          <p class="ai-thinking-text">Structuring your day with Momentum Intelligence…</p>
+          <p class="ai-thinking-text">Planning your day…</p>
         </div>
 
         <div id="planDayContent" class="plan-day-content">
           <div class="plan-day-focus-banner">
-            <span class="plan-focus-label">Day Focus</span>
+            <span class="plan-focus-label">Focus for today</span>
             <p id="planDayFocusText" class="plan-focus-text">Focus on high-leverage milestones today.</p>
           </div>
 
           <div class="plan-day-timeline-header">
-            <span class="timeline-title">Suggested Time Blocks</span>
+            <span class="timeline-title">Suggested schedule</span>
             <span id="planDayDateBadge" class="plan-date-badge">Today</span>
           </div>
 
@@ -2038,9 +2043,9 @@
       <div class="modal-footer plan-day-footer">
         <button id="regeneratePlanDayBtn" class="btn-secondary" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          <span>Regenerate</span>
+          <span>Try again</span>
         </button>
-        <button id="acceptPlanDayBtn" class="primary-btn" type="button">Apply to Today</button>
+        <button id="acceptPlanDayBtn" class="primary-btn" type="button">Use this plan</button>
       </div>
     </div>
   </div>
@@ -2053,7 +2058,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
           </svg>
-          <span class="ai-badge-text">AI Project Planner</span>
+          <span class="ai-badge-text">Plan a project</span>
         </div>
         <button id="closeProjectPlannerBtn" class="icon-btn" type="button" aria-label="Close project planner modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -2062,11 +2067,11 @@
 
       <div class="modal-body project-planner-body">
         <div id="projectPlannerInputSection" class="planner-input-section">
-          <label for="projectPlannerGoalInput" class="ai-field-label">What is your project or outcome?</label>
-          <textarea id="projectPlannerGoalInput" class="drawer-desc-input" rows="3" placeholder="e.g. Launch a new portfolio website with case studies, blog, and contact form."></textarea>
+          <label for="projectPlannerGoalInput" class="ai-field-label">What do you want to get done?</label>
+          <textarea id="projectPlannerGoalInput" class="drawer-desc-input" rows="3" placeholder="e.g. Organise the team offsite in March for 20 people"></textarea>
 
           <div class="planner-target-date-wrap">
-            <label for="projectPlannerTargetDate" class="ai-field-label">Target Completion Date (optional)</label>
+            <label for="projectPlannerTargetDate" class="ai-field-label">Finish by (optional)</label>
             <input id="projectPlannerTargetDate" type="date" class="date-input">
           </div>
 
@@ -2074,13 +2079,13 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
             </svg>
-            <span>Generate Project Plan</span>
+            <span>Make a plan</span>
           </button>
         </div>
 
         <div id="projectPlannerLoadingState" class="ai-thinking-state" style="display: none;">
           <div class="ai-thinking-spinner"></div>
-          <p class="ai-thinking-text">Drafting project milestones and tasks…</p>
+          <p class="ai-thinking-text">Making your plan…</p>
         </div>
 
         <div id="projectPlannerResultsSection" class="planner-results-section" style="display: none;">
@@ -2091,7 +2096,7 @@
 
           <div class="planner-tasks-preview-header">
             <span class="preview-count" id="plannerTaskCountBadge">0 proposed tasks</span>
-            <span class="preview-hint">Review tasks before creating</span>
+            <span class="preview-hint">Check the tasks before adding them</span>
           </div>
 
           <div id="plannerTasksList" class="planner-tasks-list">
@@ -2102,7 +2107,7 @@
 
       <div class="modal-footer project-planner-footer" id="projectPlannerFooter" style="display: none;">
         <button id="cancelProjectPlanBtn" class="btn-secondary" type="button">Discard</button>
-        <button id="commitProjectPlanBtn" class="primary-btn" type="button">Create Project & Tasks</button>
+        <button id="commitProjectPlanBtn" class="primary-btn" type="button">Add project and tasks</button>
       </div>
     </div>
   </div>
@@ -2117,7 +2122,7 @@
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span class="ai-badge-text">Momentum Briefing</span>
+          <span class="ai-badge-text">Your day at a glance</span>
         </div>
         <button id="closeBriefingModalBtn" class="icon-btn" type="button" aria-label="Close briefing modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -2127,7 +2132,7 @@
       <div class="modal-body briefing-body">
         <div id="briefingLoadingState" class="ai-thinking-state" style="display: none;">
           <div class="ai-thinking-spinner"></div>
-          <p class="ai-thinking-text">Preparing your morning briefing…</p>
+          <p class="ai-thinking-text">Getting your summary ready…</p>
         </div>
 
         <div id="briefingContent" class="briefing-content">
@@ -2137,7 +2142,7 @@
           <div class="briefing-stats-row">
             <div class="briefing-stat-chip">
               <span class="chip-val" id="briefingDueTodayCount">0</span>
-              <span class="chip-lbl">Due Today</span>
+              <span class="chip-lbl">Due today</span>
             </div>
             <div class="briefing-stat-chip chip-overdue">
               <span class="chip-val" id="briefingOverdueCount">0</span>
@@ -2145,16 +2150,16 @@
             </div>
             <div class="briefing-stat-chip chip-high">
               <span class="chip-val" id="briefingHighPriorityCount">0</span>
-              <span class="chip-lbl">High Priority</span>
+              <span class="chip-lbl">High priority</span>
             </div>
             <div class="briefing-stat-chip">
               <span class="chip-val" id="briefingTotalOpenCount">0</span>
-              <span class="chip-lbl">Open Tasks</span>
+              <span class="chip-lbl">Still to do</span>
             </div>
           </div>
 
           <div id="briefingTopTaskWrap" class="briefing-top-task" style="display: none;">
-            <span class="top-task-label">Key Focus Task</span>
+            <span class="top-task-label">Start with this</span>
             <p id="briefingTopTaskTitle" class="top-task-title"></p>
           </div>
         </div>
@@ -2163,9 +2168,9 @@
       <div class="modal-footer briefing-footer">
         <button id="briefingPlanDayActionBtn" class="btn-secondary" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path></svg>
-          <span>Plan Today</span>
+          <span>Plan my day</span>
         </button>
-        <button id="closeBriefingActionBtn" class="primary-btn" type="button">Got It</button>
+        <button id="closeBriefingActionBtn" class="primary-btn" type="button">Got it</button>
       </div>
     </div>
   </div>
@@ -2178,7 +2183,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
-          <span class="ai-badge-text">Weekly Review</span>
+          <span class="ai-badge-text">Your week</span>
         </div>
         <button id="closeWeeklyReviewModalBtn" class="icon-btn" type="button" aria-label="Close weekly review modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -2188,11 +2193,11 @@
       <div class="modal-body weekly-review-body">
         <div id="weeklyReviewLoadingState" class="ai-thinking-state" style="display: none;">
           <div class="ai-thinking-spinner"></div>
-          <p class="ai-thinking-text">Compiling weekly productivity narrative…</p>
+          <p class="ai-thinking-text">Looking back on your week…</p>
         </div>
 
         <div id="weeklyReviewContent" class="weekly-review-content">
-          <div class="review-date-range" id="reviewDateRangeText">Past Week</div>
+          <div class="review-date-range" id="reviewDateRangeText">Last 7 days</div>
 
           <div class="review-stats-grid">
             <div class="review-stat-item">
@@ -2205,28 +2210,28 @@
             </div>
             <div class="review-stat-item">
               <span class="stat-big-number" id="reviewOpenCount">0</span>
-              <span class="stat-sub-label">Still Open</span>
+              <span class="stat-sub-label">Still to do</span>
             </div>
             <div class="review-stat-item">
               <span class="stat-big-number" id="reviewBestDay">Mon</span>
-              <span class="stat-sub-label">Most Productive</span>
+              <span class="stat-sub-label">Best day</span>
             </div>
           </div>
 
           <div class="review-narrative-section">
-            <h4 class="review-section-title">Accomplishments & Retrospective</h4>
+            <h4 class="review-section-title">What you got done</h4>
             <p id="reviewNarrativeText" class="review-prose"></p>
           </div>
 
           <div class="review-preview-section">
-            <h4 class="review-section-title">Strategic Outlook for Next Week</h4>
+            <h4 class="review-section-title">Looking ahead</h4>
             <p id="reviewNextWeekText" class="review-prose"></p>
           </div>
         </div>
       </div>
 
       <div class="modal-footer weekly-review-footer">
-        <button id="closeWeeklyReviewActionBtn" class="primary-btn" type="button">Close Review</button>
+        <button id="closeWeeklyReviewActionBtn" class="primary-btn" type="button">Close</button>
       </div>
     </div>
   </div>
@@ -2235,7 +2240,7 @@
   <div id="bulkConfirmModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="bulkConfirmModal" class="modal-card bulk-confirm-card" role="dialog" aria-modal="true" aria-labelledby="bulkConfirmTitle">
       <div class="modal-header">
-        <h3 id="bulkConfirmTitle" class="modal-title">Confirm Bulk Changes</h3>
+        <h3 id="bulkConfirmTitle" class="modal-title">Check these changes</h3>
         <button id="closeBulkConfirmBtn" class="icon-btn" type="button" aria-label="Close bulk confirm modal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -2243,7 +2248,7 @@
 
       <div class="modal-body bulk-confirm-body">
         <p id="bulkConfirmDescription" class="bulk-confirm-desc">
-          Are you sure you want to apply the following updates?
+          The AI assistant would like to make these changes:
         </p>
         <div id="bulkConfirmItemsList" class="bulk-confirm-items-list">
           <!-- Dynamically populated list of affected items -->
@@ -2252,7 +2257,7 @@
 
       <div class="modal-footer bulk-confirm-footer">
         <button id="cancelBulkConfirmBtn" class="btn-secondary" type="button">Cancel</button>
-        <button id="acceptBulkConfirmBtn" class="primary-btn" type="button">Confirm & Apply</button>
+        <button id="acceptBulkConfirmBtn" class="primary-btn" type="button">Make these changes</button>
       </div>
     </div>
   </div>
@@ -2265,19 +2270,19 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
           </svg>
-          <span class="ai-badge-text">Momentum Intelligence</span>
+          <span class="ai-badge-text">AI assistant</span>
         </div>
-        <button id="closeIntelligenceHubBtn" class="icon-btn" type="button" aria-label="Close intelligence hub">
+        <button id="closeIntelligenceHubBtn" class="icon-btn" type="button" aria-label="Close AI assistant">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
       <div class="modal-body intelligence-hub-body">
         <div class="ai-hub-nl-box">
-          <label for="aiHubNlInput" class="ai-field-label">Natural Language Action</label>
+          <label for="aiHubNlInput" class="ai-field-label">Ask in your own words</label>
           <div class="ai-hub-input-row">
-            <input id="aiHubNlInput" type="text" class="text-input" placeholder="e.g. Schedule deep work tomorrow at 10am #focus">
-            <button id="aiHubNlSubmitBtn" class="primary-btn btn-sm" type="button">Execute</button>
+            <input id="aiHubNlInput" type="text" class="text-input" placeholder="e.g. Move my calls to tomorrow afternoon">
+            <button id="aiHubNlSubmitBtn" class="primary-btn btn-sm" type="button">Go</button>
           </div>
         </div>
 
@@ -2287,8 +2292,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
             </div>
             <div class="hub-action-text">
-              <strong>Plan My Day</strong>
-              <span>Generate time blocks for today</span>
+              <strong>Plan my day</strong>
+              <span>A simple schedule for today</span>
             </div>
           </button>
 
@@ -2297,8 +2302,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
             </div>
             <div class="hub-action-text">
-              <strong>Morning Briefing</strong>
-              <span>Today's verified metrics & advice</span>
+              <strong>My day at a glance</strong>
+              <span>What’s due, what’s late, where to start</span>
             </div>
           </button>
 
@@ -2307,8 +2312,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </div>
             <div class="hub-action-text">
-              <strong>Project Planner</strong>
-              <span>Turn high-level goals into tasks</span>
+              <strong>Plan a project</strong>
+              <span>Turn a goal into a list of tasks</span>
             </div>
           </button>
 
@@ -2317,8 +2322,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             </div>
             <div class="hub-action-text">
-              <strong>Weekly Review</strong>
-              <span>Retrospective & next week preview</span>
+              <strong>Review my week</strong>
+              <span>What you got done and what’s next</span>
             </div>
           </button>
         </div>
@@ -2338,6 +2343,7 @@
   <script src="js/views.js"></script>
   <script src="js/actions.js"></script>
   <script src="js/reminders.js"></script>
+  <script src="js/getting-started.js"></script>
   <script src="js/ambient.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/main.js"></script>

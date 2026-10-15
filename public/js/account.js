@@ -112,7 +112,7 @@ function setupUserProfileMenu() {
     menuExportDataBtn.addEventListener("click", () => {
       DataStore.exportData();
       userProfileWrap.classList.remove("open");
-      showToast("Workspace backup exported (JSON)", 2500);
+      showToast("Backup downloaded", 2500, null, "check");
     });
   }
 
@@ -425,9 +425,16 @@ const AuthManager = {
     }
   },
 
-  openSignIn() {
+  /** Opens sign-in. `reason` is an optional one-line benefit shown above the form. */
+  openSignIn({ reason = "" } = {}) {
     this.setStep(1);
     this.clearError();
+
+    const reasonEl = document.getElementById("authReason");
+    if (reasonEl) {
+      reasonEl.textContent = typeof reason === "string" ? reason : "";
+      reasonEl.hidden = !reasonEl.textContent;
+    }
 
     if (userProfileWrap) userProfileWrap.classList.remove("open");
     if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
@@ -756,7 +763,7 @@ const AuthManager = {
         this.setSignedOutState();
         this.showLanding();
       }
-      showToast("Authentication sync failed. Running in Local Mode.", 3500);
+      showToast("We couldn't sign you in just now. Your tasks on this device are still here.", 4000);
     }
   },
 
@@ -1031,11 +1038,11 @@ const AuthManager = {
 
     if (statusEl) {
       statusEl.className = "user-status cloud-connected";
-      statusEl.innerHTML = `<span class="user-status-dot"></span>Cloud Connected`;
+      statusEl.innerHTML = `<span class="user-status-dot"></span>Saved to your account`;
     }
 
     if (accountMenuHeaderTitle) accountMenuHeaderTitle.textContent = displayName;
-    if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = user.email || "Cloud Account";
+    if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = user.email || "Your account";
 
     if (menuSignInBtn) menuSignInBtn.style.display = "none";
     if (menuEditProfileBtn) menuEditProfileBtn.style.display = "flex";
@@ -1043,7 +1050,7 @@ const AuthManager = {
     if (menuSignOutBtn) menuSignOutBtn.style.display = "flex";
 
     if (accountMenuBadge) {
-      accountMenuBadge.textContent = "Cloud Account";
+      accountMenuBadge.textContent = "Signed in";
       accountMenuBadge.classList.add("cloud-badge");
     }
   },
@@ -1058,16 +1065,16 @@ const AuthManager = {
     }
 
     if (nameEl) {
-      nameEl.textContent = "Local Workspace";
+      nameEl.textContent = "Not signed in";
     }
 
     if (statusEl) {
       statusEl.className = "user-status";
-      statusEl.textContent = "Local Mode";
+      statusEl.textContent = "On this device only";
     }
 
-    if (accountMenuHeaderTitle) accountMenuHeaderTitle.textContent = "Local Workspace";
-    if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = "Offline-Ready";
+    if (accountMenuHeaderTitle) accountMenuHeaderTitle.textContent = "Not signed in";
+    if (accountMenuHeaderSub) accountMenuHeaderSub.textContent = "Your tasks are saved on this device only";
 
     if (menuSignInBtn) menuSignInBtn.style.display = "flex";
     if (menuEditProfileBtn) menuEditProfileBtn.style.display = "none";
@@ -1075,7 +1082,7 @@ const AuthManager = {
     if (menuSignOutBtn) menuSignOutBtn.style.display = "none";
 
     if (accountMenuBadge) {
-      accountMenuBadge.textContent = "Local Mode";
+      accountMenuBadge.textContent = "No account";
       accountMenuBadge.classList.remove("cloud-badge");
     }
   },
@@ -1344,10 +1351,10 @@ const OnboardingManager = {
 
       this.close();
       render();
-      showToast("Workspace initialized. Welcome to Momentum!", 3500);
+      showToast("You're all set. Welcome to Momentum!", 3500);
     } catch (err) {
       console.error("Finish onboarding error:", err);
-      showToast("Setup encountered an issue, but your workspace is ready.", 3000);
+      showToast("Something didn't finish setting up, but you can start adding tasks.", 3500);
       this.close();
     } finally {
       if (finishBtn) finishBtn.disabled = false;
@@ -1388,8 +1395,8 @@ const AccountDataManager = {
     const isCloud = WorkspaceRepository.isCloud() && AuthManager.currentUser;
     if (statusText) {
       statusText.textContent = isCloud
-        ? `Signed in as ${AuthManager.currentUser.displayName || "Momentum User"} (${AuthManager.currentUser.email || "Cloud Account"}). Cloud sync active.`
-        : "Using Local Workspace (on-device localStorage). No cloud account attached.";
+        ? `Signed in as ${AuthManager.currentUser.displayName || "you"}${AuthManager.currentUser.email ? ` (${AuthManager.currentUser.email})` : ""}. Your tasks are saved to your account.`
+        : "You’re not signed in. Your tasks are saved on this device only.";
     }
 
     if (dangerZone) {
@@ -1410,7 +1417,7 @@ const AccountDataManager = {
 
   exportCloud() {
     if (!WorkspaceRepository.isCloud() || !AuthManager.currentUser) {
-      showToast("Please sign in to export cloud workspace.", 3000);
+      showToast("Sign in to download your account's tasks.", 3000);
       return;
     }
     const backup = {
@@ -1422,7 +1429,7 @@ const AccountDataManager = {
       projects: state.projects
     };
     this.downloadJson(backup, `momentum-cloud-backup-${getLocalDateString()}.json`);
-    showToast("Cloud workspace exported successfully (JSON).", 2500);
+    showToast("Backup downloaded", 2500, null, "check");
   },
 
   exportLocal() {
@@ -1436,7 +1443,7 @@ const AccountDataManager = {
       projects: localProjects
     };
     this.downloadJson(backup, `momentum-local-backup-${getLocalDateString()}.json`);
-    showToast("Local workspace exported successfully (JSON).", 2500);
+    showToast("Backup downloaded", 2500, null, "check");
   },
 
   downloadJson(data, filename) {
@@ -1517,7 +1524,7 @@ const AccountDataManager = {
         // Cloud data in Neon was deleted; Clerk identity deletion did not complete
         this.closeDeleteModal();
         await AuthManager.signOut();
-        showToast("Cloud workspace data was permanently deleted. Authentication identity cleanup requires manual action.", 6000);
+        showToast("Your tasks were deleted, but we couldn't finish closing your sign-in. Please contact us to complete it.", 6000);
         return;
       }
 
@@ -1525,7 +1532,7 @@ const AccountDataManager = {
       // Note: Local storage (Local Workspace) is strictly preserved!
       this.closeDeleteModal();
       await AuthManager.signOut();
-      showToast("Your Momentum Cloud account has been permanently deleted.", 4500);
+      showToast("Your account has been permanently deleted.", 4500);
     } catch (err) {
       console.error("Account deletion failed:", err);
       if (errEl) {

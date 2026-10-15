@@ -60,7 +60,7 @@ async function toggleTodo(id) {
       }
     } catch (err) {
       console.error("[toggleTodo] Cloud toggle error:", err);
-      showToast(err.message || "Failed to update task status in cloud.", 3500);
+      showToast(err.message || "Couldn't save that change. Please try again.", 3500);
       render();
     } finally {
       state.completingTodoIds.delete(id);
@@ -211,7 +211,7 @@ async function deleteTodo(id) {
       showToast(`Deleted "${todo.title}"`, 3000);
     } catch (err) {
       console.error("[deleteTodo] Cloud delete error:", err);
-      showToast(err.message || "Failed to delete task from cloud.", 3500);
+      showToast(err.message || "Couldn't delete that task. Please try again.", 3500);
       render();
     }
   } else {
@@ -252,7 +252,7 @@ async function clearCompleted() {
         showToast(`Cleared ${successfulIds.size} completed task${successfulIds.size === 1 ? "" : "s"}.`, 3500);
       } catch (err) {
         console.error("Failed to clear completed tasks in cloud:", err);
-        showToast("Error clearing completed tasks.", 3500);
+        showToast("Couldn't clear completed tasks. Please try again.", 3500);
       }
     } else {
       state.undoManager.push({
@@ -366,7 +366,7 @@ function renderCommandPaletteResults(query = "") {
 
   // Navigation Items
   const navDefs = [
-    { title: "Today’s Board", meta: "View", icon: "sun", action: () => setView("today") },
+    { title: "Today", meta: "View", icon: "sun", action: () => setView("today") },
     { title: "Inbox", meta: "View", icon: "inbox", action: () => setView("inbox") },
     { title: "Upcoming", meta: "View", icon: "calendar", action: () => setView("upcoming") },
     { title: "Calendar", meta: "View", icon: "calendar", action: () => setView("calendar") },
@@ -379,7 +379,7 @@ function renderCommandPaletteResults(query = "") {
   // Quick Action Items
   const actionDefs = [
     {
-      title: "New Task",
+      title: "New task",
       meta: "Action",
       icon: "plus",
       action: () => {
@@ -391,25 +391,25 @@ function renderCommandPaletteResults(query = "") {
         }
       }
     },
-    { title: "New Project", meta: "Action", icon: "folder-plus", action: () => openProjectModal(null) },
-    { title: "Clear Completed Tasks", meta: "Action", icon: "trash", action: () => clearCompleted() },
-    { title: "Plan My Day (AI)", meta: "AI", icon: "sparkles", action: () => MomentumAI.openPlanDay() },
-    { title: "Morning Briefing (AI)", meta: "AI", icon: "sparkles", action: () => MomentumAI.openBriefing() },
-    { title: "Weekly Review (AI)", meta: "AI", icon: "sparkles", action: () => MomentumAI.openWeeklyReview() },
-    { title: "AI Project Planner", meta: "AI", icon: "sparkles", action: () => MomentumAI.openProjectPlanner() },
-    { title: "Toggle Theme (Dark / Light)", meta: "Action", icon: "moon", action: () => toggleTheme() },
-    { title: "Export Backup (JSON)", meta: "Action", icon: "download", action: () => DataStore.exportData() },
-    { title: "Show Keyboard Shortcuts", meta: "Help", icon: "help", action: () => openShortcutsModal() }
+    { title: "New project", meta: "Action", icon: "folder-plus", action: () => openProjectModal(null) },
+    { title: "Clear completed tasks", meta: "Action", icon: "trash", action: () => clearCompleted() },
+    { title: "Plan my day", meta: "AI", icon: "sparkles", action: () => MomentumAI.openPlanDay() },
+    { title: "My day at a glance", meta: "AI", icon: "sparkles", action: () => MomentumAI.openBriefing() },
+    { title: "Review my week", meta: "AI", icon: "sparkles", action: () => MomentumAI.openWeeklyReview() },
+    { title: "Plan a project", meta: "AI", icon: "sparkles", action: () => MomentumAI.openProjectPlanner() },
+    { title: "Switch light / dark", meta: "Action", icon: "moon", action: () => toggleTheme() },
+    { title: "Download a backup", meta: "Action", icon: "download", action: () => DataStore.exportData() },
+    { title: "Keyboard shortcuts", meta: "Help", icon: "help", action: () => openShortcutsModal() }
   ];
 
   if (AuthManager.isAuthenticated()) {
     actionDefs.push(
-      { title: "Manage Account (Clerk Profile)", meta: "Account", icon: "user", action: () => AuthManager.openAccountManagement() },
-      { title: "Sign Out", meta: "Account", icon: "log-out", action: () => AuthManager.signOut() }
+      { title: "Manage account", meta: "Account", icon: "user", action: () => AuthManager.openAccountManagement() },
+      { title: "Sign out", meta: "Account", icon: "log-out", action: () => AuthManager.signOut() }
     );
   } else {
     actionDefs.push(
-      { title: "Sign In / Create Account", meta: "Account", icon: "log-in", action: () => AuthManager.openSignIn() }
+      { title: "Sign in or create a free account", meta: "Account", icon: "log-in", action: () => AuthManager.openSignIn() }
     );
   }
 
@@ -419,8 +419,8 @@ function renderCommandPaletteResults(query = "") {
   const aiItems = [];
   if (needle && needle.length >= 2) {
     aiItems.push({
-      title: `Ask Momentum Intelligence: "${query.trim()}"`,
-      meta: "AI Action",
+      title: `Ask the AI assistant: "${query.trim()}"`,
+      meta: "AI",
       icon: "sparkles",
       action: () => {
         closeCommandPalette();
@@ -454,7 +454,7 @@ function renderCommandPaletteResults(query = "") {
   cmdPaletteResults.innerHTML = "";
 
   const sections = [];
-  if (aiItems.length > 0) sections.push({ group: "Momentum Intelligence", items: aiItems });
+  if (aiItems.length > 0) sections.push({ group: "AI assistant", items: aiItems });
   if (matchedActions.length > 0) sections.push({ group: "Actions", items: matchedActions });
   if (matchedNav.length > 0) sections.push({ group: "Navigation", items: matchedNav });
   if (matchedProjects.length > 0) sections.push({ group: "Projects", items: matchedProjects });
@@ -467,7 +467,7 @@ function renderCommandPaletteResults(query = "") {
     const emptyDiv = document.createElement("div");
     emptyDiv.className = "cmd-item";
     emptyDiv.style.cursor = "default";
-    emptyDiv.innerHTML = `<span style="color: var(--muted);">No commands or tasks found</span>`;
+    emptyDiv.innerHTML = `<span style="color: var(--muted);">Nothing found</span>`;
     cmdPaletteResults.appendChild(emptyDiv);
     return;
   }
@@ -807,6 +807,7 @@ function setupTaskCreationListeners() {
 
       desktopSmart.reset();
       collapseComposer();
+      if (smart.understood > 0) GettingStarted.markTypedNaturally();
       showToast(describeCreatedTask(created), 3000, null, "check");
     } catch (err) {
       console.error("Task creation failed:", err);
@@ -844,6 +845,7 @@ function setupTaskCreationListeners() {
       });
 
       closeMobileBottomSheet();
+      if (smart.understood > 0) GettingStarted.markTypedNaturally();
       showToast(describeCreatedTask(created), 3000, null, "check");
     } catch (err) {
       console.error("Task creation failed:", err);

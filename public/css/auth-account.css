@@ -1935,3 +1935,19 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* One-line reason above the sign-in form (e.g. why the AI assistant needs an account) */
+.auth-reason {
+  margin: 0.8rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  border: 1px solid var(--border-focus);
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.auth-reason[hidden] {
+  display: none;
+}

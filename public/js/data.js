@@ -576,7 +576,7 @@ const CloudDataStore = {
           console.error("Failed to reconcile stale cloud task:", fetchErr);
         }
       } else {
-        showToast(err.message || "Failed to save changes to cloud.", 3000);
+        showToast(err.message || "Couldn't save your changes. Please try again.", 3000);
       }
     } finally {
       queue.inFlight = false;
@@ -705,7 +705,7 @@ const WorkspaceRepository = {
       if (this.workspaceGeneration !== currentGen) return;
       console.error("[WorkspaceRepository] Failed to load cloud workspace:", err);
       state.cloudStatus = "error";
-      state.cloudError = err.message || "Unable to load cloud workspace.";
+      state.cloudError = err.message || "We couldn't load your tasks.";
       render();
     }
   },
