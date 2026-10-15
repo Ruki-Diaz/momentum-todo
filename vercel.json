@@ -7,6 +7,12 @@
       "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/daily-email",
+      "schedule": "0 21 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -39,6 +45,14 @@
     {
       "source": "/api/ai/status",
       "destination": "/api/ai?action=status"
+    },
+    {
+      "source": "/api/cron/daily-email",
+      "destination": "/api/settings?action=daily-email"
+    },
+    {
+      "source": "/api/email/unsubscribe",
+      "destination": "/api/settings?action=unsubscribe"
     },
     {
       "source": "/",

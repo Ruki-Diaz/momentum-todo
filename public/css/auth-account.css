@@ -850,6 +850,10 @@
   padding-top: 1rem;
 }
 
+.modal-footer-single .primary-btn {
+  padding: 0.7rem 1.5rem;
+}
+
 /* Feedback Modal */
 .feedback-modal-card {
   width: min(100% - 2rem, 460px);
@@ -1774,4 +1778,160 @@
   font-size: 0.76rem;
   color: var(--muted);
   line-height: 1.35;
+}
+
+/* --------------------------------------------------------------------------
+   Reminders: inline "Turn on reminders" card + "Reminders & daily email" panel
+   -------------------------------------------------------------------------- */
+.reminder-prompt-slot[hidden] {
+  display: none;
+}
+
+.list-panel .reminder-prompt-slot {
+  margin-bottom: 1rem;
+}
+
+.reminder-card {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  border: 1px solid var(--border-focus);
+  animation: smartChipIn var(--dur-base) var(--ease-out);
+}
+
+.reminder-card-icon {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--panel-strong);
+  color: var(--accent);
+}
+
+.reminder-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.reminder-card-text {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+.reminder-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.reminder-card-actions .primary-btn,
+.reminder-card-actions .ghost-btn,
+.reminder-settings-section .primary-btn {
+  padding: 0.55rem 1rem;
+  font-size: 0.88rem;
+}
+
+.reminder-settings-section .primary-btn {
+  align-self: flex-start;
+  margin-top: 0.4rem;
+}
+
+.reminder-settings-card {
+  width: min(100% - 2rem, 480px);
+}
+
+.reminder-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.reminder-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.reminder-settings-section[hidden] {
+  display: none;
+}
+
+.reminder-settings-note {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.daily-email-hour {
+  max-width: 12rem;
+  background: var(--panel-subtle);
+  color: var(--text);
+}
+
+/* Accessible on/off switch built on a real checkbox */
+.switch-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--tap-min);
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.switch-row input {
+  position: absolute;
+  opacity: 0;
+  width: 2.6rem;
+  height: 1.5rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.switch-track {
+  position: relative;
+  width: 2.6rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--panel-secondary);
+  border: 1px solid var(--border);
+  transition: background-color var(--dur-fast) ease;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.5rem - 6px);
+  height: calc(1.5rem - 6px);
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) ease;
+}
+
+.switch-row input:checked + .switch-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switch-row input:checked + .switch-track .switch-thumb {
+  transform: translateX(1.1rem);
+  background: #fff;
+}
+
+.switch-row input:focus-visible + .switch-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

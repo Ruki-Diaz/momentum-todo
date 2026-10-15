@@ -46,6 +46,8 @@ export const userSettings = pgTable(
     sortPreference: varchar("sort_preference", { length: 30 }).notNull().default("smart"),
     onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
     timezone: varchar("timezone", { length: 100 }).notNull().default("UTC"),
+    dailyEmail: boolean("daily_email").notNull().default(false),
+    dailyEmailHour: integer("daily_email_hour").notNull().default(8),
     version: integer("version").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()

@@ -468,6 +468,10 @@ function render() {
 
   // Check and prompt workspace import if eligible
   ImportManager.checkAndPromptImport();
+
+  // Offer reminders when tasks have them; open a task a notification asked for
+  Reminders.renderPrompt(document.querySelector("#listReminderPrompt"));
+  Reminders.applyPending();
 }
 
 function updateViewHeaders() {

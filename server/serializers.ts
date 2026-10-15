@@ -4,6 +4,7 @@
  * Strips internal secrets and formats timestamps cleanly.
  */
 import type { Project, Task, Subtask, UserSettings } from "./schema.js";
+import { isDigestConfigured } from "./digest.js";
 
 export interface SerializedProject {
   id: string;
@@ -104,17 +105,23 @@ export interface SerializedUserSettings {
   sortPreference: string;
   onboardingCompleted: boolean;
   timezone: string;
+  dailyEmail: boolean;
+  dailyEmailHour: number;
+  dailyEmailAvailable: boolean;
   version: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export function serializeUserSettings(settings: UserSettings): SerializedUserSettings {
+export function serializeUserSettings(settings: UserSettings, dailyEmailAvailable = isDigestConfigured()): SerializedUserSettings {
   return {
     theme: settings.theme,
     sortPreference: settings.sortPreference,
     onboardingCompleted: Boolean(settings.onboardingCompleted),
     timezone: settings.timezone || "UTC",
+    dailyEmail: Boolean(settings.dailyEmail),
+    dailyEmailHour: typeof settings.dailyEmailHour === "number" ? settings.dailyEmailHour : 8,
+    dailyEmailAvailable,
     version: settings.version,
     createdAt: settings.createdAt instanceof Date ? settings.createdAt.toISOString() : new Date(settings.createdAt).toISOString(),
     updatedAt: settings.updatedAt instanceof Date ? settings.updatedAt.toISOString() : new Date(settings.updatedAt).toISOString()

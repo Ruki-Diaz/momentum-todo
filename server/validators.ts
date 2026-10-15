@@ -395,6 +395,8 @@ export interface ValidatedSettingsInput {
   sortPreference?: "smart" | "dueDate" | "priority" | "newest" | "oldest";
   onboardingCompleted?: boolean;
   timezone?: string;
+  dailyEmail?: boolean;
+  dailyEmailHour?: number;
   version?: number;
 }
 
@@ -439,6 +441,20 @@ export function validateSettingsInput(body: any, isUpdate = false): ValidatedSet
       throw new ApiError(400, "VALIDATION_ERROR", "'timezone' must be a valid IANA timezone string (1–100 characters)");
     }
     result.timezone = body.timezone.trim();
+  }
+
+  if (body.dailyEmail !== undefined) {
+    if (typeof body.dailyEmail !== "boolean") {
+      throw new ApiError(400, "VALIDATION_ERROR", "'dailyEmail' must be a boolean");
+    }
+    result.dailyEmail = body.dailyEmail;
+  }
+
+  if (body.dailyEmailHour !== undefined) {
+    if (!Number.isInteger(body.dailyEmailHour) || body.dailyEmailHour < 0 || body.dailyEmailHour > 23) {
+      throw new ApiError(400, "VALIDATION_ERROR", "'dailyEmailHour' must be a whole hour from 0 to 23");
+    }
+    result.dailyEmailHour = body.dailyEmailHour;
   }
 
   if (isUpdate) {

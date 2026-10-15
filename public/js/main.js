@@ -24,6 +24,7 @@ AccountDataManager.setupListeners();
 PrivacyManager.setupListeners();
 FeedbackManager.setupListeners();
 MomentumAI.setupListeners();
+Reminders.setupListeners();
 AuthManager.init();
 
 // PWA Service Worker Registration
@@ -37,13 +38,18 @@ if ("serviceWorker" in navigator) {
 
 // Online / Offline Network Listeners
 window.addEventListener("online", () => {
-  showToast("Network restored. Momentum Cloud connected.", 3000);
+  showToast("You're back online.", 3000);
 });
 window.addEventListener("offline", () => {
-  showToast("You are offline. Changes will save locally.", 3500);
+  showToast(
+    WorkspaceRepository.isCloud()
+      ? "You're offline. Changes may not save until you're back online."
+      : "You're offline. Your tasks are still saved on this device.",
+    3500
+  );
 });
 
-// Start In-App Reminder Polling every 30 seconds
+// Check reminders every 30 seconds (and when the tab becomes visible; see reminders.js)
 setInterval(checkReminders, 30000);
 checkReminders();
 

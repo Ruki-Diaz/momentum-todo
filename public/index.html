@@ -624,6 +624,10 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
               <span>Import Local Workspace</span>
             </button>
+            <button class="account-menu-item" id="menuRemindersBtn" type="button" role="menuitem">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+              <span>Reminders &amp; daily email</span>
+            </button>
             <button class="account-menu-item" id="menuToggleThemeBtn" type="button" role="menuitem">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg>
               <span>Toggle Theme (Dark / Light)</span>
@@ -959,6 +963,8 @@
                 <p id="summaryText" class="summary-text">No tasks yet. Add one to get started.</p>
               </div>
 
+              <div id="listReminderPrompt" class="reminder-prompt-slot" hidden></div>
+
               <ul id="todoList" class="todo-list" aria-live="polite"></ul>
 
               <!-- Elegant Compact Empty State Template -->
@@ -1261,13 +1267,14 @@
           <label for="drawerReminderInput" class="drawer-field-label">Reminder</label>
           <select id="drawerReminderInput" class="select-input">
             <option value="">No reminder</option>
-            <option value="0">At time of event</option>
+            <option value="0">When it's due</option>
             <option value="15">15 minutes before</option>
             <option value="60">1 hour before</option>
             <option value="1440">1 day before</option>
           </select>
         </div>
       </div>
+      <div id="drawerReminderPrompt" class="drawer-section reminder-prompt-slot" hidden></div>
 
       <!-- Tags Section -->
       <div class="drawer-section drawer-tags-section">
@@ -1796,6 +1803,39 @@
     </div>
   </div>
 
+  <!-- Reminders & Daily Email Panel -->
+  <div id="reminderSettingsOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal-card reminder-settings-card" role="dialog" aria-modal="true" aria-labelledby="reminderSettingsTitle">
+      <div class="modal-header">
+        <h3 id="reminderSettingsTitle" class="modal-title">Reminders &amp; daily email</h3>
+        <button id="closeReminderSettingsBtn" class="icon-btn" type="button" aria-label="Close reminders and daily email">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="reminder-settings-body">
+        <section class="reminder-settings-section" aria-labelledby="reminderStatusHeading">
+          <h4 id="reminderStatusHeading" class="account-data-heading">Reminders on this device</h4>
+          <p id="reminderStatusText" class="account-data-desc"></p>
+          <button id="reminderTurnOnBtn" class="primary-btn btn-sm" type="button" hidden>Turn on reminders</button>
+          <p class="reminder-settings-note">Reminders arrive while your browser is running, or while the Momentum app is open on your phone.</p>
+        </section>
+        <section id="dailyEmailSection" class="reminder-settings-section" aria-labelledby="dailyEmailHeading" hidden>
+          <h4 id="dailyEmailHeading" class="account-data-heading">Your day by email</h4>
+          <label class="switch-row" for="dailyEmailToggle">
+            <input id="dailyEmailToggle" type="checkbox" role="switch">
+            <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            <span>Email me my day each morning</span>
+          </label>
+          <label class="sr-only" for="dailyEmailHour">When to send it</label>
+          <select id="dailyEmailHour" class="select-input daily-email-hour"></select>
+        </section>
+      </div>
+      <div class="modal-footer-single">
+        <button id="reminderSettingsDoneBtn" class="primary-btn" type="button">Done</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Feedback Modal -->
   <div id="feedbackModalOverlay" class="modal-overlay" aria-hidden="true">
     <div id="feedbackModal" class="modal-card feedback-modal-card" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
@@ -2297,6 +2337,7 @@
   <script src="js/account.js"></script>
   <script src="js/views.js"></script>
   <script src="js/actions.js"></script>
+  <script src="js/reminders.js"></script>
   <script src="js/ambient.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/main.js"></script>

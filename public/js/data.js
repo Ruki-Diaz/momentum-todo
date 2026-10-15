@@ -677,6 +677,7 @@ const WorkspaceRepository = {
       if (this.workspaceGeneration !== currentGen) return;
 
       if (settings) {
+        state.cloudSettings = settings;
         state.cloudSettingsVersion = settings.version || 1;
         if (settings.theme && (settings.theme === "dark" || settings.theme === "light")) {
           applyTheme(settings.theme, false);

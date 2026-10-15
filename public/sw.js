@@ -8,7 +8,7 @@
  * 3. Non-GET requests (POST, PUT, PATCH, DELETE) bypass Cache Storage unconditionally.
  */
 
-const CACHE_NAME = "momentum-static-v5";
+const CACHE_NAME = "momentum-static-v6";
 
 const STATIC_SHELL_ASSETS = [
   "/",
@@ -37,6 +37,7 @@ const STATIC_SHELL_ASSETS = [
   "/js/account.js",
   "/js/views.js",
   "/js/actions.js",
+  "/js/reminders.js",
   "/js/ambient.js",
   "/js/ai.js",
   "/js/main.js",
@@ -113,5 +114,28 @@ self.addEventListener("fetch", (event) => {
         if (request.mode === "navigate") return caches.match("/index.html");
         return Response.error();
       })
+  );
+});
+
+// 4. Reminder notifications: open the task, or pass "Mark done" / "Snooze" to an open page.
+self.addEventListener("notificationclick", (event) => {
+  const notification = event.notification;
+  const todoId = notification.data && notification.data.todoId;
+  const action = event.action || "open";
+  notification.close();
+
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const page = windows.find((c) => new URL(c.url).origin === self.location.origin);
+      if (page) {
+        page.postMessage({ type: "reminder-action", action, todoId });
+        if (action === "open" && "focus" in page) await page.focus();
+        return;
+      }
+      // No page open: just open the app (and the task, when the notification itself was tapped).
+      const target = action === "open" && todoId ? `/?task=${encodeURIComponent(todoId)}` : "/";
+      if (self.clients.openWindow) await self.clients.openWindow(target);
+    })()
   );
 });

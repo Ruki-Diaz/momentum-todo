@@ -679,46 +679,57 @@ function setupGlobalShortcuts() {
 }
 
 // ==========================================================================
-// 25. IN-APP REMINDER FOUNDATION (Periodic In-App Alerts)
+// 25. REMINDERS (system notifications via Reminders, in-page toast as fallback)
 // ==========================================================================
+/**
+ * Fires each due reminder once (remembered across reloads). Runs every 30 s and whenever
+ * the tab becomes visible again, so reminders missed while the page was hidden still show.
+ * Reminders more than 12 hours late become one quiet "You missed this" toast instead.
+ * These only run while the browser is open; see reminders.js for why.
+ */
 function checkReminders() {
-  const now = new Date();
-  const currentIso = now.toISOString();
-  const todayStr = getLocalDateString(now);
+  if (state.booting) return;
+  const now = Date.now();
+  const granted = Reminders.status() === "granted";
+  const visible = document.visibilityState === "visible";
+  const missed = [];
 
   state.todos.forEach((todo) => {
-    if (todo.completed || !todo.dueDate || !todo.reminder) return;
-    if (state.triggeredReminders.has(todo.id)) return;
+    const at = Reminders.reminderAt(todo);
+    if (at === null) return;
 
-    const offsetMinutes = parseInt(todo.reminder, 10);
-    if (isNaN(offsetMinutes)) return;
+    const snoozedUntil = Reminders.snoozedUntil(todo.id);
+    if (snoozedUntil) {
+      if (now < snoozedUntil) return;
+      if (!granted && !visible) return;
+      Reminders.clearSnooze(todo.id);
+      deliverReminder(todo, granted);
+      return;
+    }
 
-    // Calculate target date & time
-    const timeStr = todo.dueTime || "09:00";
-    const [year, month, day] = todo.dueDate.split("-").map(Number);
-    const [hh, mm] = timeStr.split(":").map(Number);
+    const key = `${todo.id}@${at}`;
+    if (now < at || Reminders.wasFired(key)) return;
+    // Without system notifications, wait until the person is looking at the page.
+    if (!granted && !visible) return;
 
-    const targetDate = new Date(year, month - 1, day, hh, mm, 0, 0);
-    const reminderTime = new Date(targetDate.getTime() - offsetMinutes * 60 * 1000);
-
-    if (now >= reminderTime) {
-      state.triggeredReminders.add(todo.id);
-      const reminderMsg = `Reminder: "${todo.title}" is due ${formatDueDate(todo.dueDate, todo.dueTime)}`;
-      showToast(reminderMsg, 5000, null, "bell");
-
-      // Active-tab browser notification if permission granted
-      if ("Notification" in window && Notification.permission === "granted") {
-        try {
-          new Notification("Momentum Reminder", {
-            body: reminderMsg,
-            icon: "/favicon.svg"
-          });
-        } catch (nErr) {
-          // ignore notification delivery error
-        }
-      }
+    Reminders.markFired(key);
+    if (now - at > 12 * 60 * 60 * 1000) {
+      missed.push(todo);
+    } else {
+      deliverReminder(todo, granted);
     }
   });
+
+  if (missed.length === 1) {
+    showToast(`You missed this: "${missed[0].title}" (${formatDueDate(missed[0].dueDate, missed[0].dueTime)})`, 6000, null, "bell");
+  } else if (missed.length > 1) {
+    showToast(`You missed ${missed.length} reminders while Momentum was closed. They're in your list.`, 6000, null, "bell");
+  }
+}
+
+async function deliverReminder(todo, granted) {
+  if (granted && (await Reminders.show(todo))) return;
+  showToast(`Reminder: "${todo.title}" is ${Reminders.dueWords(todo) || "due now"}`, 6000, null, "bell");
 }
 
 // ==========================================================================

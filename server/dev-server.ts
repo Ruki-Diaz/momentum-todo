@@ -42,6 +42,10 @@ function createVercelResponse(res: http.ServerResponse) {
     res.end(JSON.stringify(data));
     return customRes;
   };
+  customRes.send = function (body: string) {
+    res.end(body);
+    return customRes;
+  };
   return customRes;
 }
 
@@ -174,6 +178,16 @@ const server = http.createServer(async (req, res) => {
 
   // Settings Endpoints
   if (pathname === "/api/settings") {
+    await settingsHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/cron/daily-email") {
+    vercelReq.query.action = "daily-email";
+    await settingsHandler(vercelReq, vercelRes);
+    return;
+  }
+  if (pathname === "/api/email/unsubscribe") {
+    vercelReq.query.action = "unsubscribe";
     await settingsHandler(vercelReq, vercelRes);
     return;
   }
