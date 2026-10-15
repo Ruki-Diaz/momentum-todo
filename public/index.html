@@ -859,6 +859,10 @@
                   </button>
                 </div>
 
+                <!-- Smart typing: what Momentum understood, and a hint while empty -->
+                <div id="composerSmartPreview" class="smart-preview" aria-label="Understood from what you typed" hidden></div>
+                <p id="composerSmartHint" class="smart-hint"></p>
+
                 <!-- Secondary Controls (Smoothly expands on focus/typing) -->
                 <div class="composer-options-row" id="composerOptionsRow">
                   <!-- Priority Selector -->
@@ -1132,6 +1136,8 @@
           <label class="sr-only" for="mobileTodoInput">Task title</label>
           <input id="mobileTodoInput" type="text" placeholder="What needs to be done?" required maxlength="140">
         </div>
+        <div id="mobileSmartPreview" class="smart-preview" aria-label="Understood from what you typed" hidden></div>
+        <p id="mobileSmartHint" class="smart-hint"></p>
         <div class="mobile-options-grid">
           <div class="option-field">
             <label for="mobilePriorityInput"><span class="option-label">Priority</span></label>
@@ -2284,6 +2290,7 @@
   <script src="js/cube-wave.js"></script>
   <script src="js/data.js"></script>
   <script src="js/icons.js"></script>
+  <script src="js/smart-input.js"></script>
   <script src="js/motion.js"></script>
   <script src="js/core.js"></script>
   <script src="js/task-ui.js"></script>

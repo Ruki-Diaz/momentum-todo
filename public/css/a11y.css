@@ -52,6 +52,13 @@ html {
     min-height: var(--tap-min);
   }
 
+  /* Small visual × with a 44px invisible hit area */
+  .smart-chip-dismiss::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+  }
+
   .icon-btn,
   .icon-btn-tiny,
   .profile-editor-close {

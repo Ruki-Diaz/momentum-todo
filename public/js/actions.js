@@ -327,6 +327,7 @@ function openMobileBottomSheet() {
 function closeMobileBottomSheet() {
   mobileComposerSheet.classList.remove("open");
   mobileTodoForm.reset();
+  if (mobileSmart) mobileSmart.reset();
 }
 
 // ==========================================================================
@@ -723,7 +724,35 @@ function checkReminders() {
 // ==========================================================================
 // 26. TASK CREATION FORM LISTENERS
 // ==========================================================================
+// Smart typing controllers for the desktop composer and the mobile bottom sheet.
+let desktopSmart = null;
+let mobileSmart = null;
+
+/** "Added: Call John · Tomorrow, 3:00 PM · repeats weekly" */
+function describeCreatedTask(todo) {
+  if (!todo) return "Task added";
+  const parts = [`Added: ${todo.title}`];
+  if (todo.dueDate) parts.push(formatDueDate(todo.dueDate, todo.dueTime));
+  if (todo.recurrence && todo.recurrence !== "none") parts.push(`repeats ${RECURRENCE_WORDS[todo.recurrence] || todo.recurrence}`);
+  return parts.join(" · ");
+}
+
+const RECURRENCE_WORDS = { daily: "every day", weekdays: "every weekday", weekly: "every week", monthly: "every month" };
+
 function setupTaskCreationListeners() {
+  desktopSmart = SmartInput.bindComposer({
+    input: todoInput,
+    fields: { priority: priorityInput, dueDate: dueDateInput, dueTime: dueTimeInput, tags: tagsInput },
+    preview: document.querySelector("#composerSmartPreview"),
+    hint: document.querySelector("#composerSmartHint")
+  });
+  mobileSmart = SmartInput.bindComposer({
+    input: mobileTodoInput,
+    fields: { priority: mobilePriorityInput, dueDate: mobileDueDateInput, dueTime: mobileDueTimeInput, tags: mobileTagsInput },
+    preview: document.querySelector("#mobileSmartPreview"),
+    hint: document.querySelector("#mobileSmartHint")
+  });
+
   // Desktop Task Creation
   todoForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -740,22 +769,18 @@ function setupTaskCreationListeners() {
       return;
     }
 
-    const priority = priorityInput.value;
-    const dueDate = dueDateInput.value;
-    const dueTime = dueTimeInput.value;
-    const projectId = projectInput.value || null;
-    const rawTags = tagsInput.value;
-
-    const tags = normalizeTags(rawTags.split(","));
+    const smart = desktopSmart.result();
+    if (!smart.title) return;
 
     try {
-      await WorkspaceRepository.createTask({
-        title,
-        priority,
-        dueDate,
-        dueTime,
-        projectId,
-        tags
+      const created = await WorkspaceRepository.createTask({
+        title: smart.title,
+        priority: smart.priority,
+        dueDate: smart.dueDate,
+        dueTime: smart.dueTime,
+        projectId: projectInput.value || null,
+        tags: smart.tags,
+        recurrence: smart.recurrence
       });
 
       todoForm.reset();
@@ -769,8 +794,9 @@ function setupTaskCreationListeners() {
         projectInput.value = state.currentView.slice(8);
       }
 
+      desktopSmart.reset();
       collapseComposer();
-      showToast("Task created", 2000);
+      showToast(describeCreatedTask(created), 3000, null, "check");
     } catch (err) {
       console.error("Task creation failed:", err);
       showToast(err.message || "Failed to create task.", 3500);
@@ -792,26 +818,22 @@ function setupTaskCreationListeners() {
       return;
     }
 
-    const priority = mobilePriorityInput.value;
-    const dueDate = mobileDueDateInput.value;
-    const dueTime = mobileDueTimeInput.value;
-    const projectId = mobileProjectInput.value || null;
-    const rawTags = mobileTagsInput.value;
-
-    const tags = normalizeTags(rawTags.split(","));
+    const smart = mobileSmart.result();
+    if (!smart.title) return;
 
     try {
-      await WorkspaceRepository.createTask({
-        title,
-        priority,
-        dueDate,
-        dueTime,
-        projectId,
-        tags
+      const created = await WorkspaceRepository.createTask({
+        title: smart.title,
+        priority: smart.priority,
+        dueDate: smart.dueDate,
+        dueTime: smart.dueTime,
+        projectId: mobileProjectInput.value || null,
+        tags: smart.tags,
+        recurrence: smart.recurrence
       });
 
       closeMobileBottomSheet();
-      showToast("Task created", 2000);
+      showToast(describeCreatedTask(created), 3000, null, "check");
     } catch (err) {
       console.error("Task creation failed:", err);
       showToast(err.message || "Failed to create task.", 3500);
